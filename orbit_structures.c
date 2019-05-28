@@ -3,12 +3,12 @@
 
 void initialize_config(Config_t* cfg_ptr){
 
-  Config_t cfg = *cfg_ptr;
+  //Config_t cfg = *cfg_ptr;
 
-  cfg.seed = 12345;
-  cfg.ekev = 75;
+  cfg_ptr->seed = 12345;
+  cfg_ptr->ekev = 75;
   /* engn = ; */
-  cfg.bkg = 5.5;
+  cfg_ptr->bkg = 5.5;
   /* double bmin; */
   /* double bmax; */
   /* double rmaj; */
@@ -21,15 +21,19 @@ void initialize_config(Config_t* cfg_ptr){
   /* double bax; */
   /* double* dwal;  /\* wall definition *\/ */
 
-  cfg.pamp = 8.63;
-  cfg.rprof = 3.765;
+  cfg_ptr->pamp = 8.63;
+  cfg_ptr->rprof = 3.765;
 
 };
 
 void initialize_particle(Particle_t* ptc_ptr){
-  
+
 };
 
 void initialize_Perturb(Perturb_t* ptrb_ptr){
+
+};
+
+void initialize_Equilib(Equilib_t* Equilib_ptr){
 
 };
