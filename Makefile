@@ -1,13 +1,13 @@
 CC=cc
 NVCC=nvcc
 
-CFLAGS=' -Wall -Wextra -Wno-missing-field-initializers -Wsign-conversion -g -O3 '
+CFLAGS= -Wall -Wextra -Wno-missing-field-initializers -Wsign-conversion -g -O3
 CLIBS=
 CFLAGS+= $(CLIBS)
 #CFLAGS += $(INCLUDES)
 #-Wsign-conversion (some nvidia libs can make this a noisy warning, might be fixed now)
 #LDFLAGS= --shared
-NVCCFLAGS= --compiler-options $(CFLAGS) -g -O3 --use_fast_math
+NVCCFLAGS= --compiler-options '$(CFLAGS)' -g -O3 --use_fast_math
 NVCCLDFLAGS= --compiler-options '-shared -fPIC '
 #NVOPT= --maxrregcount=32
 #NVCCFLAGS += $(NVOPT)
@@ -15,17 +15,19 @@ NVCCLDFLAGS= --compiler-options '-shared -fPIC '
 
 .PHONY: clean all
 
-all: orbit_structures.o
+all: orbit_structures.o test.x
 
 # libcuorbit.so:
 # 	$(NVCC) $(NVCCLDFLAGS) $(NVCCFLAGS) $^ -o $@
 
 %.o: %.c
-	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -DSKIPMAIN -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 %.o: %.cu
-	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -DSKIPMAIN -c $< -o $@
+	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -c $< -o $@
 
+test.x: orbit_structures.o
+	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
 	-rm -f *.o
