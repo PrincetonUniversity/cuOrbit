@@ -7,12 +7,13 @@
 
 #include "orbit_equilibrium.h"
 #include "orbit_perturbation.h"
+#include "orbit_particles.h"
 #include "orbit_util.h"
 
 const int NAMP_ = 155;
 
 void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
-                        Equilib_t* equilib_ptr, Particle_t* ptcl_ptr){
+                        Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
 
   /* these values are to become part of config  */
   double falf = 13.3550;
@@ -169,7 +170,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
 };
 
 
-void splna(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particle_t* ptcl_ptr){
+void splna(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
   int ind, j, m, md;
   int jm, jp, jpp;
   const int lpt = ptrb_ptr->lpt;
@@ -218,7 +219,7 @@ void splna(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particle_t* ptcl_ptr){
   return;
 }
 
-void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particle_t* ptcl_ptr){
+void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
   int ind, j, m, md;
   int jm, jp, jpp;
   const int lpt = ptrb_ptr->lpt;

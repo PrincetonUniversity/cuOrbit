@@ -2,6 +2,7 @@
 #define SET_ORBIT_PERTURBATION_H_
 
 #include "orbit_structures.h"
+#include "orbit_particles.h"
 #include "orbit_equilibrium.h"
 
 /* we can pack this in the struct if we really need it... */
@@ -40,9 +41,9 @@ typedef struct Perturb {
   double *a1, *a2, *a3;
 } Perturb_t;
 
-void initialize_Perturb(Perturb_t*, Config_t*, Equilib_t*, Particle_t*);
+void initialize_Perturb(Perturb_t*, Config_t*, Equilib_t*, Particles_t*);
 
-void splna(Perturb_t* , Equilib_t*, Particle_t*);
-void splnx(Perturb_t* , Equilib_t*, Particle_t*);
+void splna(Perturb_t* , Equilib_t*, Particles_t*);
+void splnx(Perturb_t* , Equilib_t*, Particles_t*);
 
 #endif

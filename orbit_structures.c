@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include "orbit_structures.h"
 
-const int IDM=2000;
 const int IDP=210;
 const int IDT=150;
 const int NTOR=5000;
@@ -12,6 +11,7 @@ void initialize_Config(Config_t* cfg_ptr){
 
   //Config_t cfg = *cfg_ptr;
 
+  cfg_ptr->nprt = 2000;
   cfg_ptr->seed = 12345;
   cfg_ptr->ekev = 75;
   /* engn = ; */
@@ -32,8 +32,3 @@ void initialize_Config(Config_t* cfg_ptr){
   cfg_ptr->rprof = 3.765;
 
 };
-
-void initialize_Particle(Particle_t* ptc_ptr){
-
-};
-
