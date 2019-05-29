@@ -38,4 +38,10 @@ typedef struct Equilib {
 
 void initialize_Equilib(Equilib_t*);
 
+/* utils */
+double gfun(Equilib_t*, double);
+double qfun(Equilib_t*, double);
+double rifun(Equilib_t*, double);
+
+
 #endif

@@ -8,7 +8,7 @@ const int IDT=150;
 const int NTOR=5000;
 
 
-void initialize_config(Config_t* cfg_ptr){
+void initialize_Config(Config_t* cfg_ptr){
 
   //Config_t cfg = *cfg_ptr;
 
@@ -33,7 +33,7 @@ void initialize_config(Config_t* cfg_ptr){
 
 };
 
-void initialize_particle(Particle_t* ptc_ptr){
+void initialize_Particle(Particle_t* ptc_ptr){
 
 };
 

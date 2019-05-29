@@ -58,10 +58,8 @@ typedef struct Particle {
 
 
 
-
-
-void initialize_config(Config_t*);
-void initialize_particle(Particle_t*);
+void initialize_Config(Config_t*);
+void initialize_Particle(Particle_t*);
 
 
 #endif

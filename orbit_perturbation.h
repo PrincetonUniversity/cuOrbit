@@ -1,6 +1,9 @@
 #ifndef SET_ORBIT_PERTURBATION_H_
 #define SET_ORBIT_PERTURBATION_H_
 
+#include "orbit_structures.h"
+#include "orbit_equilibrium.h"
+
 /* we can pack this in the struct if we really need it... */
 extern const int NAMP_;
 
@@ -17,6 +20,7 @@ typedef struct Perturb {
   double *omegv;  /* mode frequency */
   double *amp;    /* amp */
   double *damp;
+  double *harm;
   double *xx;
   //unused? double *yy;
   double *alfv;
@@ -36,6 +40,6 @@ typedef struct Perturb {
   double *a1, *a2, *a3;
 } Perturb_t;
 
-void initialize_Perturb(Perturb_t*);
+void initialize_Perturb(Perturb_t*, Config_t*, Equilib_t*);
 
 #endif

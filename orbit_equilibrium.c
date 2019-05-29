@@ -293,6 +293,14 @@ void initialize_Equilib(Equilib_t* Equilib_ptr){
   }  /* j */
 
   fclose(ifp);
-  
+
 };
 
+static int compute_jd(Equilib_t* Eq_ptr, double jd){
+  int jd;
+  jd = 
+      
+
+double gfun(Equilib_t* Eq_ptr, double);
+double qfun(Equilib_t* Eq_ptr, double);
+double rifun(Equilib_t* Eq_ptr, double);
