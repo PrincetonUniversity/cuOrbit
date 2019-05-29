@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "orbit_equilibrium.h"
+#include "orbit_util.h"
 
 void initialize_Equilib(Equilib_t* Equilib_ptr){
 
@@ -296,11 +297,34 @@ void initialize_Equilib(Equilib_t* Equilib_ptr){
 
 };
 
-static int compute_jd(Equilib_t* Eq_ptr, double jd){
+static int compute_jd(Equilib_t* Eq_ptr, double x){
   int jd;
-  jd = 
-      
+  jd = (int) (x * (Eq_ptr->lsp - 1) / Eq_ptr->pw);
+  jd = imin(jd, Eq_ptr->lsp - 2);
+  jd = imax(jd, 0);
+  return jd;
+}
 
-double gfun(Equilib_t* Eq_ptr, double);
-double qfun(Equilib_t* Eq_ptr, double);
-double rifun(Equilib_t* Eq_ptr, double);
+
+double gfun(Equilib_t* Eq_ptr, double px){
+  /* gives g as function of poloidal flux */
+  const int jd = compute_jd(Eq_ptr, px);
+  const double dpx = px - jd * Eq_ptr->pw / (Eq_ptr->lsp-1);
+  const double dp2 = dpx*dpx;
+  return Eq_ptr->gd1[jd] + Eq_ptr->gd2[jd] * dpx + Eq_ptr->gd3[jd] * dp2;
+}
+double qfun(Equilib_t* Eq_ptr, double px){
+  /* gives q as function of poloidal flux */
+  const int jd = compute_jd(Eq_ptr, px);
+  const double dpx = px - jd * Eq_ptr->pw / (Eq_ptr->lsp-1);
+  const double dp2 = dpx*dpx;
+  return Eq_ptr->qd1[jd] + Eq_ptr->qd2[jd] * dpx + Eq_ptr->qd3[jd] * dp2;
+}
+
+double rifun(Equilib_t* Eq_ptr, double px){
+  /* gives ri as function of poloidal flux */
+  const int jd = compute_jd(Eq_ptr, px);
+  const double dpx = px - jd * Eq_ptr->pw / (Eq_ptr->lsp-1);
+  const double dp2 = dpx*dpx;
+  return Eq_ptr->rd1[jd] + Eq_ptr->rd2[jd] * dpx + Eq_ptr->rd3[jd] * dp2;
+}

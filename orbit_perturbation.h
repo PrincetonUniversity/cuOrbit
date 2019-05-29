@@ -40,6 +40,9 @@ typedef struct Perturb {
   double *a1, *a2, *a3;
 } Perturb_t;
 
-void initialize_Perturb(Perturb_t*, Config_t*, Equilib_t*);
+void initialize_Perturb(Perturb_t*, Config_t*, Equilib_t*, Particle_t*);
+
+void splna(Perturb_t* , Equilib_t*, Particle_t*);
+void splnx(Perturb_t* , Equilib_t*, Particle_t*);
 
 #endif

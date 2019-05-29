@@ -11,7 +11,8 @@
 
 const int NAMP_ = 155;
 
-void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr, Equilib_t* equilib_ptr){
+void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
+                        Equilib_t* equilib_ptr, Particle_t* ptcl_ptr){
 
   /* these values are to become part of config  */
   double falf = 13.3550;
@@ -151,16 +152,118 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr, Equilib_t* eq
       ptrb_ptr->a1[ind] = ( m / qfun(equilib_ptr, px) - n) * ptrb_ptr->xi1[ind] / (
           m * gfun(equilib_ptr, px) + n * rifun(equilib_ptr, px));
     }  /* j */
-    printf("");
+    printf("%d %d %d %f %f %f\n",
+           md, ptrb_ptr->nmod[md], ptrb_ptr->mmod[md], 1E5*ptrb_ptr->amp[md],
+           ptrb_ptr->omegv[md] * (config_ptr->omeg0) / 6280.,
+           xxmax);
   }  /* k */
 
-  /*  does this really need 1 based? */
-  ptrb_ptr->md1 = 1;
-  /* and do we need md2 at all? looks vestigile*/
-  ptrb_ptr->md2 = ptrb_ptr->modes;
+  /*  does this really need 1 based?, lets try without*/
+  //ptrb_ptr->md1 = 0;
+  /* and do we need md2 at all? looks vestigile, lets try without*/
+  //ptrb_ptr->md2 = ptrb_ptr->modes;
 
-  //splna()
-  //splnx()
+  splna(ptrb_ptr, equilib_ptr, ptcl_ptr);
+  splnx(ptrb_ptr, equilib_ptr, ptcl_ptr);
   return;
 };
+
+
+void splna(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particle_t* ptcl_ptr){
+  int ind, j, m, md;
+  int jm, jp, jpp;
+  const int lpt = ptrb_ptr->lpt;
+  const int lptm = lpt - 1;
+  const double dpx = equilib_ptr->pw / (double)lptm;
+
+  const int lpx = 1;  /* mp change mar 2016 */
+
+  for(md=0; md < ptrb_ptr->modes; md++){
+    m = ptrb_ptr->mmod[md];
+    ind = md * lpt;
+    for(j=0; j < lpx; j++){
+      ptrb_ptr->xi1[ind + j] = pow(ptcl_ptr->pol[j], m) *
+          ptrb_ptr->xi1[md*lpt + (lpx-1)] /
+          pow(ptcl_ptr->pol[lpx-1], m);
+    }
+    ptrb_ptr->a2[md*lpt] = (
+        10. * ptrb_ptr->a1[md*lpt + 1] -
+        7.  * ptrb_ptr->a1[md*lpt] -
+        3.  * ptrb_ptr->a1[md*lpt + 2]
+                            ) / (4. * dpx);
+    if (m != 1){
+      ptrb_ptr->a2[md*lpt] = 0;
+    }
+    for(j=1; j<lptm; j++){
+      jm = j-1;
+      jp = j+1;
+      jpp = imin(j+2, lpt);
+
+      ptrb_ptr->a2[ind + j] =
+          -1. * ptrb_ptr->a2[ind + jm] +
+          2. * (ptrb_ptr->a1[ind + j] - ptrb_ptr->a1[ind + jm]) / dpx;
+      /* smooth a1 */
+
+      ptrb_ptr->a1[ind + jp] =
+          0.4 * dpx * ptrb_ptr->a2[ind + j] +
+          0.3 * ptrb_ptr->a1[ind + jpp] +
+          0.7 * ptrb_ptr->a1[ind + j];
+    }  /* j */
+
+    for(j=0; j<lptm; j++){
+      ptrb_ptr->a3[ind + j] = (
+          ptrb_ptr->a2[ind + j + 1] - ptrb_ptr->a2[ind + j] ) / (2. * dpx);
+    }  /* j */
+  }    /* md */
+  return;
+}
+
+void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particle_t* ptcl_ptr){
+  int ind, j, m, md;
+  int jm, jp, jpp;
+  const int lpt = ptrb_ptr->lpt;
+  const int lptm = lpt - 1;
+  const double dpx = equilib_ptr->pw / (double)lptm;
+
+  const int lpx = 1;  /* mp change mar 2016 */
+
+  for(md=0; md<ptrb_ptr->modes; md++){
+    m = ptrb_ptr->mmod[md];
+    ind = md * lpt;
+    for(j=0; j<lpx; j++){
+      ptrb_ptr->xi1[ind + j] = pow(ptcl_ptr->pol[j], m) * ptrb_ptr->xi1[ind + (lpx-1) ] /
+          pow(ptcl_ptr->pol[lpx-1], m);
+    }
+    ptrb_ptr->xi2[ind] =  (
+        10. * ptrb_ptr->xi1[ind + 1] -
+        7.  * ptrb_ptr->xi1[ind] -
+        3.  * ptrb_ptr->xi1[ind + 2]
+                           ) / ( 4. * dpx);
+    if(m != 1){
+      ptrb_ptr->xi2[ind] = 0;
+    }
+
+    for(j=1; j<lptm; j++){
+      jm = j-1;
+      jp = j+1;
+      jpp = imin(j+2, lpt);
+
+      ptrb_ptr->xi2[ind + j] =
+          -1. * ptrb_ptr->xi2[ind + jm] +
+          2. * (ptrb_ptr->xi1[ind + j] - ptrb_ptr->xi1[ind + jm]) / dpx;
+      /* smooth a1 */
+
+      ptrb_ptr->xi1[ind + jp] =
+          0.4 * dpx * ptrb_ptr->xi2[ind + j] +
+          0.3 * ptrb_ptr->xi1[ind + jpp] +
+          0.7 * ptrb_ptr->xi1[ind + j];
+    }  /* j */
+
+    for(j=0; j<lptm; j++){
+      ptrb_ptr->xi3[ind + j] = (
+          ptrb_ptr->xi2[ind + j + 1] - ptrb_ptr->xi2[ind + j] ) / (2. * dpx);
+    }  /* j */
+  }    /* md */
+  return;
+}
 
