@@ -15,7 +15,7 @@ NVCCLDFLAGS= --compiler-options '-shared -fPIC '
 
 .PHONY: clean all
 
-all: orbit_structures.o test.x
+all: test.x
 
 # libcuorbit.so:
 # 	$(NVCC) $(NVCCLDFLAGS) $(NVCCFLAGS) $^ -o $@
@@ -26,7 +26,7 @@ all: orbit_structures.o test.x
 %.o: %.cu
 	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -c $< -o $@
 
-test.x: orbit_structures.o
+test.x: test.o orbit_structures.o orbit_equilibrium.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
