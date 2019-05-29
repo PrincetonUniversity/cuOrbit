@@ -1,5 +1,5 @@
-#ifndef SET_ORBIT_STRUCTURES_H_
-#define SET_ORBIT_STRUCTURES_H_
+#ifndef SET_ORBIT_CONFIG_H_
+#define SET_ORBIT_CONFIG_H_
 
 /* these are set in the .c file for now */
 extern const int IDP;

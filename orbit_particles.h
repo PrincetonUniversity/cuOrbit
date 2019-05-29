@@ -1,7 +1,7 @@
 #ifndef SET_ORBIT_PARTICLES_H_
 #define SET_ORBIT_PARTICLES_H_
 
-#include "orbit_structures.h"
+#include "orbit_config.h"
 
 //not sure if this is better way yet
 /* typedef struct Particle { */

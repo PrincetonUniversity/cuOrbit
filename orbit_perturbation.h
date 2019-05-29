@@ -1,7 +1,7 @@
 #ifndef SET_ORBIT_PERTURBATION_H_
 #define SET_ORBIT_PERTURBATION_H_
 
-#include "orbit_structures.h"
+#include "orbit_config.h"
 #include "orbit_particles.h"
 #include "orbit_equilibrium.h"
 

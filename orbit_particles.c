@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "orbit_structures.h"
+#include "orbit_config.h"
 #include "orbit_particles.h"
 
 void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){

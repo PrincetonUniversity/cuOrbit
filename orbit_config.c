@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "orbit_structures.h"
+#include "orbit_config.h"
 
 const int IDP=210;
 const int IDT=150;

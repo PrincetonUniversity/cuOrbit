@@ -1,5 +1,5 @@
 
-#include "orbit_structures.h"
+#include "orbit_config.h"
 #include "orbit_equilibrium.h"
 #include "orbit_perturbation.h"
 #include "orbit_particles.h"
