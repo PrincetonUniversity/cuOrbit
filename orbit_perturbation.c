@@ -61,9 +61,26 @@ void initialize_Perturb(Perturb_t* ptrb_ptr){
   printf("Malloc'ing arrays for Perturbation\n");
   sz = (unsigned)(ptrb_ptr->lpt * ptrb_ptr->modes);
   ptrb_ptr->xi1 = (double*)calloc(sz, sizeof(double));
+  ptrb_ptr->xi2 = (double*)calloc(sz, sizeof(double));
+  ptrb_ptr->xi3 = (double*)calloc(sz, sizeof(double));
+  ptrb_ptr->a1 = (double*)calloc(sz, sizeof(double));
+  ptrb_ptr->a2 = (double*)calloc(sz, sizeof(double));
+  ptrb_ptr->a3 = (double*)calloc(sz, sizeof(double));
+
+  ptrb_ptr->xx = (double*)calloc((unsigned)ptrb_ptr->lpt, sizeof(double));
+
+  ptrb_ptr->damp = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->amp = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->omegv = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
+
+  ptrb_ptr->mmod = (int*)calloc((unsigned)ptrb_ptr->modes, sizeof(int));
+  ptrb_ptr->nmod = (int*)calloc((unsigned)ptrb_ptr->modes, sizeof(int));
+
+
 
   for(md=0; md < ptrb_ptr->modes; md++){
-    fscanf(ifp, "%*s=%d", &(ptrb_ptr->mmod[md]));
+    fscanf(ifp, "** m = %d ", &(ptrb_ptr->mmod[md]));
+    assert(md == ptrb_ptr->mmod[md]);
     for(j=0; j < ptrb_ptr->lpt; j++){
       ind = ptrb_ptr->lpt * md + j;
       fscanf(ifp, "%lf ", &(ptrb_ptr->xi1[ind]));

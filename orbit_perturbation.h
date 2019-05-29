@@ -18,7 +18,7 @@ typedef struct Perturb {
   double *amp;    /* amp */
   double *damp;
   double *xx;
-  double *yy;
+  //unused? double *yy;
   double *alfv;
   /* derivatives */
   double *dbdt;
