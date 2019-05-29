@@ -26,7 +26,7 @@ all: test.x
 %.o: %.cu
 	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -c $< -o $@
 
-test.x: test.o orbit_structures.o orbit_equilibrium.o
+test.x: test.o orbit_structures.o orbit_equilibrium.o orbit_perturbation.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean:

@@ -37,7 +37,3 @@ void initialize_particle(Particle_t* ptc_ptr){
 
 };
 
-void initialize_Perturb(Perturb_t* ptrb_ptr){
-
-};
-

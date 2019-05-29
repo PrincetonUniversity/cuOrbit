@@ -33,9 +33,6 @@ typedef struct Equilib {
   double *rd1, *rd2, *rd3;
   double *rp1, *rp2, *rp3;
 
-  //xxx i think this goes into the perturb struct?
-  int NA_;  /* 155 */
-  double *amp;
 } Equilib_t;
 
 

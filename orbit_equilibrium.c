@@ -16,9 +16,10 @@ void initialize_Equilib(Equilib_t* Equilib_ptr){
 
   ifp = fopen(inputFilename, mode);
   if (ifp == NULL) {
-    fprintf(stderr, "Can't open input file in.list!\n");
+    fprintf(stderr, "Can't open input file %s!\n", inputFilename);
     exit(1);
   }
+  printf("Parsing Equilibrium file %s\n",  inputFilename);
 
   /* file header line */
   fscanf(ifp, "%s", buf);
