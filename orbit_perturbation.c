@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -15,13 +16,13 @@ void initialize_Perturb(Perturb_t* ptrb_ptr){
   FILE *ifp;
   const char *mode = "r";
   const char inputFilename[] = "INPUT/displ_3_9.dat";
-  char buf[255];
-  int j, l, ind;
-  size_t sz;
+  int j, ind, md;
+  int idum;
   int nmd, mmin, mmax, ndum;
   double fkhz;
   double omrat;
   int lptm1;
+  size_t sz;
 
 
   ifp = fopen(inputFilename, mode);
@@ -37,11 +38,43 @@ void initialize_Perturb(Perturb_t* ptrb_ptr){
   fscanf(ifp, "%*[^\n]\n");  /* skip 2 */
 
   fscanf(ifp, "%d %d %d %d %lf %d ", &(ptrb_ptr->lpt), &nmd, &mmin, &mmax, &omrat, &ndum);
+  fscanf(ifp, "%*[^\n]\n");  /*  skip remaing part of line */
   fkhz = omrat * falf;
   lptm1 = ptrb_ptr->lpt - 1;
-  printf("ltp = %d\nnmd = %d\nmmin = %d\nmmax = %d\nomrat = %g\nfkhz = %g\n",
+  printf("lpt = %d\nnmd = %d\nmmin = %d\nmmax = %d\nomrat = %g\nfkhz = %g\n",
          ptrb_ptr->lpt, nmd, mmin, mmax, omrat, fkhz);
 
+  fscanf(ifp, "%*[^\n]\n");  /* skip 4 */
+  fscanf(ifp, "%d ", &idum);
+  assert (idum == ptrb_ptr->lpt);
+  for(j=0; j < ptrb_ptr->lpt; j++){
+    /* zero md */ //xxx according to code, we can just skip these...overwrite below... confirm with Mario
+    //fscanf(ifp, "%lf ", &(ptrb_ptr->xi1[j]));
+    fscanf(ifp, "%*lf ");
+  }
+
+  fscanf(ifp, "%*[^\n]\n");  /* skip*/
+  fscanf(ifp, "%d %d ", &idum, &(ptrb_ptr->modes));
+  assert(idum == ptrb_ptr->lpt);
+
+  /* malloc xi */
+  printf("Malloc'ing arrays for Perturbation\n");
+  sz = (unsigned)(ptrb_ptr->lpt * ptrb_ptr->modes);
+  ptrb_ptr->xi1 = (double*)calloc(sz, sizeof(double));
+
+  for(md=0; md < ptrb_ptr->modes; md++){
+    fscanf(ifp, "%*s=%d", &(ptrb_ptr->mmod[md]));
+    for(j=0; j < ptrb_ptr->lpt; j++){
+      ind = ptrb_ptr->lpt * md + j;
+      fscanf(ifp, "%lf ", &(ptrb_ptr->xi1[ind]));
+    }  /* j */
+  }  /* md */
+
+  fclose(ifp);
+
+  /* now from here we initialize remaining structure */
+
+  
 
 };
 

@@ -292,5 +292,7 @@ void initialize_Equilib(Equilib_t* Equilib_ptr){
     }
   }  /* j */
 
+  fclose(ifp);
+  
 };
 
