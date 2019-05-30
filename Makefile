@@ -1,7 +1,7 @@
 CC=cc
 NVCC=nvcc
 
-CFLAGS= -Wall -Wextra -Wno-missing-field-initializers -Wsign-conversion -g -O3
+CFLAGS= -Wall -Wextra -Wno-missing-field-initializers -Wsign-conversion -pedantic -g -O3
 CLIBS=
 CFLAGS+= $(CLIBS)
 #CFLAGS += $(INCLUDES)

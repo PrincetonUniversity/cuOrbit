@@ -31,4 +31,4 @@ void initialize_Config(Config_t* cfg_ptr){
   cfg_ptr->pamp = 8.63;
   cfg_ptr->rprof = 3.765;
 
-};
+}

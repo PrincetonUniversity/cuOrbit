@@ -41,5 +41,4 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
 
 
 
-};
-
+}

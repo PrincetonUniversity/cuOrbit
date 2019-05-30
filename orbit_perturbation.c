@@ -167,7 +167,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   splna(ptrb_ptr, equilib_ptr, ptcl_ptr);
   splnx(ptrb_ptr, equilib_ptr, ptcl_ptr);
   return;
-};
+}
 
 
 void splna(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
@@ -267,4 +267,3 @@ void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
   }    /* md */
   return;
 }
-

@@ -295,7 +295,7 @@ void initialize_Equilib(Equilib_t* Equilib_ptr){
 
   fclose(ifp);
 
-};
+}
 
 static int compute_jd(Equilib_t* Eq_ptr, double x){
   int jd;

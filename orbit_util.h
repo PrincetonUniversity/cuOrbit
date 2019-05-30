@@ -8,9 +8,9 @@ double darray_min(double*, size_t);
 
 inline int imax(int a, int b){
   return a > b ? a : b;
-};
+}
 inline int imin(int a, int b){
   return a < b ? a : b;
-};
+}
 
 #endif
