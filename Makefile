@@ -27,10 +27,11 @@ all: test.x
 	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -c $< -o $@
 
 test.x: test.o orbit_config.o  orbit_particles.o orbit_equilibrium.o orbit_perturbation.o \
-orbit_util.o
+orbit_util.o inih/ini.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 clean:
+	-rm -f inih/*.o
 	-rm -f *.o
 	-rm -f *.oo
 	-rm -f *.so

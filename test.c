@@ -7,15 +7,16 @@
 // test
 int main(){
 
-  Config_t Cfg;
-  initialize_Config(&Cfg);
+  Config_t* Cfg=NULL;
+  initialize_Config(Cfg);
 
-  Equilib_t Eq;
+  /* these will be managed by the config soon */
+  Equilib_t* Eq=NULL;
   initialize_Equilib(&Eq);
 
-  Particles_t Ptcl;
-  initialize_Particles(&Ptcl, &Cfg);
+  Particles_t* Ptcl=NULL;
+  initialize_Particles(&Ptcl);
 
-  Perturb_t Ptrb;
-  initialize_Perturb(&Ptrb, &Cfg, &Eq, &Ptcl);
+  Perturb_t* Ptrb=NULL;
+  initialize_Perturb(&Ptrb, Cfg, Eq, Ptcl);
 }

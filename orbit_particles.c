@@ -1,14 +1,44 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "orbit_config.h"
 #include "orbit_particles.h"
 
-void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
+typedef struct Particles {
+  int nprt;   /* number of particles (use in place of IDM*/
+  double chrg;  /* 1 for ion, -1 for electron */
+  double zprt;
+  double prot;  /* proton mass in proton units */
+
+  size_t idm;
+  int *otp;
+  double *pol;
+  double *zet;
+  double *thet;
+  double *rho;
+  double *en;
+  double *rmu;
+  double *ptch;
+  double *pot;
+  double *time;  /* time step */
+  double *g;
+  double *gp;
+  double *q;
+  double *qp;
+  double *b;  /* B, I associated with particle */
+  double *ri;
+  double *rip;
+  double *w1, *w2, *w3;  /* particle stepping */
+} Particles_t;
+
+
+void initialize_Particles(Particles_t** ptcl_ptr_ptr){
+  *ptcl_ptr_ptr = (Particles_t*)calloc(1, sizeof(Particles_t));
+  Particles_t* ptcl_ptr = *ptcl_ptr_ptr;
+
   /* from the config we can get number of particles
      which we will use to dimenion our arrays
   */
-  ptcl_ptr->idm = (unsigned)cfg_ptr->nprt;
+  ptcl_ptr->idm = (unsigned)ptcl_ptr->nprt;
 
   /* we'll code these in for now, and admit a file+struct based config for parameters soon */
 
@@ -41,4 +71,8 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
 
 
 
+}
+
+double* get_pol(Particles_t* ptcl_ptr){
+  return ptcl_ptr->pol;
 }

@@ -5,22 +5,96 @@
 /* for constants like pi */
 #include <math.h>
 
-#include "orbit_equilibrium.h"
 #include "orbit_perturbation.h"
-#include "orbit_particles.h"
 #include "orbit_util.h"
 
 const int NAMP_ = 155;
 
-void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
+typedef struct Perturb {
+  int npert;
+  int nflr;
+  int lpt;
+  int md1;
+  int md2;
+  int modes;
+  double psi_solRZ;
+
+  double falf;
+  double ascale;
+  double global_scaling_factor;
+  double alimit;
+  double freq_scaling_factor;
+  double omeg0;
+
+  int *mmod;  /* pol mode numbers */
+  int *nmod;  /* pol mode numbers */
+  double *omegv;  /* mode frequency */
+  double *amp;    /* amp */
+  double *damp;
+  double *harm;
+  double *xx;
+  //unused? double *yy;
+  double *alfv;
+  /* derivatives */
+  double *dbdt;
+  double *dbdp;
+  double *dbdz;
+  double *alp;
+  double *dadp;
+  double *dadt;
+  double *dadz;
+  double *padt;
+  double *phaz;
+  /* displacements xi1-xi3 */
+  double *xi1, *xi2, *xi3;
+  /* alphas a1-a3*/
+  double *a1, *a2, *a3;
+} Perturb_t;
+
+
+
+void initialize_Perturb(Perturb_t** ptrb_ptr_ptr, Config_t* config_ptr,
                         Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
 
+  *ptrb_ptr_ptr = (Perturb_t*)calloc(1, sizeof(Perturb_t));
+  Perturb_t* ptrb_ptr = *ptrb_ptr_ptr;
+
+  double pw;
+  double ped;
+  double pwd;
+  int lsp;
+  int lst;
+  int lemax;
+  int lrmax;
+  int krip;
+  int  nrip;
+  double rmaj;
+  double d0;
+  double brip;
+  double wrip;
+  double xrip;
+
+  /* arrays */
+  // we can make this into a single buffer with "smarter" indexes
+  // once we are confident code works... for now might help debug etc.
+  double *b1, *b2, *b3, *b4, *b5, *b6, *b7, *b8, *b9;
+  double *g1, *g2, *g3, *g4, *g5, *g6, *g7, *g8, *g9;
+  double *r1, *r2, *r3, *r4, *r5, *r6, *r7, *r8, *r9;
+  double *x1, *x2, *x3, *x4, *x5, *x6, *x7, *x8, *x9;
+  double *z1, *z2, *z3, *z4, *z5, *z6, *z7, *z8, *z9;
+  double *gd1, *gd2, *gd3;
+  double *pd1, *pd2, *pd3;
+  double *ps1, *ps2, *ps3;
+  double *qd1, *qd2, *qd3;
+  double *rd1, *rd2, *rd3;
+  double *rp1, *rp2, *rp3;
+
   /* these values are to become part of config  */
-  double falf = 13.3550;
-  double ascale = 5.;
-  double global_scaling_factor = 3E-4;
-  double alimit = 0.;
-  double freq_scaling_factor = 1.;
+  /* double falf = 13.3550; */
+  /* double ascale = 5.; */
+  /* double global_scaling_factor = 3E-4; */
+  /* double alimit = 0.; */
+  /* double freq_scaling_factor = 1.; */
 
   /* for now we'll load from file, same as the fortran code */
   FILE *ifp;
@@ -51,7 +125,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
 
   fscanf(ifp, "%d %d %d %d %lf %d ", &(ptrb_ptr->lpt), &nmd, &mmin, &mmax, &omrat, &ndum);
   fscanf(ifp, "%*[^\n]\n");  /*  skip remaing part of line */
-  fkhz = omrat * falf;
+  fkhz = omrat * ptrb_ptr->falf;
   lptm1 = ptrb_ptr->lpt - 1;
   printf("lpt = %d\nnmd = %d\nmmin = %d\nmmax = %d\nomrat = %g\nfkhz = %g\n",
          ptrb_ptr->lpt, nmd, mmin, mmax, omrat, fkhz);
@@ -113,7 +187,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
     ptrb_ptr->harm[md] = 1;
     ptrb_ptr->alfv[md] = md;
     /* this is tricky, including config, do we need to do it this way... */
-    ptrb_ptr->omegv[md] = 2E3 * M_PI * fkhz / config_ptr->omeg0;
+    ptrb_ptr->omegv[md] = 2E3 * M_PI * fkhz / ptrb_ptr->omeg0;
     ptrb_ptr->nmod[md] = nmd;
   }
 
@@ -121,7 +195,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   //xxxnvalx = nval;
 
   printf("Change Amplitude = %g\nChange Frequency = %g\nLimit = %g\n",
-         global_scaling_factor, freq_scaling_factor, alimit);
+         ptrb_ptr->global_scaling_factor, ptrb_ptr->freq_scaling_factor, ptrb_ptr->alimit);
 
   md = -1;
   for(k=0; k < ptrb_ptr->modes; k++){
@@ -132,12 +206,12 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
     xxmax = darray_max(ptrb_ptr->xx, (unsigned)ptrb_ptr->lpt);
     ptrb_ptr->damp[k] = xxmax;
 
-    if (ptrb_ptr->damp[k] < alimit) continue;
+    if (ptrb_ptr->damp[k] < ptrb_ptr->alimit) continue;
     if (ptrb_ptr->mmod[k] == 0) continue;
 
     md++;
-    ptrb_ptr->amp[md] = ascale * xxmax * global_scaling_factor; /* modify  scaling */
-    ptrb_ptr->omegv[md] = ptrb_ptr->omegv[k] * freq_scaling_factor; /* modify freq */
+    ptrb_ptr->amp[md] = ptrb_ptr->ascale * xxmax * ptrb_ptr->global_scaling_factor; /* modify  scaling */
+    ptrb_ptr->omegv[md] = ptrb_ptr->omegv[k] * ptrb_ptr->freq_scaling_factor; /* modify freq */
     ptrb_ptr->mmod[md] = ptrb_ptr->mmod[k];
     ptrb_ptr->nmod[md] = ptrb_ptr->nmod[k];
     m = ptrb_ptr->mmod[md];
@@ -149,13 +223,13 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
       ptrb_ptr->xi1[ind] = ptrb_ptr->xi1[ ptrb_ptr->lpt * k + j] /xxmax;
 
       /* compute alpha from disp */
-      px = j * equilib_ptr->pw / lptm1;
+      px = j * get_pw(equilib_ptr) / lptm1;
       ptrb_ptr->a1[ind] = ( m / qfun(equilib_ptr, px) - n) * ptrb_ptr->xi1[ind] / (
           m * gfun(equilib_ptr, px) + n * rifun(equilib_ptr, px));
     }  /* j */
     printf("%d %d %d %f %f %f\n",
            md, ptrb_ptr->nmod[md], ptrb_ptr->mmod[md], 1E5*ptrb_ptr->amp[md],
-           ptrb_ptr->omegv[md] * (config_ptr->omeg0) / 6280.,
+           ptrb_ptr->omegv[md] * (ptrb_ptr->omeg0) / 6280.,
            xxmax);
   }  /* k */
 
@@ -175,7 +249,9 @@ void splna(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
   int jm, jp, jpp;
   const int lpt = ptrb_ptr->lpt;
   const int lptm = lpt - 1;
-  const double dpx = equilib_ptr->pw / (double)lptm;
+  const double dpx = get_pw(equilib_ptr) / (double)lptm;
+
+  double* pol = get_pol(ptcl_ptr);
 
   const int lpx = 1;  /* mp change mar 2016 */
 
@@ -183,9 +259,9 @@ void splna(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
     m = ptrb_ptr->mmod[md];
     ind = md * lpt;
     for(j=0; j < lpx; j++){
-      ptrb_ptr->xi1[ind + j] = pow(ptcl_ptr->pol[j], m) *
+      ptrb_ptr->xi1[ind + j] = pow(pol[j], m) *
           ptrb_ptr->xi1[md*lpt + (lpx-1)] /
-          pow(ptcl_ptr->pol[lpx-1], m);
+          pow(pol[lpx-1], m);
     }
     ptrb_ptr->a2[md*lpt] = (
         10. * ptrb_ptr->a1[md*lpt + 1] -
@@ -224,7 +300,9 @@ void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
   int jm, jp, jpp;
   const int lpt = ptrb_ptr->lpt;
   const int lptm = lpt - 1;
-  const double dpx = equilib_ptr->pw / (double)lptm;
+  const double dpx = get_pw(equilib_ptr) / (double)lptm;
+
+  double* pol = get_pol(ptcl_ptr);
 
   const int lpx = 1;  /* mp change mar 2016 */
 
@@ -232,8 +310,8 @@ void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
     m = ptrb_ptr->mmod[md];
     ind = md * lpt;
     for(j=0; j<lpx; j++){
-      ptrb_ptr->xi1[ind + j] = pow(ptcl_ptr->pol[j], m) * ptrb_ptr->xi1[ind + (lpx-1) ] /
-          pow(ptcl_ptr->pol[lpx-1], m);
+      ptrb_ptr->xi1[ind + j] = pow(pol[j], m) * ptrb_ptr->xi1[ind + (lpx-1) ] /
+          pow(pol[lpx-1], m);
     }
     ptrb_ptr->xi2[ind] =  (
         10. * ptrb_ptr->xi1[ind + 1] -
