@@ -5,6 +5,7 @@
 /* for constants like pi */
 #include <math.h>
 
+#include "orbit_config_api.h"
 #include "orbit_perturbation.h"
 #include "orbit_util.h"
 
@@ -59,6 +60,10 @@ Perturb_t* Perturb_ctor(){
 void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
                         Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
 
+
+  /* first we set values expected from config */
+  ptrb_ptr->omeg0 = config_ptr->omeg0;
+
   double pw;
   double ped;
   double pwd;
@@ -73,6 +78,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   double brip;
   double wrip;
   double xrip;
+
 
   /* arrays */
   // we can make this into a single buffer with "smarter" indexes
