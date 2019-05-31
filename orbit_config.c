@@ -123,8 +123,18 @@ void initialize_Config(Config_t* cfg_ptr){
   printf("rx'd nprt %d seed %d\n", cfg_ptr->nprt, cfg_ptr->seed);
   /* initialize the other model components */
   initialize_Equilib(cfg_ptr->eqlb_ptr, cfg_ptr);
+
+  set1(cfg_ptr);
+
   initialize_Particles(cfg_ptr->ptcl_ptr, cfg_ptr);
+
   initialize_Perturb(cfg_ptr->ptrb_ptr, cfg_ptr, cfg_ptr->eqlb_ptr, cfg_ptr->ptcl_ptr);
 
 
+}
+
+void set1(Config_t* cfg_ptr){
+
+  
+  return;
 }

@@ -3,5 +3,6 @@
 
 typedef struct Config Config_t;
 
+void set1(Config_t* cfg_ptr);
 
 #endif
