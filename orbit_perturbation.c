@@ -26,6 +26,7 @@ typedef struct Perturb {
   double alimit;
   double freq_scaling_factor;
   double omeg0;
+  //double sng;
 
   int *mmod;  /* pol mode numbers */
   int *nmod;  /* pol mode numbers */
@@ -62,7 +63,15 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
 
 
   /* first we set values expected from config */
-  ptrb_ptr->omeg0 = config_ptr->omeg0;
+  ptrb_ptr->falf = config_ptr->falf;
+  ptrb_ptr->ascale = config_ptr->ascale;
+  ptrb_ptr->alimit = config_ptr->alimit;
+  ptrb_ptr->global_scaling_factor = config_ptr->global_scaling_factor;
+  ptrb_ptr->freq_scaling_factor = config_ptr->freq_scaling_factor;
+  //ptrb_ptr->sng = config_ptr->sng;
+
+  /*  */
+  ptrb_ptr->omeg0 = 9.58E6 * get_zprt(ptcl_ptr) * config_ptr->bkg / get_prot(ptcl_ptr);
 
   double pw;
   double ped;
@@ -95,17 +104,6 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   double *rd1, *rd2, *rd3;
   double *rp1, *rp2, *rp3;
 
-  /* these values are to become part of config  */
-  /* double falf = 13.3550; */
-  /* double ascale = 5.; */
-  /* double global_scaling_factor = 3E-4; */
-  /* double alimit = 0.; */
-  /* double freq_scaling_factor = 1.; */
-
-  /* for now we'll load from file, same as the fortran code */
-  FILE *ifp;
-  const char *mode = "r";
-  const char inputFilename[] = "INPUT/displ_3_9.dat";
   int j, k, m, n, ind, md;
   int idum;
   int nmd, mmin, mmax, ndum;
@@ -116,13 +114,14 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   int lptm1;
   size_t sz;
 
-
-  ifp = fopen(inputFilename, mode);
+  FILE *ifp;
+  const char *mode = "r";
+  ifp = fopen(config_ptr->displ_file, mode);
   if (ifp == NULL) {
-    fprintf(stderr, "Can't open input file %s!\n", inputFilename);
+    fprintf(stderr, "Can't open input file %s!\n", config_ptr->displ_file);
     exit(1);
   }
-  printf("Parsing Displacement file %s\n",  inputFilename);
+  printf("Parsing Displacement file %s\n",  config_ptr->displ_file);
 
   /* file header lines */
   fscanf(ifp, "%*[^\n]\n");  /* skip 0 */
@@ -192,7 +191,6 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   for(md=0; md < ptrb_ptr->modes; md++){
     ptrb_ptr->harm[md] = 1;
     ptrb_ptr->alfv[md] = md;
-    /* this is tricky, including config, do we need to do it this way... */
     ptrb_ptr->omegv[md] = 2E3 * M_PI * fkhz / ptrb_ptr->omeg0;
     ptrb_ptr->nmod[md] = nmd;
   }

@@ -13,9 +13,11 @@
 
 typedef struct Particles Particles_t;
 
-void initialize_Particles(Particles_t*);
+void initialize_Particles(Particles_t*, Config_t*);
 Particles_t* Particles_ctor();
 
-double* get_pol(Particles_t* ptcl_ptr);
+double* get_pol(Particles_t* );
+double get_zprt(Particles_t* );
+double get_prot(Particles_t* );
 
 #endif

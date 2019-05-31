@@ -1,10 +1,12 @@
 #ifndef SET_ORBIT_EQUILIBRIUM_H_
 #define SET_ORBIT_EQUILIBRIUM_H_
 
+#include "orbit_config.h"
+
 /* this is generally speaking the values taken in from "spdata" */
 typedef struct Equilib Equilib_t;
 
-void initialize_Equilib(Equilib_t*);
+void initialize_Equilib(Equilib_t*, Config_t*);
 Equilib_t* Equilib_ctor();
 
 double get_pw(Equilib_t*);

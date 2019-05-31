@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "orbit_config_api.h"
 #include "orbit_particles.h"
 
 typedef struct Particles {
@@ -8,6 +9,12 @@ typedef struct Particles {
   double chrg;  /* 1 for ion, -1 for electron */
   double zprt;
   double prot;  /* proton mass in proton units */
+  /* particle distribution */
+  double ekev;
+  double polo_scale;
+  double p1_scale;
+  double p2_scale;
+  double pchi;
 
   size_t idm;
   int *otp;
@@ -35,18 +42,23 @@ Particles_t* Particles_ctor(){
 }
 
 
-void initialize_Particles(Particles_t* ptcl_ptr){
+void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
 
   /* from the config we can get number of particles
-     which we will use to dimenion our arrays
+     which we will use to dimension our arrays
   */
+  ptcl_ptr->nprt = cfg_ptr->nprt;
   ptcl_ptr->idm = (unsigned)ptcl_ptr->nprt;
 
-  /* we'll code these in for now, and admit a file+struct based config for parameters soon */
+  ptcl_ptr->chrg = cfg_ptr->chrg;
+  ptcl_ptr->zprt = cfg_ptr->zprt;
+  ptcl_ptr->prot = cfg_ptr->prot;
+  ptcl_ptr->ekev = cfg_ptr->ekev;
+  ptcl_ptr->polo_scale = cfg_ptr->polo_scale;
+  ptcl_ptr->p1_scale = cfg_ptr->p1_scale;
+  ptcl_ptr->p2_scale = cfg_ptr->p2_scale;
+  ptcl_ptr->pchi = cfg_ptr->pchi;
 
-  ptcl_ptr->chrg=1.;  /* 1 for ion, -1 for electron */
-  ptcl_ptr->zprt=1.;
-  ptcl_ptr->prot=2.;  /* proton mass in proton units */
 
   /* arrays */
   ptcl_ptr->otp = (int*)calloc(ptcl_ptr->idm, sizeof(int));
@@ -77,4 +89,12 @@ void initialize_Particles(Particles_t* ptcl_ptr){
 
 double* get_pol(Particles_t* ptcl_ptr){
   return ptcl_ptr->pol;
+}
+
+double get_zprt(Particles_t* ptcl_ptr){
+  return ptcl_ptr->zprt;
+}
+
+double get_prot(Particles_t* ptcl_ptr){
+  return ptcl_ptr->zprt;
 }

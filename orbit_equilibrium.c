@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "orbit_equilibrium.h"
+#include "orbit_config_api.h"
 #include "orbit_util.h"
 
 typedef struct Equilib {
@@ -42,22 +43,20 @@ Equilib_t* Equilib_ctor(){
 }
 
 
-void initialize_Equilib(Equilib_t* Equilib_ptr){
+void initialize_Equilib(Equilib_t* Equilib_ptr, Config_t* cfg_ptr){
 
-  /* for now we'll load from file, same as the fortran code */
   FILE *ifp;
   const char *mode = "r";
-  const char inputFilename[] = "INPUT/spdata";
   char buf[255];
   int j, l, ind;
   size_t sz;
 
-  ifp = fopen(inputFilename, mode);
+  ifp = fopen(cfg_ptr->spdata_file, mode);
   if (ifp == NULL) {
-    fprintf(stderr, "Can't open input file %s!\n", inputFilename);
+    fprintf(stderr, "Can't open input file %s!\n", cfg_ptr->spdata_file);
     exit(1);
   }
-  printf("Parsing Equilibrium file %s\n",  inputFilename);
+  printf("Parsing Equilibrium file %s\n",  cfg_ptr->spdata_file);
 
   /* file header line */
   fscanf(ifp, "%s", buf);
