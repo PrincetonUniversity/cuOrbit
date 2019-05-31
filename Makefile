@@ -1,12 +1,14 @@
 CC=cc
 NVCC=nvcc
 
-CFLAGS= -Wall -Wextra -Wno-missing-field-initializers -Wsign-conversion -pedantic -g -O3
+SILENCE= -Wno-unused-variable
+#-Wmissing-field-initializers # I think this was for nvcc or something
+CFLAGS= -Wall -Wextra -Wsign-conversion -pedantic $(SILENCE) -g -O3
 CLIBS=
 CFLAGS+= $(CLIBS)
 #CFLAGS += $(INCLUDES)
 #-Wsign-conversion (some nvidia libs can make this a noisy warning, might be fixed now)
-#LDFLAGS= --shared
+LDFLAGS= -shared
 NVCCFLAGS= --compiler-options '$(CFLAGS)' -g -O3 --use_fast_math
 NVCCLDFLAGS= --compiler-options '-shared -fPIC '
 #NVOPT= --maxrregcount=32
@@ -26,9 +28,12 @@ all: test.x
 %.o: %.cu
 	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -c $< -o $@
 
-test.x: test.o orbit_config.o  orbit_particles.o orbit_equilibrium.o orbit_perturbation.o \
-orbit_util.o inih/ini.o
-	$(CC) $(CFLAGS) $^ -o $@
+liborbit.so: orbit_config.o  orbit_particles.o orbit_equilibrium.o \
+             orbit_perturbation.o orbit_util.o inih/ini.o
+	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+
+test.x: test.o liborbit.so
+	$(CC) $(CFLAGS) $^ -o $@ -L. -lorbit
 
 clean:
 	-rm -f inih/*.o
