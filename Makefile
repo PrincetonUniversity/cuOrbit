@@ -41,3 +41,4 @@ clean:
 	-rm -f *.oo
 	-rm -f *.so
 	-rm -f *.x
+	-rm -rf test.x.dSYM
