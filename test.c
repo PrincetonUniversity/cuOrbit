@@ -1,8 +1,6 @@
 
 #include "orbit_config_api.h"
-#include "orbit_equilibrium.h"
-#include "orbit_perturbation.h"
-#include "orbit_particles.h"
+
 
 // test
 int main(){
