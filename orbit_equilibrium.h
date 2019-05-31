@@ -4,7 +4,8 @@
 /* this is generally speaking the values taken in from "spdata" */
 typedef struct Equilib Equilib_t;
 
-void initialize_Equilib(Equilib_t**);
+void initialize_Equilib(Equilib_t*);
+Equilib_t* Equilib_ctor();
 
 double get_pw(Equilib_t*);
 

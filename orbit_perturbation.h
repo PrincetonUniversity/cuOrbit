@@ -10,7 +10,8 @@ extern const int NAMP_;
 
 typedef struct Perturb Perturb_t;
 
-void initialize_Perturb(Perturb_t**, Config_t*, Equilib_t*, Particles_t*);
+void initialize_Perturb(Perturb_t*, Config_t*, Equilib_t*, Particles_t*);
+Perturb_t* Perturb_ctor();
 
 void splna(Perturb_t* , Equilib_t*, Particles_t*);
 void splnx(Perturb_t* , Equilib_t*, Particles_t*);

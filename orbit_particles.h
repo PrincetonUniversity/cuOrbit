@@ -13,7 +13,8 @@
 
 typedef struct Particles Particles_t;
 
-void initialize_Particles(Particles_t**);
+void initialize_Particles(Particles_t*);
+Particles_t* Particles_ctor();
 
 double* get_pol(Particles_t* ptcl_ptr);
 

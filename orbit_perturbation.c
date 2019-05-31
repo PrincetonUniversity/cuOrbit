@@ -51,13 +51,13 @@ typedef struct Perturb {
   double *a1, *a2, *a3;
 } Perturb_t;
 
+Perturb_t* Perturb_ctor(){
+  return (Perturb_t*)calloc(1, sizeof(Perturb_t));
+}
 
 
-void initialize_Perturb(Perturb_t** ptrb_ptr_ptr, Config_t* config_ptr,
+void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
                         Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
-
-  *ptrb_ptr_ptr = (Perturb_t*)calloc(1, sizeof(Perturb_t));
-  Perturb_t* ptrb_ptr = *ptrb_ptr_ptr;
 
   double pw;
   double ped;

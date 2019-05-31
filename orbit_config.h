@@ -8,6 +8,7 @@ extern const int NTOR;
 
 typedef struct Config Config_t;
 
+Config_t* Config_ctor();
 void initialize_Config(Config_t*);
 
 

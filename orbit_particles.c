@@ -30,10 +30,12 @@ typedef struct Particles {
   double *w1, *w2, *w3;  /* particle stepping */
 } Particles_t;
 
+Particles_t* Particles_ctor(){
+  return (Particles_t*)calloc(1, sizeof(Particles_t));
+}
 
-void initialize_Particles(Particles_t** ptcl_ptr_ptr){
-  *ptcl_ptr_ptr = (Particles_t*)calloc(1, sizeof(Particles_t));
-  Particles_t* ptcl_ptr = *ptcl_ptr_ptr;
+
+void initialize_Particles(Particles_t* ptcl_ptr){
 
   /* from the config we can get number of particles
      which we will use to dimenion our arrays

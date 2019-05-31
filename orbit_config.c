@@ -13,7 +13,6 @@ const int IDT=150;
 const int NTOR=5000;
 
 
-
 typedef struct Config {
   /* meta */
   char* name;
@@ -58,6 +57,11 @@ typedef struct Config {
 } Config_t;
 
 
+Config_t* Config_ctor(){
+  return (Config_t*)calloc(1, sizeof(Config_t));
+}
+
+
 static int config_handler(void* res_ptr, const char* section, const char* name,
                    const char* value){
     Config_t* pconfig = (Config_t*)res_ptr;
@@ -98,7 +102,6 @@ static int config_file_handler(char* config_fname, Config_t* config){
 
 
 void initialize_Config(Config_t* cfg_ptr){
-  cfg_ptr = (Config_t*)calloc(1, sizeof(Config_t));
 
   /* engn = ; */
   /* double bmin; */

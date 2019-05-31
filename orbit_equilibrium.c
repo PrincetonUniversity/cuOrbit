@@ -37,9 +37,12 @@ typedef struct Equilib {
 
 } Equilib_t;
 
-void initialize_Equilib(Equilib_t** Equilib_ptr_ptr){
-  *Equilib_ptr_ptr = (Equilib_t*)calloc(1, sizeof(Equilib_t));
-  Equilib_t* Equilib_ptr = *Equilib_ptr_ptr;
+Equilib_t* Equilib_ctor(){
+  return (Equilib_t*)calloc(1, sizeof(Equilib_t));
+}
+
+
+void initialize_Equilib(Equilib_t* Equilib_ptr){
 
   /* for now we'll load from file, same as the fortran code */
   FILE *ifp;
