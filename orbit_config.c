@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "inih/ini.h"
 
 #include "orbit_config_api.h"
@@ -8,7 +9,8 @@
 
 const int IDP=210;
 const int IDT=150;
-
+const double pi2 = 2. * M_PI;
+const double pi2i = 1. / pi2;
 
 
 Config_t* Config_ctor(){
@@ -113,8 +115,6 @@ void initialize_Config(Config_t* cfg_ptr){
   /* double trun; */
   /* double tran;  /\* transit time for particle at the mag axi with pitch=1 *\/ */
   /* double dt0; */
-  /* double xc; */
-  /* double eps; */
   /* double bax; */
   /* double* dwal;  /\* wall definition *\/ */
 
@@ -124,9 +124,11 @@ void initialize_Config(Config_t* cfg_ptr){
   /* initialize the other model components */
   initialize_Equilib(cfg_ptr->eqlb_ptr, cfg_ptr);
 
+  initialize_Particles(cfg_ptr->ptcl_ptr, cfg_ptr);
+
   set1(cfg_ptr);
 
-  initialize_Particles(cfg_ptr->ptcl_ptr, cfg_ptr);
+  //xxxxx set1 expecs pol initialize_Particles(cfg_ptr->ptcl_ptr, cfg_ptr);
 
   initialize_Perturb(cfg_ptr->ptrb_ptr, cfg_ptr, cfg_ptr->eqlb_ptr, cfg_ptr->ptcl_ptr);
 
@@ -134,7 +136,71 @@ void initialize_Config(Config_t* cfg_ptr){
 }
 
 void set1(Config_t* cfg_ptr){
-
+  int k;
+  double dum;
+  double pdum;
+  double q0, qw;
+  Equilib_t* Eq = cfg_ptr->eqlb_ptr;
+  Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
+  Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
+  double * const q = get_q(Ptcl);
   
+  double psiwal;
+
+  for(k=1; k<=1000; k++){
+    pdum = 0.001 * k * get_pw(Eq);
+    dum = dum + qfun(Eq, pdum);
+  }
+  psiwal = dum;
+  printf("\t Toroidal psi wall %f\n", psiwal);
+
+  set_omeg0(Ptrb, 9.58E6 * get_zprt(Ptcl) * cfg_ptr->bkg / get_prot(Ptcl));
+
+  set_xc(cfg_ptr, xproj(Eq, 0., 0.));
+  set_eps(cfg_ptr, ( xproj(Eq, get_ped(Eq) , 0.) - xproj(Eq, 0., 0.)) / get_xc(cfg_ptr) );
+
+  cfg_ptr->bmin = bfield(Eq, get_pw(Eq), 0.);
+  cfg_ptr->bmax = bfield(Eq, get_pw(Eq), M_PI);
+  cfg_ptr->bax = bfield(Eq, 0., 0.);
+
+  dum = fabs(cfg_ptr->bax - 1.);
+  /* Sanity check */
+  if (dum > 5E-3){
+    fprintf(stderr, "Equlib is improperly initialized %f\n", dum);
+    exit(1);
+  }
+
+  double* pol = get_pol(Ptcl);
+  double* thet = get_thet(Ptcl);
+  pol[0] = 1E-10;
+  thet[0] = 0;
+
+  /* xxx not sure why exactly we do this... */
+  field(cfg_ptr, Ptcl, 1);
+  /* or this */
+  q0 = q[0];
+  pol[0] = get_pw(Eq);
+  field(cfg_ptr, Ptcl, 1);
+  qw = q[0];
+
   return;
 }
+
+
+void set_xc(Config_t* cfg_ptr, double val){
+  cfg_ptr->xc = val;
+}
+
+double get_xc(Config_t* cfg_ptr){
+  return cfg_ptr->xc;
+}
+
+
+void set_eps(Config_t* cfg_ptr, double val){
+  cfg_ptr->xc = val;
+}
+
+double get_eps(Config_t* cfg_ptr){
+  return cfg_ptr->xc;
+}
+

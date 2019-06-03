@@ -16,8 +16,13 @@ typedef struct Particles Particles_t;
 void initialize_Particles(Particles_t*, Config_t*);
 Particles_t* Particles_ctor();
 
+double* get_q(Particles_t* );
 double* get_pol(Particles_t* );
+double* get_thet(Particles_t* );
+double* get_thet(Particles_t* );
 double get_zprt(Particles_t* );
 double get_prot(Particles_t* );
+void field(Config_t*, Particles_t*, const int);
+void kfield(Config_t*, Particles_t*, int);
 
 #endif

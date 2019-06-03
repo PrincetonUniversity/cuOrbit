@@ -10,6 +10,9 @@
 extern const int IDP;
 extern const int IDT;
 extern const int NTOR;
+extern const double pi2;
+extern const double pi2i;
+
 
 typedef struct Config {
   /* meta */
@@ -70,5 +73,11 @@ typedef struct Config {
 
 Config_t* Config_ctor();
 void initialize_Config(Config_t*);
+
+void set_xc(Config_t*, double);
+double get_xc(Config_t*);
+void set_eps(Config_t*, double);
+double get_eps(Config_t*);
+
 
 #endif

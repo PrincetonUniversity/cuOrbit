@@ -38,9 +38,10 @@ typedef struct Perturb {
   //unused? double *yy;
   double *alfv;
   /* derivatives */
-  double *dbdt;
-  double *dbdp;
-  double *dbdz;
+  /// maybe these belong elsewhere, like field, which is more paticles
+  /* double *dbdt; */
+  /* double *dbdp; */
+  /* double *dbdz; */
   double *alp;
   double *dadp;
   double *dadt;
@@ -70,8 +71,8 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   ptrb_ptr->freq_scaling_factor = config_ptr->freq_scaling_factor;
   //ptrb_ptr->sng = config_ptr->sng;
 
-  /*  */
-  ptrb_ptr->omeg0 = 9.58E6 * get_zprt(ptcl_ptr) * config_ptr->bkg / get_prot(ptcl_ptr);
+  /* in set1 */
+  //ptrb_ptr->omeg0 = 9.58E6 * get_zprt(ptcl_ptr) * config_ptr->bkg / get_prot(ptcl_ptr);
 
   double pw;
   double ped;
@@ -348,4 +349,8 @@ void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
     }  /* j */
   }    /* md */
   return;
+}
+
+void set_omeg0(Perturb_t* ptrb_ptr, double val){
+  ptrb_ptr->omeg0 = val;
 }

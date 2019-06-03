@@ -15,5 +15,6 @@ Perturb_t* Perturb_ctor();
 
 void splna(Perturb_t* , Equilib_t*, Particles_t*);
 void splnx(Perturb_t* , Equilib_t*, Particles_t*);
+void set_omeg0(Perturb_t*, double);
 
 #endif
