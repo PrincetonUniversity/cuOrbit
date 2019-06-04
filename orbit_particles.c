@@ -123,9 +123,11 @@ double* get_zet(Particles_t* ptcl_ptr){
 double get_zprt(Particles_t* ptcl_ptr){
   return ptcl_ptr->zprt;
 }
-
 double get_prot(Particles_t* ptcl_ptr){
-  return ptcl_ptr->zprt;
+  return ptcl_ptr->prot;
+}
+double get_ekev(Particles_t* ptcl_ptr){
+  return ptcl_ptr->ekev;
 }
 
 

@@ -442,7 +442,9 @@ double** get_RP(Equilib_t* Eq_ptr){
 double get_pw(Equilib_t* Eq_ptr){
   return Eq_ptr->pw;
 }
-
+double get_rmaj(Equilib_t* Eq_ptr){
+  return Eq_ptr->rmaj;
+}
 
 int compute_jd(Equilib_t* Eq_ptr, double x){
   /* computes jd in zero inds */

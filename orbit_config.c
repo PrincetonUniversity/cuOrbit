@@ -5,7 +5,7 @@
 #include "inih/ini.h"
 
 #include "orbit_config_api.h"
-
+#include "orbit_util.h"
 
 const int IDP=210;
 const int IDT=150;
@@ -108,10 +108,7 @@ static int config_file_handler(char* config_fname, Config_t* config){
 
 void initialize_Config(Config_t* cfg_ptr){
 
-  /* engn = ; */
-  /* double bmin; */
-  /* double bmax; */
-  /* double rmaj; */
+
   /* double trun; */
   /* double tran;  /\* transit time for particle at the mag axi with pitch=1 *\/ */
   /* double dt0; */
@@ -128,6 +125,7 @@ void initialize_Config(Config_t* cfg_ptr){
 
   set1(cfg_ptr);
 
+  //xxxx I need to check if we need anything in set1 for particles to be correct
   //xxxxx set1 expecs pol initialize_Particles(cfg_ptr->ptcl_ptr, cfg_ptr);
 
   initialize_Perturb(cfg_ptr->ptrb_ptr, cfg_ptr, cfg_ptr->eqlb_ptr, cfg_ptr->ptcl_ptr);
@@ -137,15 +135,21 @@ void initialize_Config(Config_t* cfg_ptr){
 
 void set1(Config_t* cfg_ptr){
   int k;
+  int kdum;
   double dum;
-  double pdum;
+  double pdum, qdum;
   double q0, qw;
   Equilib_t* Eq = cfg_ptr->eqlb_ptr;
   Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
   Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
   double * const q = get_q(Ptcl);
-  
+  const int nprt = cfg_ptr->nprt;
+
   double psiwal;
+  double pq1;
+  double rq1;
+  double pdp, pdq, pqm, pqp, qdm, qdp;
+  double rqm, rqp;
 
   for(k=1; k<=1000; k++){
     pdum = 0.001 * k * get_pw(Eq);
@@ -182,6 +186,43 @@ void set1(Config_t* cfg_ptr){
   pol[0] = get_pw(Eq);
   field(cfg_ptr, Ptcl, 1);
   qw = q[0];
+  for(k=1; k<=200; k++){
+    pol[k] = 0.005 * k * get_pw(Eq);
+    thet[k] = 0;
+  }
+  field(cfg_ptr, Ptcl, 200);
+  pq1 = 9.99E9;
+  rq1 = 9.99E9;
+  if (darray_max(q, (size_t)nprt)>1. || darray_min(q, (size_t)nprt)<1.){
+    for(k=1; k<=200; k++){
+      kdum = k;
+      pq1 = pol[k-1];
+      if(q[k] > 1.){
+        break;
+      }
+    }
+    pqp = 0.005 * kdum * get_pw(Eq);
+    pqm = 0.005 * (kdum -1) * get_pw(Eq);
+    rqp = xproj(Eq, pqp, 0.) - get_xc(cfg_ptr);
+    rqm = xproj(Eq, pqm, 0.) - get_xc(cfg_ptr);
+    qdp = q[kdum];
+    if(kdum == 1){
+      rq1 = xproj(Eq, pq1, 0.) - get_xc(cfg_ptr);
+    }else{
+      qdm = q[kdum-1];
+      if(kdum == 1){
+        qdum = q0;
+      }
+      rq1 = rqp - (rqp-rqm)*(qdp - 1.)/(qdp - qdm);
+      pq1 = pqp - (pqp-pqm)*(qdp - 1.)/(qdp - qdm);
+    }
+  }
+  cfg_ptr->engn = 10.533 * get_prot(Ptcl) * get_ekev(Ptcl) * pow(get_GD(Eq)[0][0], 2) /
+      pow( get_rmaj(Eq) * get_zprt(Ptcl) * cfg_ptr->bkg * get_B(Eq)[0][0], 2);
+
+  printf("%f %f %f %f %f %f %f %f\n",
+         get_prot(Ptcl), get_ekev(Ptcl), get_QD(Eq)[0][0], get_rmaj(Eq),
+         get_zprt(Ptcl), cfg_ptr->bkg, get_B(Eq)[0][0], cfg_ptr->engn);
 
   return;
 }

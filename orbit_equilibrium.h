@@ -25,6 +25,7 @@ double** get_RP(Equilib_t*);
 
 
 double get_pw(Equilib_t*);
+double get_rmaj(Equilib_t*);
 double get_ped(Equilib_t*);
 double get_lsp(Equilib_t*);
 double get_lst(Equilib_t*);
