@@ -39,6 +39,12 @@ typedef struct Equilib {
   double *rd1, *rd2, *rd3;
   double *rp1, *rp2, *rp3;
 
+  /* xxx maybe belongs somewhere else */
+  double* VD[3];
+  double* vd1;
+  double* vd2;
+  double* vd3;
+
 } Equilib_t;
 
 Equilib_t* Equilib_ctor(){
@@ -208,6 +214,14 @@ void initialize_Equilib(Equilib_t* Equilib_ptr, Config_t* cfg_ptr){
   Equilib_ptr->ps3 = (double*)calloc(sz, sizeof(double));
   Equilib_ptr->PS[2] = Equilib_ptr->ps3;
 
+  sz = (size_t)IDP;
+  Equilib_ptr->vd1 = (double*)calloc(sz, sizeof(double));
+  Equilib_ptr->VD[0] = Equilib_ptr->vd1;
+  Equilib_ptr->vd2 = (double*)calloc(sz, sizeof(double));
+  Equilib_ptr->VD[1] = Equilib_ptr->vd2;
+  Equilib_ptr->vd3 = (double*)calloc(sz, sizeof(double));
+  Equilib_ptr->VD[2] = Equilib_ptr->vd3;
+  Equilib_ptr->rp1 = (double*)calloc(sz, sizeof(double));
 
   /* first data line */
   fscanf(ifp, "%lf %lf ",  /* read doubles as "long float", ugh */
@@ -437,6 +451,10 @@ double** get_RP(Equilib_t* Eq_ptr){
   return Eq_ptr->RP;
 }
 
+double** get_VD(Equilib_t* Eq_ptr){
+  return Eq_ptr->VD;
+}
+
 
 
 double get_pw(Equilib_t* Eq_ptr){
@@ -603,4 +621,52 @@ double get_lst(Equilib_t* Eq_ptr){
 
 double get_nrip(Equilib_t* Eq_ptr){
   return Eq_ptr->nrip;
+}
+
+
+void vspline(Equilib_t* Eq_ptr){
+  const int lsp = get_lsp(Eq_ptr);
+  const int lspm = lsp - 1;
+  double* const vd1 = get_VD(Eq_ptr)[0];
+  double* const vd2 = get_VD(Eq_ptr)[1];
+  double* const vd3 = get_VD(Eq_ptr)[1];
+  double dpx, integ, pdum, tdum;
+  int j, k, l;
+  int jm, jp, jpp;
+
+  dpx = 0.01 * get_pw(Eq_ptr) / lspm;
+  /* vd1 */
+  vd1[0] = 0.;
+  integ = 0;
+  pdum = 0.;
+  for(j=1; j<lsp; j++){
+    for(k=0; k<100; k++){
+      pdum += dpx;
+      for(l=1; l<=100; l++){
+        tdum = .01 * l * pi2;
+        integ = integ + .01 * pi2 * dpx * giac(Eq_ptr, pdum, tdum);
+      }  /* l */
+    }    /* k */
+    vd1[j] = integ;
+  }  /* j */
+  for(j=0; j<lsp; j++){
+    vd1[j] /= vd1[lsp];
+  }
+
+  dpx = get_pw(Eq_ptr) / lspm;
+  /*  vd2 */
+  vd2[0] = (10*vd1[1] - 7*vd1[0] - 3*vd1[2])/(4*dpx);
+  for(j=1; j<lspm; j++){
+    jm = j - 1;
+    jp = j + 1;
+    jpp = imin(j + 2, lspm);
+    vd2[j] = -vd2[jm] + 2*(vd1[j]-vd1[jm])/dpx;
+      /* smooth a1 */
+    vd1[jp] = .4 * dpx * vd2[j] + .3 * vd1[jpp] + .7*vd1[j];
+  }
+  for(j=0; j<lspm; j++){
+    jp = j+1;
+    vd3[j] = (vd2[jp] - vd2[j])/(2.*dpx);
+  }
+  return;
 }

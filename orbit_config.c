@@ -322,7 +322,7 @@ void set1(Config_t* cfg_ptr){
   }
 
   /* volume spline */
-  //vspline();
+  vspline(Eq);
 
   return;
 }

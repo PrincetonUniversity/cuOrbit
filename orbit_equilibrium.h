@@ -22,7 +22,7 @@ double** get_GD(Equilib_t*);
 double** get_PD(Equilib_t*);
 double** get_PS(Equilib_t*);
 double** get_RP(Equilib_t*);
-
+double** get_VD(Equilib_t*);
 
 double get_pw(Equilib_t*);
 double get_rmaj(Equilib_t*);
@@ -39,6 +39,7 @@ double qfun(Equilib_t*, double);
 double rifun(Equilib_t*, double);
 double bfield(Equilib_t*, double, double);
 double giac(Equilib_t*, double, double);
+void vspline(Equilib_t*);
 
 double xproj(Equilib_t*, double, double);
 double zproj(Equilib_t*, double, double);
