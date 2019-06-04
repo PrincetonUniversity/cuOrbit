@@ -22,10 +22,10 @@ all: test.x
 # libcuorbit.so:
 # 	$(NVCC) $(NVCCLDFLAGS) $(NVCCFLAGS) $^ -o $@
 
-%.o: %.c
+%.o: %.c %.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-%.o: %.cu
+%.o: %.cu %h
 	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -c $< -o $@
 
 liborbit.so: orbit_config.o  orbit_particles.o orbit_equilibrium.o \
