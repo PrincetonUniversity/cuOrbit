@@ -19,7 +19,12 @@ Particles_t* Particles_ctor();
 double* get_q(Particles_t*);
 double* get_pol(Particles_t*);
 double* get_thet(Particles_t*);
-double* get_thet(Particles_t*);
+double* get_pot(Particles_t*);
+double* get_time(Particles_t*);
+double* get_dt(Particles_t*);
+double* get_tim1(Particles_t*);
+double* get_wt(Particles_t*);
+
 double get_zprt(Particles_t*);
 double get_prot(Particles_t*);
 double get_prot(Particles_t*);

@@ -9,7 +9,6 @@
 /* these are set in the .c file for now */
 extern const int IDP;
 extern const int IDT;
-extern const int NTOR;
 extern const double pi2;
 extern const double pi2i;
 
@@ -22,6 +21,12 @@ typedef struct Config {
   int nmds;  /* probably dont need this */
   int nrmds;  /* dont remember this */
   int seed;   /* used by the RNG */
+  int ntor;
+  int nskip;   //xxx i suspect this will go to another struct...
+  double bsum; //xxx i suspect this will go to another struct...
+  double dsum; //xxx i suspect this will go to another struct...
+  double esum; //xxx i suspect this will go to another struct...
+  double pvol;  /* stash plasma volume, another struct? */
   double engn;
   double bkg;
   double bmin;

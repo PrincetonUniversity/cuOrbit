@@ -489,6 +489,27 @@ double rifun(Equilib_t* Eq_ptr, double px){
   return Eq_ptr->rd1[jd] + Eq_ptr->rd2[jd] * dpx + Eq_ptr->rd3[jd] * dp2;
 }
 
+double giac(Equilib_t* Eq_ptr, double px, double tx){
+  /* jacobian as function of poloidal flux */
+  const double lst = Eq_ptr->lst;
+  int idum;
+  double tdum;
+  const int jd = compute_jd(Eq_ptr, px);
+  const double dpx = px - jd * Eq_ptr->pw / (Eq_ptr->lsp-1);
+  const double dp2 = dpx*dpx;
+  idum = tx/pi2;
+  tdum = tx - pi2 * (double)(idum-1);
+  idum = tdum *.1591549431;
+  tdum = tdum - pi2 * (double)idum;
+  const int kd = compute_kd(Eq_ptr, tdum);
+  const double dtx = tdum - (double)(kd) * pi2 / lst;
+  const double dt2 = dtx*dtx;
+  const int ind = jd*lst + kd;
+  return Eq_ptr->g1[ind] + Eq_ptr->g2[ind]*dpx + Eq_ptr->g3[ind]*dp2
+      + Eq_ptr->g4[ind]*dtx + Eq_ptr->g5[ind]*dpx*dtx + Eq_ptr->g6[ind]*dtx*dp2
+      + Eq_ptr->g7[ind]*dt2 + Eq_ptr->g8[ind]*dt2*dpx + Eq_ptr->g9[ind]*dt2*dp2;
+}
+
 double xproj(Equilib_t* Eq_ptr, double px, double tx){
   /* major radius position as function of poloidal flux, theta  */
   const double lst = Eq_ptr->lst;

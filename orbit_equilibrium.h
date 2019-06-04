@@ -38,6 +38,7 @@ double gfun(Equilib_t*, double);
 double qfun(Equilib_t*, double);
 double rifun(Equilib_t*, double);
 double bfield(Equilib_t*, double, double);
+double giac(Equilib_t*, double, double);
 
 double xproj(Equilib_t*, double, double);
 double zproj(Equilib_t*, double, double);

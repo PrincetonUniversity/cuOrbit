@@ -43,7 +43,10 @@ typedef struct Particles {
   double *rpl;
   double *rplp;
   double *rplt;
-
+  /* init during set1, not sure what used for yet*/
+  double* dt;
+  double* tim1;
+  double* wt;
 
 } Particles_t;
 
@@ -100,7 +103,10 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
   ptcl_ptr->rplp=(double*)calloc(ptcl_ptr->idm, sizeof(double));
   ptcl_ptr->rplt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
 
-
+  /* stuff from set1 */
+  ptcl_ptr->dt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->tim1=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->wt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
 
 }
 
@@ -115,8 +121,23 @@ double* get_pol(Particles_t* ptcl_ptr){
 double* get_thet(Particles_t* ptcl_ptr){
   return ptcl_ptr->thet;
 }
+double* get_pot(Particles_t* ptcl_ptr){
+  return ptcl_ptr->pot;
+}
 double* get_zet(Particles_t* ptcl_ptr){
   return ptcl_ptr->zet;
+}
+double* get_time(Particles_t* ptcl_ptr){
+  return ptcl_ptr->time;
+}
+double* get_dt(Particles_t* ptcl_ptr){
+  return ptcl_ptr->dt;
+}
+double* get_tim1(Particles_t* ptcl_ptr){
+  return ptcl_ptr->tim1;
+}
+double* get_wt(Particles_t* ptcl_ptr){
+  return ptcl_ptr->wt;
 }
 
 

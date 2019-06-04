@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <stdbool.h>
 #include "inih/ini.h"
 
 #include "orbit_config_api.h"
@@ -35,7 +36,7 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
     } else if (MATCH("model", "rng_seed")) {
         pconfig->seed = atoi(value);
     } else if (MATCH("model", "ntor")) {
-        pconfig->pamp = atof(value);
+        pconfig->ntor = atof(value);
     } else if (MATCH("model", "bkg")) {
         pconfig->bkg = atof(value);
     } else if (MATCH("model", "pamp")) {
@@ -109,13 +110,6 @@ static int config_file_handler(char* config_fname, Config_t* config){
 void initialize_Config(Config_t* cfg_ptr){
 
 
-  /* double trun; */
-  /* double tran;  /\* transit time for particle at the mag axi with pitch=1 *\/ */
-  /* double dt0; */
-  /* double bax; */
-  /* double* dwal;  /\* wall definition *\/ */
-
-
   config_file_handler("INPUT/config.ini", cfg_ptr);
   printf("rx'd nprt %d seed %d\n", cfg_ptr->nprt, cfg_ptr->seed);
   /* initialize the other model components */
@@ -134,10 +128,10 @@ void initialize_Config(Config_t* cfg_ptr){
 }
 
 void set1(Config_t* cfg_ptr){
-  int k;
+  int j, k;
   int kdum;
   double dum;
-  double pdum, qdum;
+  double pdum, qdum, tdum;
   double q0, qw;
   Equilib_t* Eq = cfg_ptr->eqlb_ptr;
   Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
@@ -148,8 +142,11 @@ void set1(Config_t* cfg_ptr){
   double psiwal;
   double pq1;
   double rq1;
-  double pdp, pdq, pqm, pqp, qdm, qdp;
-  double rqm, rqp;
+  double pdp, pdq, pqm, pqp, qdm, qdp, rqm, rqp;
+  double denom, bdum, rdum, ddum;
+  double pz, tz;
+  double xdum, zdum;
+  double xl, xr, zb, zt, rmd;
 
   for(k=1; k<=1000; k++){
     pdum = 0.001 * k * get_pw(Eq);
@@ -176,6 +173,16 @@ void set1(Config_t* cfg_ptr){
 
   double* pol = get_pol(Ptcl);
   double* thet = get_thet(Ptcl);
+  double* pot = get_pot(Ptcl);
+  double* time = get_time(Ptcl);
+  double* dt = get_dt(Ptcl);
+  double* tim1 = get_tim1(Ptcl);
+  double* wt = get_wt(Ptcl);
+
+  double** const B = get_B(Eq);
+  double** const QD = get_QD(Eq);
+  double** const GD = get_GD(Eq);
+  double** const RD = get_RD(Eq);
   pol[0] = 1E-10;
   thet[0] = 0;
 
@@ -217,12 +224,105 @@ void set1(Config_t* cfg_ptr){
       pq1 = pqp - (pqp-pqm)*(qdp - 1.)/(qdp - qdm);
     }
   }
-  cfg_ptr->engn = 10.533 * get_prot(Ptcl) * get_ekev(Ptcl) * pow(get_GD(Eq)[0][0], 2) /
-      pow( get_rmaj(Eq) * get_zprt(Ptcl) * cfg_ptr->bkg * get_B(Eq)[0][0], 2);
+  cfg_ptr->engn = 10.533 * get_prot(Ptcl) * get_ekev(Ptcl) * pow(GD[0][0], 2) /
+      pow( get_rmaj(Eq) * get_zprt(Ptcl) * cfg_ptr->bkg * B[0][0], 2);
 
-  printf("%f %f %f %f %f %f %f %f\n",
-         get_prot(Ptcl), get_ekev(Ptcl), get_QD(Eq)[0][0], get_rmaj(Eq),
-         get_zprt(Ptcl), cfg_ptr->bkg, get_B(Eq)[0][0], cfg_ptr->engn);
+  printf("set1 %f %f %f %f %f %f %f %f\n",
+         get_prot(Ptcl), get_ekev(Ptcl), QD[0][0], get_rmaj(Eq),
+         get_zprt(Ptcl), cfg_ptr->bkg, B[0][0], cfg_ptr->engn);
+
+  denom = B[0][0] * sqrt(2. * cfg_ptr->engn) * QD[0][0];
+  cfg_ptr->tran = 6.28 * (GD[0][0] * QD[0][0] + RD[0][0])/denom;
+  cfg_ptr->trun = cfg_ptr->ntor * cfg_ptr->tran;
+  cfg_ptr->dt0 = cfg_ptr->tran/200;
+  cfg_ptr->nskip = cfg_ptr->trun/
+      (200 * cfg_ptr->dt0) + 1;   /* for diffusion and bootstrap */
+
+  cfg_ptr->bsum = 0.;
+  cfg_ptr->dsum = 0.;
+  cfg_ptr->esum = 0.;
+  for(k=0; k<nprt; k++){
+    dt[k] = cfg_ptr->dt0;
+    tim1[k] = 0.;
+    time[k] = 0.;
+    pot[k] = 0.;
+    wt[k] = 0.;
+  }
+
+  /*   find plasma volume, pdum = pw for total
+       units of numerical equilibrium  */
+  pdum = get_pw(Eq);
+  cfg_ptr->pvol = 0.;
+  const int nint0 = 100;
+  for(k=1; k<=nint0; k++){
+    for(j=1; j<=nint0; j++){
+      pz = get_pw(Eq) - (j - .5) * pdum/((double)nint0);
+      tz = k * 2 * M_PI / ((double)nint0);
+      cfg_ptr->pvol += pdum * 2 * M_PI * giac(Eq, pz, tz) / (
+          (double)(nint0*nint0));
+    }  /* j */
+  }    /* k */
+  cfg_ptr->pvol *=  2 * M_PI;  /* 2*pi*R */
+  printf("Plasma Volume %f\tbax %f\n", cfg_ptr->pvol, cfg_ptr->bax);
+
+  /* /\* setup for plots, commenting for now *\/ */
+  /* const int nbinx = 50; */
+  /* double pop[nbinx], xpop[nbinx], pv[nbinx], zv[nbinx]; */
+  /* int nbin; */
+  /* for(nbin=1; nbin<=nbinx; nbin++){ */
+  /*   pop[nbin] = 0.; */
+  /*   xpop[nbin] = 0.; */
+  /*   pv[nbin] = 0.; */
+  /*   zv[nbin] = 0.; */
+  /* }  /\* nbin *\/ */
+
+  /* some sort of checking going on here */
+  xl = 1.E6;
+  xr = -1.E6;
+  zb = 1.E6;
+  zt = -1.E6;
+  pz = 0.99 * get_pw(Eq);
+  for(k=1; k<=200; k++){
+    tdum = .0314 * k;
+    xdum = xproj(Eq, pz, tdum) * get_rmaj(Eq) / get_xc(cfg_ptr);
+    xl = fmin(xl, xdum);
+    xr = fmax(xr, xdum);
+    zdum = zproj(Eq, pz, tdum) *  get_rmaj(Eq) / get_xc(cfg_ptr);
+    zb = fmin(zb, zdum);
+    zt = fmax(zt, zdum);
+  }  /* k */
+
+  /* check vanishing of D at axis */
+  const double gdum = GD[0][0];
+  const double gdump = GD[1][0];
+  const double ridum = RD[0][0];
+  const double ridump = RD[1][0];
+  qdum = QD[0][0];
+  const double qdump = QD[1][0];
+  bdum = cfg_ptr->bax;
+  bool invalid=false;
+  for(j=1; j<=10; j++){
+    rmd = j * cfg_ptr->engn / (10 * bdum);
+    dum = 2 * cfg_ptr->engn -
+        2 * rmd * bdum;
+    if(dum < 0) continue;
+    rdum = sqrt(dum) / bdum;
+    ddum = gdum * qdum + ridum + rdum * (gdum*ridump - ridum*gdump);
+    if(dum < 0){
+      invalid=true;
+    };
+    ddum = gdum*qdum + ridum - rdum * (gdum*ridump - ridum*gdump);
+    if(dum < 0){
+      invalid=true;
+    };
+  }
+  if(invalid){
+    fprintf(stderr, "D vanishes for this energy, some uses of code invalid");
+    exit(1);
+  }
+
+  /* volume spline */
+  //vspline();
 
   return;
 }
