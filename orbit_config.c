@@ -69,15 +69,15 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->freq_scaling_factor = atof(value);
     }
     /* Particles Config Vars*/
-    else if (MATCH("perturbation", "nprt")) {
+    else if (MATCH("particle", "nprt")) {
         pconfig->nprt = atoi(value);
-    } else if (MATCH("perturbation", "zprt")) {
+    } else if (MATCH("particle", "zprt")) {
       pconfig->zprt = atof(value);
-    } else if (MATCH("perturbation", "chrg")) {
+    } else if (MATCH("particle", "chrg")) {
       pconfig->chrg = atof(value);
-    } else if (MATCH("perturbation", "prot")) {
+    } else if (MATCH("particle", "prot")) {
       pconfig->prot = atof(value);
-    } else if (MATCH("perturbation", "ekev")) {
+    } else if (MATCH("particle", "ekev")) {
       pconfig->ekev = atof(value);
     } else if (MATCH("particle_distribution", "polo_scale")) {
       pconfig->polo_scale = atof(value);
