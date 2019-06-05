@@ -1,10 +1,12 @@
 #ifndef SET_ORBIT_CONFIG_API_H_
 #define SET_ORBIT_CONFIG_API_H_
 
+#include <stdbool.h>
 #include "orbit_config.h"
 #include "orbit_perturbation.h"
 #include "orbit_equilibrium.h"
 #include "orbit_particles.h"
+#include "orbit_deposition.h"
 
 /* these are set in the .c file for now */
 extern const int IDP;
@@ -72,6 +74,26 @@ typedef struct Config {
   double p2_scale;
   double pchi;
 
+  /* Deposition*/
+  Deposition_t* Depo_ptr;
+  /* xxx stochastic, does this belong here? */
+  double mubk_scale;
+  int emink;
+  int emaxk;
+  int dmubk;
+  int nstoche;
+  int nstochp;
+  /* pdedp */
+  int nruns;
+  bool compute_pdedp;
+  bool initial_update_pdedp;
+  double deposit_on_bins_after_fraction;
+  double pde_dtsamp;
+  double pde_dtav;
+  int pde_tskip;
+  double pde_otpup;
+  bool pde_focusdep;
+  bool pde_optimize;
 
 } Config_t;
 

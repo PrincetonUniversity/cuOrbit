@@ -90,6 +90,43 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->pchi = atof(value);
     }
 
+    else if (MATCH("pdedp", "nruns")){
+      pconfig->nruns = atoi(value);
+    }    else if (MATCH("pdedp", "compute_pdedp")){
+      pconfig->compute_pdedp = atob(value);
+    }    else if (MATCH("pdedp", "initial_update_pdedp")){
+      pconfig->initial_update_pdedp = atob(value);
+    }    else if (MATCH("pdedp", "deposit_on_bins_after_fraction")){
+      pconfig->deposit_on_bins_after_fraction = atof(value);
+    }    else if (MATCH("pdedp", "pde_dtsamp")){
+      pconfig->pde_dtsamp = atof(value);
+    }    else if (MATCH("pdedp", "pde_dtav")){
+      pconfig->pde_dtav = atof(value);
+    }    else if (MATCH("pdedp", "pde_tskip")){
+      pconfig->pde_tskip = atoi(value);
+    }    else if (MATCH("pdedp", "pde_otpup")){
+      pconfig->pde_otpup = atof(value);
+    }    else if (MATCH("pdedp", "pde_focusdep")){
+      pconfig->pde_focusdep = atob(value);
+    }    else if (MATCH("pdedp", "pde_optimize")){
+      pconfig->pde_optimize = atob(value);
+    }
+
+    else if (MATCH("stochastic", "mubk_scale")){
+      pconfig->mubk_scale = atof(value);
+    }    else if (MATCH("stochastic", "emink")){
+      pconfig->emink = atoi(value);
+    }    else if (MATCH("stochastic", "emaxk")){
+      pconfig->emaxk = atoi(value);
+    }    else if (MATCH("stochastic", "dmubk")){
+      pconfig->dmubk = atoi(value);
+    }    else if (MATCH("stochastic", "nstoche")){
+      pconfig->nstoche = atoi(value);
+    }    else if (MATCH("stochastic", "nstochp")){
+      pconfig->nstoche = atoi(value);
+    }
+
+
     /* unknown section/name, error */
     else {
       return 0;

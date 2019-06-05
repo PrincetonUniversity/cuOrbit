@@ -29,7 +29,8 @@ all: test.x
 	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -c $< -o $@
 
 liborbit.so: orbit_config.o  orbit_particles.o orbit_equilibrium.o \
-             orbit_perturbation.o orbit_util.o inih/ini.o
+             orbit_perturbation.o orbit_deposition.o \
+             orbit_util.o inih/ini.o
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
 test.x: test.o liborbit.so
