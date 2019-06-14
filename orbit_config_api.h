@@ -88,12 +88,12 @@ typedef struct Config {
   bool compute_pdedp;
   bool initial_update_pdedp;
   double deposit_on_bins_after_fraction;
-  double pde_dtsamp;
-  double pde_dtav;
-  int pde_tskip;
-  double pde_otpup;
-  bool pde_focusdep;
-  bool pde_optimize;
+  double pdedp_dtsamp;
+  double pdedp_dtav;
+  int pdedp_tskip;
+  double pdedp_otpup;
+  bool pdedp_focusdep;
+  bool pdedp_optimize;
 
 } Config_t;
 

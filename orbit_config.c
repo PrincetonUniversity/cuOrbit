@@ -53,6 +53,7 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
     } else if (MATCH("input", "displ_file")) {
       pconfig->displ_file = strdup(value);
     }
+
     /* Output */
     else if (MATCH("output", "pdedp_file")) {
       pconfig->pdedp_file = strdup(value);
@@ -99,18 +100,18 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->initial_update_pdedp = atob(value);
     }    else if (MATCH("pdedp", "deposit_on_bins_after_fraction")){
       pconfig->deposit_on_bins_after_fraction = atof(value);
-    }    else if (MATCH("pdedp", "pde_dtsamp")){
-      pconfig->pde_dtsamp = atof(value);
-    }    else if (MATCH("pdedp", "pde_dtav")){
-      pconfig->pde_dtav = atof(value);
-    }    else if (MATCH("pdedp", "pde_tskip")){
-      pconfig->pde_tskip = atoi(value);
-    }    else if (MATCH("pdedp", "pde_otpup")){
-      pconfig->pde_otpup = atof(value);
-    }    else if (MATCH("pdedp", "pde_focusdep")){
-      pconfig->pde_focusdep = atob(value);
-    }    else if (MATCH("pdedp", "pde_optimize")){
-      pconfig->pde_optimize = atob(value);
+    }    else if (MATCH("pdedp", "pdedp_dtsamp")){
+      pconfig->pdedp_dtsamp = atof(value);
+    }    else if (MATCH("pdedp", "pdedp_dtav")){
+      pconfig->pdedp_dtav = atof(value);
+    }    else if (MATCH("pdedp", "pdedp_tskip")){
+      pconfig->pdedp_tskip = atoi(value);
+    }    else if (MATCH("pdedp", "pdedp_otpup")){
+      pconfig->pdedp_otpup = atof(value);
+    }    else if (MATCH("pdedp", "pdedp_focusdep")){
+      pconfig->pdedp_focusdep = atob(value);
+    }    else if (MATCH("pdedp", "pdedp_optimize")){
+      pconfig->pdedp_optimize = atob(value);
     }
 
     else if (MATCH("stochastic", "mubk_scale")){
@@ -194,8 +195,8 @@ void initialize_Config(Config_t* cfg_ptr){
   Deposition_t* depo_ptr = cfg_ptr->depo_ptr;
   
   double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
-  const int nstep_all =((int) 10.* get_pde_dtsamp(depo_ptr) / dum) + 1;
-  set_pde_tskip(depo_ptr,
+  const int nstep_all =((int) 10.* get_pdedp_dtsamp(depo_ptr) / dum) + 1;
+  set_pdedp_tskip(depo_ptr,
                 imax(((int) nstep_all / 1E4 + 1),
                      5));    /* stay in array bounds */
   int npt_done = 0;    /* xxx ? */
