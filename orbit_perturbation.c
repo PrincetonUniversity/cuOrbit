@@ -354,3 +354,7 @@ void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
 void set_omeg0(Perturb_t* ptrb_ptr, double val){
   ptrb_ptr->omeg0 = val;
 }
+
+double get_omeg0(Perturb_t* ptrb_ptr){
+    return ptrb_ptr->omeg0;
+}

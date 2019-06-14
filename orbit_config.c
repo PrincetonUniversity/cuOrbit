@@ -20,6 +20,7 @@ Config_t* Config_ctor(){
   Cfg->eqlb_ptr = Equilib_ctor();
   Cfg->ptcl_ptr = Particles_ctor();
   Cfg->ptrb_ptr = Perturb_ctor();
+  Cfg->depo_ptr = Deposition_ctor();
   return Cfg;
 }
 
@@ -126,6 +127,21 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->nstoche = atoi(value);
     }
 
+    /* I believe this is not used yet
+    else if (MATCH("collision", "massb")){
+      pconfig->massb = atof(value);
+    }    else if (MATCH("collision", "chgb")){
+      pconfig->chgb = atof(value);
+    }    else if (MATCH("collision", "imp")){
+      pconfig->imp = atof(value);
+    }    else if (MATCH("collision", "massi")){
+      pconfig->massi = atof(value);
+    }    else if (MATCH("collision", "chgi")){
+      pconfig->chgi = atof(value);
+    }    else if (MATCH("collision", "eion")){
+      pconfig->eion = atof(value);
+    }
+    */
 
     /* unknown section/name, error */
     else {
@@ -161,8 +177,71 @@ void initialize_Config(Config_t* cfg_ptr){
 
   initialize_Perturb(cfg_ptr->ptrb_ptr, cfg_ptr, cfg_ptr->eqlb_ptr, cfg_ptr->ptcl_ptr);
 
+  initialize_Deposition(cfg_ptr->depo_ptr, cfg_ptr);
 
+
+  if(compute_pdedp(cfg_ptr->depo_ptr)){
+    if(initial_update_pdedp(cfg_ptr->depo_ptr)){
+      /* reads from ufile */
+      pdedp_read(cfg_ptr->depo_ptr);
+    }
+  }
+
+  /* xxx init and fulldepmp/fulldepmp_co go about here */
+
+
+  /* maybe break this out into a compute area. */
+  Deposition_t* depo_ptr = cfg_ptr->depo_ptr;
+  
+  double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
+  const int nstep_all =((int) 10.* get_pde_dtsamp(depo_ptr) / dum) + 1;
+  set_pde_tskip(depo_ptr,
+                imax(((int) nstep_all / 1E4 + 1),
+                     5));    /* stay in array bounds */
+  int npt_done = 0;    /* xxx ? */
+
+  printf("\n\n --- Start main run --- \n" );
+  printf("\t no. of particles \t: %d\n", cfg_ptr->nprt);
+  printf("\t no. of time steps \t: %d\n", nstep_all);
+  printf("\t sim. time [ms] \t:  %f\n", nstep_all*dum);
+  printf("\t time step [us] \t:  %f\n\n",
+         1E6 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr));
+
+  /* launch the stepping functions*/
+  /* ... */
+  /* end of main run*/
+
+  if (compute_pdedp(depo_ptr)){
+
+    /* this code was a in the loop, need to  investigate how to run all at once */
+    /* apprently this needs triple testing */
+    pdedp_rcrd_resid(depo_ptr);
+    if (pdedp_optimize(depo_ptr)){
+      pdedp_checkbdry(depo_ptr);
+      /* repeat sampling */
+      pdedp_rcrd_resid(depo_ptr);
+    }
+
+    pdedp_out(depo_ptr);
+    printf("- p(DE,DP) calculations: done\n");
+
+    /* this was out of loop */
+
+    /* normalize and fill empty bins */
+    pdedp_finalize(depo_ptr);
+    /* write output file *AEP */
+    pdedp_out(depo_ptr);
+  }
+
+  rcrd_bfield(depo_ptr);
+
+  /* i think this is just diagnostic output */
+  /* wrt6();  */
+  /* phys6(); */
+  
+  
 }
+
 
 void set1(Config_t* cfg_ptr){
   int j, k;

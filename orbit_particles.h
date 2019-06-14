@@ -16,6 +16,7 @@ typedef struct Particles Particles_t;
 void initialize_Particles(Particles_t*, Config_t*);
 Particles_t* Particles_ctor();
 
+double* get_g(Particles_t*);
 double* get_q(Particles_t*);
 double* get_pol(Particles_t*);
 double* get_thet(Particles_t*);

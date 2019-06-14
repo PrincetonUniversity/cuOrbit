@@ -75,7 +75,7 @@ typedef struct Config {
   double pchi;
 
   /* Deposition*/
-  Deposition_t* Depo_ptr;
+  Deposition_t* depo_ptr;
   /* xxx stochastic, does this belong here? */
   double mubk_scale;
   int emink;
