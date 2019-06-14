@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 #include "orbit_config_api.h"
 #include "orbit_deposition.h"
@@ -23,9 +24,9 @@ typedef struct Deposition {
   bool pdedp_focusdep;
   bool pdedp_optimize;
 
+  bool pdedp_initialized;
   /* the 5d dist */
   double* pde_pdedp;
-
   /* internal vars */
   int pde_nbinDE;
   int pde_nbinDPz;
@@ -47,7 +48,9 @@ typedef struct Deposition {
   double pde_DEmax;
   double pde_DPzmin;
   double pde_DPzmax;
-
+  /* xxx do we really need both? */
+  double pde_maxDE;
+  double pde_maxDPz;
 
   /* xxx stochastic, does this belong here? */
   double mubk;
@@ -77,6 +80,9 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->pdedp_focusdep = cfg_ptr->pdedp_focusdep;
   Depo_ptr->pdedp_optimize = cfg_ptr->pdedp_optimize;
 
+  /* this allocs at runtime, so has own init func */
+  Depo_ptr->pdedp_initialized = false;
+
   /* xxx stochastic,  does this actually belong here*/
   Depo_ptr->mubk = cfg_ptr->mubk_scale *  get_ekev(cfg_ptr->ptcl_ptr);
   Depo_ptr->emink = cfg_ptr->emink;
@@ -86,6 +92,17 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->nstochp = cfg_ptr->nstochp;
 
   return;
+}
+
+void initialize_pdedp(Deposition_t* Depo_ptr){
+  const size_t sz = sizeof(double);
+  Depo_ptr->pde_varDE = (double*)calloc((unsigned)Depo_ptr->pde_nbinDE, sz);
+  Depo_ptr->pde_varDPz = (double*)calloc((unsigned)Depo_ptr->pde_nbinDPz, sz);
+  Depo_ptr->pde_varE = (double*)calloc((unsigned)Depo_ptr->pde_nbinE, sz);
+  Depo_ptr->pde_varPz = (double*)calloc((unsigned)Depo_ptr->pde_nbinPz, sz);
+  Depo_ptr->pde_varmu = (double*)calloc((unsigned)Depo_ptr->pde_nbinmu, sz);
+  Depo_ptr->pde_pdedp = (double*)calloc(sizeof_pdedp(Depo_ptr), sz);
+  Depo_ptr->pdedp_initialized = true;
 }
 
 bool compute_pdedp(Deposition_t* Depo_ptr){
@@ -127,6 +144,11 @@ bool get_pdedp_focusdep(Deposition_t* Depo_ptr){
 void set_pdedp_focusdep(Deposition_t* Depo_ptr, bool val){
   Depo_ptr->pdedp_focusdep = val;
   return;
+}
+
+size_t sizeof_pdedp(Deposition_t* Depo_ptr){
+  return (size_t) (Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu *
+          Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz);
 }
 
 
@@ -175,23 +197,23 @@ void pdedp_read(Deposition_t* Depo_ptr){
         Depo_ptr->pde_nbinE, Depo_ptr->pde_nbinPz, Depo_ptr->pde_nbinmu,
         Depo_ptr->pde_nbinDE, Depo_ptr->pde_nbinDPz);
 
-  Depo_ptr->pde_varDE = (double*)calloc((unsigned)Depo_ptr->pde_nbinDE, sizeof(double));
+  /* malloc */
+  if(! Depo_ptr->pdedp_initialized){
+    initialize_pdedp(Depo_ptr);
+  }
+
   for(i=0; i<Depo_ptr->pde_nbinDE; i++){
     fscanf(ifp, "%lf ", &Depo_ptr->pde_varDE[i]);
   }
-  Depo_ptr->pde_varDPz = (double*)calloc((unsigned)Depo_ptr->pde_nbinDPz, sizeof(double));
   for(i=0; i<Depo_ptr->pde_nbinDPz; i++){
     fscanf(ifp, "%lf ", &Depo_ptr->pde_varDPz[i]);
   }
-  Depo_ptr->pde_varE = (double*)calloc((unsigned)Depo_ptr->pde_nbinE, sizeof(double));
   for(i=0; i<Depo_ptr->pde_nbinE; i++){
     fscanf(ifp, "%lf ", &Depo_ptr->pde_varE[i]);
   }
-  Depo_ptr->pde_varPz = (double*)calloc((unsigned)Depo_ptr->pde_nbinPz, sizeof(double));
   for(i=0; i<Depo_ptr->pde_nbinPz; i++){
     fscanf(ifp, "%lf ", &Depo_ptr->pde_varPz[i]);
   }
-  Depo_ptr->pde_varmu = (double*)calloc((unsigned)Depo_ptr->pde_nbinmu, sizeof(double));
   for(i=0; i<Depo_ptr->pde_nbinmu; i++){
     fscanf(ifp, "%lf ", &Depo_ptr->pde_varmu[i]);
   }
@@ -237,10 +259,7 @@ void pdedp_read(Deposition_t* Depo_ptr){
       Depo_ptr->pde_varDPz[Depo_ptr->pde_nbinDPz - 1] -
       Depo_ptr->pde_varDPz[0]) / (Depo_ptr->pde_nbinDPz - 1.);
 
-  /* malloc and read the 5d distribution in */
-  sz = Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu *
-      Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz;
-  Depo_ptr->pde_pdedp = (double*)calloc(sz, sizeof(double));
+  /* read the 5d distribution in */
   /*  careful, the loop order is trecherous */
   for(je=0; je < Depo_ptr->pde_nbinE; je++){
     for(jp=0; jp < Depo_ptr->pde_nbinPz; jp++){
@@ -264,6 +283,73 @@ void pdedp_read(Deposition_t* Depo_ptr){
 }
 
 void pdedp_init(Deposition_t* Depo_ptr){
+  int k;
+  double stp;
+
+  Depo_ptr->pde_Emax = 110.;
+  Depo_ptr->pde_Pzmin = -1.2;
+  Depo_ptr->pde_Pzmax =  0.7;
+  Depo_ptr->pde_mumin = 0.;  /* muB0/E */
+  Depo_ptr->pde_mumax = 1.4;
+  Depo_ptr->pde_DEmin = -0.100000;
+  Depo_ptr->pde_DEmax = 0.100000;
+  Depo_ptr->pde_DPzmin = -0.00100000;
+  Depo_ptr->pde_DPzmax = 0.00100000;
+  Depo_ptr->pde_nbinE = 12;  /* number of bins */
+  Depo_ptr->pde_nbinPz=40;
+  Depo_ptr->pde_nbinmu = 16;
+  Depo_ptr->pde_nbinDE=29;   /* this must be an ODD number */
+  assert(Depo_ptr->pde_nbinDE % 2 == 1);
+  Depo_ptr->pde_nbinDPz = 29;  /* this must be an ODD number; */
+  assert(Depo_ptr->pde_nbinDE % 2 == 1);
+
+  /* malloc */
+  if(! Depo_ptr->pdedp_initialized){
+    initialize_pdedp(Depo_ptr);
+  }
+
+  /* fill in grid vectors */
+  /* Energy  */
+  stp = (Depo_ptr->pde_Emax - Depo_ptr->pde_Emin) / Depo_ptr->pde_nbinE;
+  for(k=0; k < Depo_ptr->pde_nbinE; k++){
+    Depo_ptr->pde_varE[k] = Depo_ptr->pde_Emin + k * stp + stp/2.;
+  }
+
+  /* Pz */
+  stp = (Depo_ptr->pde_Pzmax - Depo_ptr->pde_Pzmin) / Depo_ptr->pde_nbinPz;
+  for(k=0; k < Depo_ptr->pde_nbinPz; k++){
+    Depo_ptr->pde_varPz[k] = Depo_ptr->pde_Pzmin + k * stp + stp/2.;
+  }
+
+  /* mu Bo/E */
+  stp = (Depo_ptr->pde_mumax - Depo_ptr->pde_mumin) / Depo_ptr->pde_nbinmu;
+  for(int k=0; k < Depo_ptr->pde_nbinmu; k++){
+    Depo_ptr->pde_varmu[k] = Depo_ptr->pde_mumin + k * stp + stp/2.;
+  }
+
+  /* Delta-Energy */
+  stp = (Depo_ptr->pde_DEmax - Depo_ptr->pde_DEmin) / Depo_ptr->pde_nbinDE;
+  for(k=0; k < Depo_ptr->pde_nbinDE; k++){
+    Depo_ptr->pde_varDE[k] = Depo_ptr->pde_DEmin + k * stp + stp/2.;
+  }
+
+  /*Delta-Pz */
+  stp = (Depo_ptr->pde_DPzmax - Depo_ptr->pde_DPzmin) / Depo_ptr->pde_nbinDPz;
+  for(k=0; k < Depo_ptr->pde_nbinDPz; k++){
+    Depo_ptr->pde_varDPz[k] = Depo_ptr->pde_DPzmin + k * stp + stp/2.;
+  }
+
+  Depo_ptr->pde_pdedp = calloc(sizeof_pdedp(Depo_ptr), sizeof(double));
+
+
+  /*      -------------------------------------------------------
+          Initialize variables to monitor the maximum
+          kicks in energy and Pz. These are used to optimize
+          the (DE,DPz) range on-the-fly if the flag
+          pde_optimize is set true*/
+  Depo_ptr->pde_maxDE = 0.;
+  Depo_ptr->pde_maxDPz = 0.;
+
   return;
 }
 

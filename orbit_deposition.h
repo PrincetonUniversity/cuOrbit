@@ -6,6 +6,7 @@
 typedef struct Deposition Deposition_t;
 void initialize_Deposition(Deposition_t*, Config_t*);
 Deposition_t* Deposition_ctor();
+void initialize_pdedp(Deposition_t*);
 
 bool compute_pdedp(Deposition_t*);
 bool initial_update_pdedp(Deposition_t*);
@@ -19,8 +20,7 @@ void set_initial_update_pdedp(Deposition_t*, bool);
 bool get_pdedp_focusdep(Deposition_t*);
 void set_pdedp_focusdep(Deposition_t*, bool);
 
-
-
+size_t sizeof_pdedp(Deposition_t*);
 
 void pdedp_read(Deposition_t*);
 void pdedp_init(Deposition_t*);
