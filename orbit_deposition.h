@@ -14,8 +14,17 @@ bool pdedp_optimize(Deposition_t*);
 int get_pdedp_dtsamp(Deposition_t*);
 int get_pdedp_tskip(Deposition_t*);
 void set_pdedp_tskip(Deposition_t*, double);
+bool get_initial_update_pdedp(Deposition_t*);
+void set_initial_update_pdedp(Deposition_t*, bool);
+bool get_pdedp_focusdep(Deposition_t*);
+void set_pdedp_focusdep(Deposition_t*, bool);
+
+
+
 
 void pdedp_read(Deposition_t*);
+void pdedp_init(Deposition_t*);
+void fulldepmp(Deposition_t*);
 void class_domain(Deposition_t*);
 void pdedp_checkbdry(Deposition_t*);
 void pdedp_finalize(Deposition_t*);

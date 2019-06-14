@@ -179,55 +179,79 @@ void initialize_Config(Config_t* cfg_ptr){
   initialize_Perturb(cfg_ptr->ptrb_ptr, cfg_ptr, cfg_ptr->eqlb_ptr, cfg_ptr->ptcl_ptr);
 
   initialize_Deposition(cfg_ptr->depo_ptr, cfg_ptr);
-
-
-  if(compute_pdedp(cfg_ptr->depo_ptr)){
-    if(initial_update_pdedp(cfg_ptr->depo_ptr)){
-      /* reads from ufile */
-      pdedp_read(cfg_ptr->depo_ptr);
-    }
-  }
-
-  /* xxx init and fulldepmp/fulldepmp_co go about here */
-
-
-  /* maybe break this out into a compute area. */
   Deposition_t* depo_ptr = cfg_ptr->depo_ptr;
-  
-  double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
-  const int nstep_all =((int) 10.* get_pdedp_dtsamp(depo_ptr) / dum) + 1;
-  set_pdedp_tskip(depo_ptr,
-                imax(((int) nstep_all / 1E4 + 1),
-                     5));    /* stay in array bounds */
-  int npt_done = 0;    /* xxx ? */
 
-  printf("\n\n --- Start main run --- \n" );
-  printf("\t no. of particles \t: %d\n", cfg_ptr->nprt);
-  printf("\t no. of time steps \t: %d\n", nstep_all);
-  printf("\t sim. time [ms] \t:  %f\n", nstep_all*dum);
-  printf("\t time step [us] \t:  %f\n\n",
-         1E6 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr));
+  for(int irun_pdedp=0; irun_pdedp < cfg_ptr->nruns; irun_pdedp++){
+    if(irun_pdedp>0){
+      set_initial_update_pdedp(cfg_ptr->depo_ptr, true);
+    }
+    if(irun_pdedp>1 && irun_pdedp > cfg_ptr->nruns/2){
+      set_pdedp_focusdep(cfg_ptr->depo_ptr, true);
+    }
+    
 
-  /* launch the stepping functions*/
-  /* ... */
-  /* end of main run*/
-
-  if (compute_pdedp(depo_ptr)){
-
-    /* this code was a in the loop, need to  investigate how to run all at once */
-    /* apprently this needs triple testing */
-    pdedp_rcrd_resid(depo_ptr);
-    if (pdedp_optimize(depo_ptr)){
-      pdedp_checkbdry(depo_ptr);
-      /* repeat sampling */
-      pdedp_rcrd_resid(depo_ptr);
+    if(compute_pdedp(cfg_ptr->depo_ptr)){
+      if(initial_update_pdedp(cfg_ptr->depo_ptr) && (irun_pdedp == 0)){
+        printf(" ... reading pDEDP from ufile...\n");        
+        pdedp_read(cfg_ptr->depo_ptr);
+        printf(" ... done.\n");
+      } else {
+        /* compute new p(DE,DP) */
+        pdedp_init(cfg_ptr->depo_ptr);
+      } 
     }
 
-    pdedp_out(depo_ptr);
-    printf("- p(DE,DP) calculations: done\n");
+    /* for now we just  use the fulldepmp
+       if( irun_pdedp % 2  == 0){
+       fulldepmp();
+       } else {
+       fulldepmp_co();
+       } */
+    fulldepmp(depo_ptr);
+    
 
-    /* this was out of loop */
+    /* xxx init and fulldepmp/fulldepmp_co go about here */
 
+
+    /* maybe break this out into a compute area. */
+    double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
+    const int nstep_all =((int) 10.* get_pdedp_dtsamp(depo_ptr) / dum) + 1;
+    set_pdedp_tskip(depo_ptr,
+                    imax(((int) nstep_all / 1E4 + 1),
+                         5));    /* stay in array bounds */
+    int npt_done = 0;    /* xxx ? */
+
+    printf("\n\n --- Start main run --- \n" );
+    printf("\t no. of particles \t: %d\n", cfg_ptr->nprt);
+    printf("\t no. of time steps \t: %d\n", nstep_all);
+    printf("\t sim. time [ms] \t:  %f\n", nstep_all*dum);
+    printf("\t time step [us] \t:  %f\n\n",
+           1E6 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr));
+
+    /* launch the stepping functions*/
+    /* ... */
+    /* end of main run*/
+
+    if (compute_pdedp(depo_ptr)){
+
+      /* this code was a in the loop, need to  investigate how to run all at once */
+      /* apprently this needs triple testing */
+      pdedp_rcrd_resid(depo_ptr);
+      if (pdedp_optimize(depo_ptr)){
+        pdedp_checkbdry(depo_ptr);
+        /* repeat sampling */
+        pdedp_rcrd_resid(depo_ptr);
+      }
+
+      pdedp_out(depo_ptr);
+      printf("- p(DE,DP) calculations: done\n");
+    }
+    printf("- p(DE,DP) calculations: done %d / %d \n", irun_pdedp+1, cfg_ptr->nruns);
+    
+  }  /* irun_pdedp */
+
+  /* this was out of loop */
+  if (compute_pdedp(depo_ptr)){
     /* normalize and fill empty bins */
     pdedp_finalize(depo_ptr);
     /* write output file *AEP */

@@ -113,6 +113,22 @@ void set_pdedp_tskip(Deposition_t* Depo_ptr, double pdedp_tskip){
   return;
 }
 
+bool get_initial_update_pdedp(Deposition_t* Depo_ptr){
+  return Depo_ptr->initial_update_pdedp;
+}
+void set_initial_update_pdedp(Deposition_t* Depo_ptr, bool val){
+  Depo_ptr->initial_update_pdedp = val;
+  return;
+}
+
+bool get_pdedp_focusdep(Deposition_t* Depo_ptr){
+  return Depo_ptr->pdedp_focusdep;
+}
+void set_pdedp_focusdep(Deposition_t* Depo_ptr, bool val){
+  Depo_ptr->pdedp_focusdep = val;
+  return;
+}
+
 
 
 void pdedp_read(Deposition_t* Depo_ptr){
@@ -225,7 +241,7 @@ void pdedp_read(Deposition_t* Depo_ptr){
   sz = Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu *
       Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz;
   Depo_ptr->pde_pdedp = (double*)calloc(sz, sizeof(double));
-  /*  the loop order is trecherous */
+  /*  careful, the loop order is trecherous */
   for(je=0; je < Depo_ptr->pde_nbinE; je++){
     for(jp=0; jp < Depo_ptr->pde_nbinPz; jp++){
       for(jmu=0; jmu < Depo_ptr->pde_nbinmu; jmu++){
@@ -242,9 +258,16 @@ void pdedp_read(Deposition_t* Depo_ptr){
     }
   }
 
-
   fclose(ifp);
 
+  return;
+}
+
+void pdedp_init(Deposition_t* Depo_ptr){
+  return;
+}
+
+void fulldepmp(Deposition_t* Depo_ptr){
   return;
 }
 
