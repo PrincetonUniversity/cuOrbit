@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
@@ -7,6 +8,7 @@
 #include "orbit_config_api.h"
 #include "orbit_deposition.h"
 #include "orbit_particles.h"  /* ekev */
+#include "orbit_perturbation.h"
 
 const size_t MAXFNAME=255;
 
@@ -153,7 +155,7 @@ size_t sizeof_pdedp(Deposition_t* Depo_ptr){
 
 
 
-void pdedp_read(Deposition_t* Depo_ptr){
+void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   /* this reads the probability distribution data
     for P(DE,DP| E,P,mu) from a text file (UFILE)*/
   int i;
@@ -163,7 +165,7 @@ void pdedp_read(Deposition_t* Depo_ptr){
   const char *mode = "r";
 
   /* xxx do we need this, skip for now */
-  class_domain(Depo_ptr);
+  class_domain(Depo_ptr, cfg_ptr);
 
   ifp = fopen(Depo_ptr->pdedp_file, mode);
   if (ifp == NULL) {
@@ -357,8 +359,119 @@ void fulldepmp(Deposition_t* Depo_ptr){
   return;
 }
 
-void class_domain(Deposition_t* Depo_ptr){
-  printf("class domain not implimented yet\n");
+void class_kdomain(Deposition_t* Depo_ptr, Config_t* cfg_ptr, int k){
+
+
+  /*    -  Orbit classification
+      otp=1, co-passing confined, otp = 2, co-passing lost
+      otp=3, ctr-passing confined, otp = 4, ctr-passing lost
+      otp=5, trapped confined, otp = 6, trapped lost
+      otp=7, stagnation, otp = 8, conf potato, otp = 9, trap potato
+  */
+  int ndum,ntot,ntlos,km,ku,kv,kt,j;
+  double xdum,zdum,edum,pdum,podum,dum,dum1,dum2,vol;
+  double pzdum,elt,ert,eax,etp1,etp2,mu,mube;
+  double evmin,evmax,ev0,mub,rhod,elt2;
+  double Epot,Ekin, E_ax,E_min_lcfs,E_max_lcfs;
+  double E_th0,E_thpi,mu2;
+  const double ekev=get_ekev(cfg_ptr->ptcl_ptr);
+  const double engn=get_engn(cfg_ptr);
+  const double pw=get_pw(cfg_ptr->eqlb_ptr);
+  const double *pol=get_pol(cfg_ptr->ptcl_ptr);
+  const double *en=get_en(cfg_ptr->ptcl_ptr);
+  const double *g=get_g(cfg_ptr->ptcl_ptr);
+  const double *rho=get_rho(cfg_ptr->ptcl_ptr);
+  const double *rmu=get_rmu(cfg_ptr->ptcl_ptr);
+  int * const otp=get_otp(cfg_ptr->ptcl_ptr);  /* writes */
+  const double *ptch=get_ptch(cfg_ptr->ptcl_ptr);
+  const double bax = get_bax(cfg_ptr);
+  const double bmax = get_bmax(cfg_ptr);
+  const double bmin = get_bmin(cfg_ptr);
+
+  mu = rmu[k]*ekev/engn;
+  mub = mu*bax;
+  pdum = (g[k]*rho[k] - pol[k])/pw;     /* pz0[k] */
+  edum = en[k]*ekev/engn;
+  pzdum = pdum*pw;      /* pz0[k]*pw   Pz */
+  rhod = (pzdum + pol[k])/g[k] ; /*  particle rho */
+  mube = rmu[k]*bax/en[k];   /*  mu*Bax/E */
+  dum = pow(pzdum+pw,2) * ekev / (
+      engn * 2 * pow(gfun(cfg_ptr->eqlb_ptr, pw),2));
+
+  /* get potential energies */
+  Epot = pol2pot(cfg_ptr, pol[k]);
+  E_ax = pol2pot(cfg_ptr, 0.);
+  E_min_lcfs = pol2pot(cfg_ptr, pw);
+  E_max_lcfs = pol2pot(cfg_ptr, -pzdum);
+  E_th0 = pol2pot(cfg_ptr, -pzdum);
+  E_thpi = pol2pot(cfg_ptr, -pzdum);
+
+  ert =  pow(dum*bmin, 2) + mu*bmin + E_min_lcfs;
+  elt =  pow(dum*bmax, 2) + mu*bmax + E_max_lcfs;
+  dum = pow(rhod, 2) * ekev/(2*engn);
+  elt2 =  pow(dum*bmax,2) + mu*bmax + E_max_lcfs;
+  eax = pow(ekev*pzdum,2)* pow(bax,2)/(
+      engn * 2 * pow(gfun(cfg_ptr->eqlb_ptr, 0.),2)) + mu*bax + E_ax;
+  etp1 = mu*bfield(cfg_ptr->eqlb_ptr, -pzdum,0.) + E_th0;
+  etp2 = mu*bfield(cfg_ptr->eqlb_ptr, -pzdum, M_PI) + E_thpi;
+  evmin = mu*bmin + E_min_lcfs;
+  evmax = mu*bmax + E_max_lcfs;
+  ev0 = mu*bax + E_ax;
+
+  /* Right */
+  if(pdum > 0.){
+    if(edum > eax) otp[k] = 1;
+    if(edum < eax) otp[k] = 7;
+    return;
+  }
+  /* Left */
+  if(pdum < -1.){
+    if(edum < elt) otp[k] = 4;
+    if(edum >= elt) otp[k] = 3;
+    return;
+  }
+
+  /* Middle */
+  if(pdum > -1 && pdum < 0.){
+    if(edum >= elt) otp[k] = 3;
+    if(edum > eax && edum < etp2) otp[k] = 8;
+    if(edum > eax && edum > ert) otp[k] = 2;
+    if(edum < eax && edum < etp2) otp[k] = 5;
+    if(edum > ert && edum < etp2) otp[k] = 6;
+    if(edum > etp2){
+      if(ptch[k] > 0.){
+        if(edum < elt && edum < eax) otp[k] = 2;
+        if(edum < ert && edum < eax) otp[k] = 1;
+      }
+      if(ptch[k] < 0.){
+        if(edum < elt && edum < eax) otp[k] = 3;
+      }
+      if(edum < ert && edum > eax) otp[k] = 1;
+    }
+    if(edum < etp2){
+      if(edum < ert && edum < eax) otp[k] = 5;
+    }
+    if(edum > elt) otp[k] = 3;
+  }
+
+  /* -  Stagnation */
+  if(edum < etp1 && edum < eax) otp[k] = 7;
+  /* - Confined Potato */
+  if(edum > eax && edum < etp2) otp[k] = 8;
+  /* - Lost Potato */
+  if(edum > ert){
+    if(edum > eax && edum < etp2) otp[k] = 9;
+  }
+
+  return;
+}
+
+
+void class_domain(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
+  int k;
+  for(k=0; cfg_ptr->nprt; k++){
+    class_kdomain(Depo_ptr, cfg_ptr, k);
+  }
   return;
 }
 

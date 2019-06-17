@@ -119,8 +119,24 @@ double* get_q(Particles_t* ptcl_ptr){
   return ptcl_ptr->q;
 }
 
+double* get_en(Particles_t* ptcl_ptr){
+  return ptcl_ptr->en;
+}
+
 double* get_pol(Particles_t* ptcl_ptr){
   return ptcl_ptr->pol;
+}
+double* get_rho(Particles_t* ptcl_ptr){
+  return ptcl_ptr->rho;
+}
+double* get_rmu(Particles_t* ptcl_ptr){
+  return ptcl_ptr->rho;
+}
+int* get_otp(Particles_t* ptcl_ptr){
+  return ptcl_ptr->otp;
+}
+double* get_ptch(Particles_t* ptcl_ptr){
+  return ptcl_ptr->ptch;
 }
 double* get_thet(Particles_t* ptcl_ptr){
   return ptcl_ptr->thet;

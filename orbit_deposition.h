@@ -22,10 +22,11 @@ void set_pdedp_focusdep(Deposition_t*, bool);
 
 size_t sizeof_pdedp(Deposition_t*);
 
-void pdedp_read(Deposition_t*);
+void pdedp_read(Deposition_t*, Config_t*);
 void pdedp_init(Deposition_t*);
 void fulldepmp(Deposition_t*);
-void class_domain(Deposition_t*);
+void class_kdomain(Deposition_t*, Config_t*, int);
+void class_domain(Deposition_t*, Config_t*);
 void pdedp_checkbdry(Deposition_t*);
 void pdedp_finalize(Deposition_t*);
 void pdedp_out(Deposition_t*);

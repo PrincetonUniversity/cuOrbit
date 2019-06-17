@@ -105,6 +105,11 @@ void set_xc(Config_t*, double);
 double get_xc(Config_t*);
 void set_eps(Config_t*, double);
 double get_eps(Config_t*);
-
+double get_engn(Config_t*);
+double get_bax(Config_t*);
+double get_bmax(Config_t*);
+double get_bmin(Config_t*);
+double get_pamp(Config_t*);
+double get_rprof(Config_t*);
 
 #endif

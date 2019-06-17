@@ -188,12 +188,12 @@ void initialize_Config(Config_t* cfg_ptr){
     if(irun_pdedp>1 && irun_pdedp > cfg_ptr->nruns/2){
       set_pdedp_focusdep(cfg_ptr->depo_ptr, true);
     }
-    
+
 
     if(compute_pdedp(cfg_ptr->depo_ptr)){
       if(initial_update_pdedp(cfg_ptr->depo_ptr) && (irun_pdedp == 0)){
-        printf(" ... reading pDEDP from ufile...\n");        
-        pdedp_read(cfg_ptr->depo_ptr);
+        printf(" ... reading pDEDP from ufile...\n");
+        pdedp_read(cfg_ptr->depo_ptr, cfg_ptr);
         printf(" ... done.\n");
       } else {
         /* compute new p(DE,DP) */
@@ -208,7 +208,7 @@ void initialize_Config(Config_t* cfg_ptr){
        fulldepmp_co();
        } */
     fulldepmp(depo_ptr);
-    
+
 
     /* xxx init and fulldepmp/fulldepmp_co go about here */
 
@@ -484,5 +484,29 @@ void set_eps(Config_t* cfg_ptr, double val){
 
 double get_eps(Config_t* cfg_ptr){
   return cfg_ptr->xc;
+}
+
+double get_engn(Config_t* cfg_ptr){
+  return cfg_ptr->engn;
+}
+
+double get_bax(Config_t* cfg_ptr){
+  return cfg_ptr->bax;
+}
+
+double get_bmax(Config_t* cfg_ptr){
+  return cfg_ptr->bmax;
+}
+
+double get_bmin(Config_t* cfg_ptr){
+  return cfg_ptr->bmin;
+}
+
+double get_pamp(Config_t* cfg_ptr){
+  return cfg_ptr->pamp;
+}
+
+double get_rprof(Config_t* cfg_ptr){
+  return cfg_ptr->rprof;
 }
 

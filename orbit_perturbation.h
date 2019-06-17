@@ -17,5 +17,5 @@ void splna(Perturb_t* , Equilib_t*, Particles_t*);
 void splnx(Perturb_t* , Equilib_t*, Particles_t*);
 void set_omeg0(Perturb_t*, double);
 double get_omeg0(Perturb_t*);
-
+double pol2pot(Config_t*, double);
 #endif

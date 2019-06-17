@@ -74,7 +74,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   /* in set1 */
   //ptrb_ptr->omeg0 = 9.58E6 * get_zprt(ptcl_ptr) * config_ptr->bkg / get_prot(ptcl_ptr);
 
-  double pw;
+  /* double pw; in eq*/
   double ped;
   double pwd;
   int lsp;
@@ -357,4 +357,13 @@ void set_omeg0(Perturb_t* ptrb_ptr, double val){
 
 double get_omeg0(Perturb_t* ptrb_ptr){
     return ptrb_ptr->omeg0;
+}
+
+double pol2pot(Config_t* cfg_ptr, double pdum){
+  double potout;
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  const double pamp = get_pamp(cfg_ptr);
+  const double rprof = get_rprof(cfg_ptr);
+  potout = pamp * exp(rprof * pdum / pw);
+  return potout;
 }
