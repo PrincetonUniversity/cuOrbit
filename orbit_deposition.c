@@ -356,6 +356,7 @@ void pdedp_init(Deposition_t* Depo_ptr){
 }
 
 void fulldepmp(Deposition_t* Depo_ptr){
+  /* loops over k and k/2, can live on device one day */
   return;
 }
 
@@ -466,7 +467,6 @@ void class_kdomain(Deposition_t* Depo_ptr, Config_t* cfg_ptr, int k){
   return;
 }
 
-
 void class_domain(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   int k;
   for(k=0; cfg_ptr->nprt; k++){
@@ -476,14 +476,22 @@ void class_domain(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
 }
 
 void pdedp_checkbdry(Deposition_t* Depo_ptr){
+  /* long function.
   return;
 }
 
 void pdedp_finalize(Deposition_t* Depo_ptr){
+  /* gets average numbers of counts/bin from non empty bins,
+     fill in empty bins.
+
+    then nomalizes. 
+
+  if pde_pdedp lives on card, this is trivial there*/
   return;
 }
 
 void pdedp_out(Deposition_t* Depo_ptr){
+  /* writes out the dist file */
   return;
 }
 

@@ -198,7 +198,7 @@ void initialize_Config(Config_t* cfg_ptr){
       } else {
         /* compute new p(DE,DP) */
         pdedp_init(cfg_ptr->depo_ptr);
-      } 
+      }
     }
 
     /* for now we just  use the fulldepmp
