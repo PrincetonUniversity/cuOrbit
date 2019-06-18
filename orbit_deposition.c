@@ -164,10 +164,9 @@ void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   FILE *ifp;
   const char *mode = "r";
 
-  /* xxx do we need this, skip for now */
   class_domain(Depo_ptr, cfg_ptr);
 
-  ifp = fopen(Depo_ptr->pdedp_file, mode);
+  ifp = fopen(Depo_ptr->pdedp_file, mode);  /* xxx add f status */
   if (ifp == NULL) {
     fprintf(stderr, "\nCan't open input file %s!\n", Depo_ptr->pdedp_file);
     exit(1);
@@ -476,7 +475,7 @@ void class_domain(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
 }
 
 void pdedp_checkbdry(Deposition_t* Depo_ptr){
-  /* long function.
+  /* long function. */
   return;
 }
 
@@ -484,14 +483,209 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
   /* gets average numbers of counts/bin from non empty bins,
      fill in empty bins.
 
-    then nomalizes. 
+    then nomalizes.
 
   if pde_pdedp lives on card, this is trivial there*/
   return;
 }
 
+static inline int get_bin(double val, double* arr, const int dim){
+  int k;
+  int indx = -1;
+  double epsF = 1E12;
+  double darr = 0.5 * (arr[1] - arr[0]);
+  double tmp;
+  darr *= 1.0001;  /* something about round off */
+  for(k=0; k<dim; k++){
+    tmp = fabs(arr[k] - val);
+    if(tmp <= epsF && tmp <= darr){
+      indx = k;
+      epsF = tmp;
+    }
+    if(epsF<darr) break;  /* min found */
+  }
+  return indx;
+}
+
+
 void pdedp_out(Deposition_t* Depo_ptr){
   /* writes out the dist file */
+  int k;
+  int ind;
+  FILE *ofp;
+  ofp = fopen(Depo_ptr->pdedp_file, "w");  /* add f status */
+  if (ofp == NULL) {
+    fprintf(stderr, "\nCan't open output file %s!\n", Depo_ptr->pdedp_file);
+    exit(1);
+  }
+  printf("\nOutputting P(DE,DP) file %s\n",  Depo_ptr->pdedp_file);
+
+  /* place holders, apparently this will come from transp sometime
+     right now, just mimic old behavior. */
+  const int lshot = 123456;
+  const char *date = "Apr. 2018";
+  const int nd = 5;     /* 5-D data */
+  const int nq = 0;     /* unknown parameter */
+  const int nr = 6;     /* #of decimal places f13.6 */
+  const int np = 0;     /* process code */
+  const int ns = 1;    /*  # of scalars */
+  const char *dev = "D3D";
+  const char *labelx = "DEstep                "; /* *20 */
+  const char *unitsx = "   kev    ";             /* *10 */
+  const char *labely = "DPsteps               "; /* *20 */
+  const char *unitsy = "          ";             /* *10 */
+  const char *labelu = "Evar                  "; /* *20 */
+  const char *unitsu = "   keV    ";             /* *10 */
+  const char *labelv = "Pvar                  "; /* *20 */
+  const char *unitsv = "          ";             /* *10 */
+  const char *labelw = "Muvar                ";  /* *20 */
+  const char *unitsw = "          ";             /* *10 */
+  const char *com = ";----END-OF-DATA-----------------COMMENTS:-----------";
+  const char *com2 = "UFILE WRITTEN BY ORBIT, see PDEDP_OUT";
+  const char *com3 = "SMOOTHING FACTORS, DELAY FACTORS:";
+  const char *com4 = "       NONE";
+  const char *com5 = "USER COMMENTS:";
+  const char *com6 = "       TEST FILE";
+
+  /* xxx, note I removed a lot of whitespace formatting,
+     can add back in later*/
+
+  fprintf(ofp, "%d %s %d %d %d ;-SHOT #- F(X) DATA -PDEDP_OUT- \n",
+          lshot, dev, nd, nq, nr);
+
+  fprintf(ofp, "%s ;-SHOT DATE-  UFILES ASCII FILE SYSTEM\n", date);
+
+  fprintf(ofp, "%d ;-NUMBER OF ASSOCIATED SCALAR QUANTITIES-\n", ns);
+
+  fprintf(ofp,"1.0000E+00                   ;-SCALAR, LABEL FOLLOWS:\n");
+
+  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: X-\n", labelx, unitsx);
+
+  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: Y-\n", labely, unitsy);
+
+  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: U-\n",
+          labelu, unitsu);
+
+  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: V-\n", labelv, unitsv);
+
+  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: W-\n", labelw, unitsw);
+
+  fprintf(ofp, "%f ; TSTEPSIM  - TIME STEP USED IN SIMULATION [ms]\n",
+          Depo_ptr->pdedp_dtsamp);
+
+  fprintf(ofp, " PROBABILITY DATA              ;-DEPENDENT VARIABLE LABEL-\n");
+
+  fprintf(ofp, "%d ;-PROC CODE- 0:RAW 1:AVG 2:SM 3:AVG+SM\n", np);
+
+  fprintf(ofp, "%d ;-# OF X PTS-\n", Depo_ptr->pde_nbinDE);
+
+  fprintf(ofp, "%d ;-# OF Y PTS-\n", Depo_ptr->pde_nbinDPz);
+
+  fprintf(ofp, "%d ;-# OF U PTS-\n", Depo_ptr->pde_nbinE);
+
+  fprintf(ofp, "%d ;-# OF V PTS-\n", Depo_ptr->pde_nbinPz);
+
+  fprintf(ofp, "%d ;-# OF W PTS- X,Y,U,V,W,F(X,Y,U,V,W) DATA FOLLOW:\n",
+          Depo_ptr->pde_nbinmu);
+
+  /*       -------------------------------------------------------
+         Make sure center bin has exactly DE=0,DPz=0
+
+         Get indexes of (DE,DPz)=(0,0) bin */
+  double valdum=0.;
+  int iDE0 =  get_bin(valdum, Depo_ptr->pde_varDE, Depo_ptr->pde_nbinDE);
+  int iDPz0 = get_bin(valdum, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
+
+   /* set to zero */
+  Depo_ptr->pde_varDE[iDE0]=0.;
+  Depo_ptr->pde_varDPz[iDPz0]=0.;
+
+  /* Write grid vectors */
+
+  /* variables DEbins,DPbins */
+  for(k=0; k < Depo_ptr->pde_nbinDE; k++){
+    fprintf(ofp, "%f ", Depo_ptr->pde_varDE[k]);
+  }
+  fprintf(ofp,"\n");
+
+  for(k=0; k < Depo_ptr->pde_nbinDPz; k++){
+    fprintf(ofp, "%f ", Depo_ptr->pde_varDPz[k]);
+  }
+  fprintf(ofp,"\n");
+
+  /* variables Ebins,Pbins,Mubins */
+  for(k=0; k < Depo_ptr->pde_nbinE; k++){
+    fprintf(ofp, "%f ", Depo_ptr->pde_varE[k]);
+  }
+  fprintf(ofp,"\n");
+
+  for(k=0; k < Depo_ptr->pde_nbinPz; k++){
+    fprintf(ofp, "%f ", Depo_ptr->pde_varPz[k]);
+  }
+  fprintf(ofp,"\n");
+
+  for(k=0; k < Depo_ptr->pde_nbinmu; k++){
+    fprintf(ofp, "%f ", Depo_ptr->pde_varmu[k]);
+  }
+  fprintf(ofp,"\n");
+
+
+      /*       -------------------------------------------------------
+         Write  p(DE,DP|E,Pz,mu)=0 for each bin.
+         This is a big chunk of data with many
+         nested, horrible, unelegant and
+         inefficient 'for' loops.
+
+         NOTE: at this point, the p(DE,DP)'s are NOT
+               normalized. This is to make it easier
+               to update the distributions with multiple
+               (serial) calls with random distributions
+               that simply add together.  */
+
+  for(int iE=0; iE < Depo_ptr->pde_nbinE; iE++){
+    for(int iPz=0; iPz < Depo_ptr->pde_nbinPz; iPz++){
+      for(int imu=0; imu < Depo_ptr->pde_nbinmu; imu++){
+
+        /* compute normalization factor for this bin
+           !          pnorm=0.0
+           !          do iDE=1,pde_nbinDE
+           !            do iDPz=1,pde_nbinDPz
+           !              pnorm=pnorm+pde_Pdedp(iDE,iDPz,iE,iPz,imu)
+           !            enddo
+           !          enddo
+           !
+           !          ! write normalized p(DE,DPz|E,Pz,mu) */
+
+        for(int iDE=0; iDE < Depo_ptr->pde_nbinDE; iDE++){
+          /*            ! normalize total probability to 1
+              !            if(pnorm.gt.0.) then
+              !              do iDPz=1,pde_nbinDPz
+              !                pde_Pdedp(iDE,iDPz,iE,iPz,imu)=
+              !     >             pde_Pdedp(iDE,iDPz,iE,iPz,imu)/pnorm
+              !               enddo
+              !            endif */
+          for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
+            ind = Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu * Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * iE +
+                Depo_ptr->pde_nbinmu * Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * iPz +
+                Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * imu +
+                Depo_ptr->pde_nbinDPz * iDE + iDPz++;
+            fprintf(ofp, "%f ", Depo_ptr->pde_pdedp[ind]);
+          }
+          fprintf(ofp, "\n");
+        }
+      }
+    }
+  }
+
+  fprintf(ofp, "\n%s\n", com);
+  fprintf(ofp, "%s\n", com2);
+  fprintf(ofp, "%s\n", com3);
+  fprintf(ofp, "%s\n", com4);
+  fprintf(ofp, "%s\n", com5);
+  fprintf(ofp, "%s\n", com6);
+
+  fclose(ofp);
+
   return;
 }
 
@@ -502,4 +696,5 @@ void pdedp_rcrd_resid(Deposition_t* Depo_ptr){
 void rcrd_bfield(Deposition_t* Depo_ptr){
   return;
 }
+
 
