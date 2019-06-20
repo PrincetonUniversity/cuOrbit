@@ -11,6 +11,7 @@
 #include "orbit_perturbation.h"
 
 const size_t MAXFNAME=255;
+const int ibin=40;  /* used in temp array in pdedp_finalize */
 
 typedef struct Deposition {
   /* pdedp */
@@ -153,6 +154,31 @@ size_t sizeof_pdedp(Deposition_t* Depo_ptr){
           Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz);
 }
 
+static inline int get_pdedp_ind(Deposition_t* Depo_ptr, int iE, int iPz, int imu, int iDE, int iDPz){
+  const int ind = Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu * Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * iE +
+      Depo_ptr->pde_nbinmu * Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * iPz +
+      Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * imu +
+      Depo_ptr->pde_nbinDPz * iDE + iDPz;
+  return ind;
+}
+
+static inline int get_bin(double val, double* arr, const int dim){
+  int k;
+  int indx = -1;
+  double epsF = 1E12;
+  double darr = 0.5 * (arr[1] - arr[0]);
+  double tmp;
+  darr *= 1.0001;  /* something about round off */
+  for(k=0; k<dim; k++){
+    tmp = fabs(arr[k] - val);
+    if(tmp <= epsF && tmp <= darr){
+      indx = k;
+      epsF = tmp;
+    }
+    if(epsF<darr) break;  /* min found */
+  }
+  return indx;
+}
 
 
 void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
@@ -486,26 +512,71 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
     then nomalizes.
 
   if pde_pdedp lives on card, this is trivial there*/
+  double* const pde_pdedp = Depo_ptr->pde_pdedp;
+  double sum_p[40][40][40];
+
+  printf("-> Finalize pDEDP computation ...\n");
+  /* Get indexes of (DE,DPz)=(0,0) bin */
+  int iDE0 = get_bin(0., Depo_ptr->pde_varDE, Depo_ptr->pde_nbinDE);
+  int iDPz0 = get_bin(0., Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
+
+  /* make sure center bin has exactly DE=0,DPz=0 */
+  /* set to zero */
+  Depo_ptr->pde_varDE[iDE0]=0.;
+  Depo_ptr->pde_varDPz[iDPz0]=0.;
+
+  /*       Get average number of counts/bin from non-empty bins
+           and fill in empty bins */
+  double  cnt_aver=0.;
+  int cnt_;
+  int ind;
+  int nbins=0;
+  for(int iE=0; iE < Depo_ptr->pde_nbinE; iE++){
+    for(int iPz=0; iPz < Depo_ptr->pde_nbinPz; iPz++){
+      for(int imu=0; imu < Depo_ptr->pde_nbinmu; imu++){
+        cnt_=0.;
+        sum_p[iE][iPz][imu]=0.;
+        for(int iDE=0; iDE < Depo_ptr->pde_nbinDE; iDE++){
+          for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
+            cnt_ += pde_pdedp[
+                get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz)];
+          }
+        }
+        if(cnt_ > 0) {
+          /* update*/
+          cnt_aver += cnt_;
+          sum_p[iE][iPz][imu]=cnt_;
+          nbins += 1;
+        } else {
+          /* fill with 1 count at (DE,DPz)=(0,0)*/
+          pde_pdedp[get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE0, iDPz0)] = 1.;
+          sum_p[iE][iPz][imu]=1.;
+        }
+      }
+    }
+  }
+
+  if(nbins > 0) cnt_aver /= nbins;
+
+  /* Normalize */
+  for(int iE=0; iE < Depo_ptr->pde_nbinE; iE++){
+    for(int iPz=0; iPz < Depo_ptr->pde_nbinPz; iPz++){
+      for(int imu=0; imu < Depo_ptr->pde_nbinmu; imu++){
+        for(int iDE=0; iDE < Depo_ptr->pde_nbinDE; iDE++){
+          for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
+            pde_pdedp[get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz)] *=
+                cnt_aver/sum_p[iE][iPz][imu];
+          }
+        }
+      }
+    }
+  }
+  printf("\n-> p(DE,DPz|E,Pz,mu) matrices normalized\n");
+  printf("   - Average number of counts: %f\n\n", cnt_aver);
+
   return;
 }
 
-static inline int get_bin(double val, double* arr, const int dim){
-  int k;
-  int indx = -1;
-  double epsF = 1E12;
-  double darr = 0.5 * (arr[1] - arr[0]);
-  double tmp;
-  darr *= 1.0001;  /* something about round off */
-  for(k=0; k<dim; k++){
-    tmp = fabs(arr[k] - val);
-    if(tmp <= epsF && tmp <= darr){
-      indx = k;
-      epsF = tmp;
-    }
-    if(epsF<darr) break;  /* min found */
-  }
-  return indx;
-}
 
 
 void pdedp_out(Deposition_t* Depo_ptr){
@@ -665,11 +736,8 @@ void pdedp_out(Deposition_t* Depo_ptr){
               !               enddo
               !            endif */
           for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
-            ind = Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu * Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * iE +
-                Depo_ptr->pde_nbinmu * Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * iPz +
-                Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * imu +
-                Depo_ptr->pde_nbinDPz * iDE + iDPz++;
-            fprintf(ofp, "%f ", Depo_ptr->pde_pdedp[ind]);
+            fprintf(ofp, "%f ", Depo_ptr->pde_pdedp[
+                get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz)]);
           }
           fprintf(ofp, "\n");
         }
