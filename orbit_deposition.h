@@ -30,7 +30,7 @@ void class_domain(Deposition_t*, Config_t*);
 void pdedp_checkbdry(Deposition_t*);
 void pdedp_finalize(Deposition_t*);
 void pdedp_out(Deposition_t*);
-void pdedp_rcrd_resid(Deposition_t*);
+void pdedp_rcrd_resid(Config_t*, Deposition_t*);
 void rcrd_bfield(Deposition_t*);
 
 #endif

@@ -9,6 +9,7 @@
 #include "orbit_deposition.h"
 #include "orbit_particles.h"  /* ekev */
 #include "orbit_perturbation.h"
+#include "orbit_util.h"
 
 const size_t MAXFNAME=255;
 const int ibin=40;  /* used in temp array in pdedp_finalize */
@@ -30,6 +31,7 @@ typedef struct Deposition {
   bool pdedp_initialized;
   /* the 5d dist */
   double* pde_pdedp;
+  double* res_id_arr;
   /* internal vars */
   int pde_nbinDE;
   int pde_nbinDPz;
@@ -54,6 +56,8 @@ typedef struct Deposition {
   /* xxx do we really need both? */
   double pde_maxDE;
   double pde_maxDPz;
+  int res_id_arr_j;
+  int res_id_arr_i;
 
   /* xxx stochastic, does this belong here? */
   double mubk;
@@ -82,6 +86,12 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->pdedp_otpup = cfg_ptr->pdedp_otpup;
   Depo_ptr->pdedp_focusdep = cfg_ptr->pdedp_focusdep;
   Depo_ptr->pdedp_optimize = cfg_ptr->pdedp_optimize;
+  Depo_ptr->res_id_arr_j = 10000;
+  Depo_ptr->res_id_arr_i = 4;
+  Depo_ptr->res_id_arr = (double*)calloc((unsigned)(cfg_ptr->nprt *
+                                         Depo_ptr->res_id_arr_j *
+                                          Depo_ptr->res_id_arr_i),
+                                         sizeof(double));  /* hardcoded? ask mp*/
 
   /* this allocs at runtime, so has own init func */
   Depo_ptr->pdedp_initialized = false;
@@ -757,7 +767,90 @@ void pdedp_out(Deposition_t* Depo_ptr){
   return;
 }
 
-void pdedp_rcrd_resid(Deposition_t* Depo_ptr){
+static inline int get_res_id_ind(Config_t* cfg_ptr, int k, int j, int i){
+  /*  fname indices, sorry */
+  const int nj = cfg_ptr->depo_ptr->res_id_arr_j;
+  const int ni = cfg_ptr->depo_ptr->res_id_arr_i;
+
+  return nj*ni*k + ni*j + i;
+}
+
+void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
+  /*      pde_tskip : reduce loops, skip time steps */
+  int j, j2, j3, k, ind;
+  double dtdum=Depo_ptr->pdedp_tskip *
+      1.0E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr); /* [ms] */
+  int jstart = (int)(0.2 * Depo_ptr->pdedp_dtsamp / dtdum -1 );  /* zero ind */
+  /*  in original code, this was nstep,
+      but called at end of loop when it should have achieved nstep_all value,
+      I think, which is not "private" */
+  int nsamples= cfg_ptr->nstep_all / Depo_ptr->pdedp_tskip;
+  double newE, newPz;
+  double Eav, Pzav, Muav;
+  double dedum, dpzdum;
+  int iE, iDE, iPz, iDPz, imu;
+  double * const res_id_arr = Depo_ptr->res_id_arr;
+
+
+  printf("   ... computing p(DE,DPz) matrix ...\n");
+  int nintv = (int)( Depo_ptr->pdedp_dtsamp / dtdum);
+  int Nav = imax(1, (int)( Depo_ptr->pdedp_dtav / dtdum));
+
+  for(k=0; k < cfg_ptr->nprt; k++){
+    for(j=jstart; j < nsamples; j++){
+      Eav = 0.;
+      Pzav = 0.;
+      Muav = 0.;
+      for(j3=0; j3 <= Nav-1; j3++){
+        /* j is already zero indices */
+        Eav += res_id_arr[get_res_id_ind(cfg_ptr,k,j-j3,0)];  /* E */
+        Pzav += res_id_arr[get_res_id_ind(cfg_ptr,k,j-j3,1)];  /* Pz */
+        Muav += res_id_arr[get_res_id_ind(cfg_ptr,k,j-j3,2)];  /* mu */
+      }
+
+      Eav /= ((double)Nav);
+      Pzav /= ((double)Nav);
+      Muav /= ((double)Nav);
+
+      iE =  get_bin(Eav, Depo_ptr->pde_varDE, Depo_ptr->pde_nbinE);
+      iPz =  get_bin(Pzav, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinPz);
+      imu =  get_bin(Muav, Depo_ptr->pde_varmu, Depo_ptr->pde_nbinmu);
+
+      j2 = nintv;
+      /* zero indices */
+      ind = get_res_id_ind(cfg_ptr,k,j +j2 -j3,3);
+      if (j + j2 +1 < nsamples &&
+          res_id_arr[ind] > 0 &&
+          res_id_arr[ind] < 1)
+      {
+        newE = 0.;
+        newPz = 0.;
+        for(j3=0; j3 < Nav-1; j3++){
+          newE  += res_id_arr[get_res_id_ind(cfg_ptr, k, j+j2-j3, 0)] / ((double)Nav);
+          newPz += res_id_arr[get_res_id_ind(cfg_ptr, k, j+j2-j3, 1)] / ((double)Nav);
+        }
+        dedum = newE - Eav;
+        dpzdum = newPz - Pzav;
+
+        iDE =  get_bin(dedum, Depo_ptr->pde_varDE, Depo_ptr->pde_nbinDE);
+        iDPz =  get_bin(dedum, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
+
+        if (Depo_ptr->pdedp_optimize == 1 &&
+            newE > 0 &&
+            iE >= 1 &&
+            iE <= Depo_ptr->pde_nbinE  &&
+            iPz >= 1 &&
+            iPz <= Depo_ptr->pde_nbinPz &&
+            imu >= 1 &&
+            imu <= Depo_ptr->pde_nbinmu){
+          Depo_ptr->pde_maxDE = fmax(fabs(1.05 * dedum),
+                                    Depo_ptr->pde_maxDE);
+          Depo_ptr->pde_maxDPz = fmax(fabs(1.05 * dpzdum),
+                                     Depo_ptr->pde_maxDPz);
+        }
+      }
+    }  /* j */
+  }    /* k */
   return;
 }
 

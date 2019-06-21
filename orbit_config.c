@@ -216,6 +216,7 @@ void initialize_Config(Config_t* cfg_ptr){
     /* maybe break this out into a compute area. */
     double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
     const int nstep_all =((int) 10.* get_pdedp_dtsamp(depo_ptr) / dum) + 1;
+    cfg_ptr->nstep_all = nstep_all;
     set_pdedp_tskip(depo_ptr,
                     imax(((int) nstep_all / 1E4 + 1),
                          5));    /* stay in array bounds */
@@ -236,11 +237,11 @@ void initialize_Config(Config_t* cfg_ptr){
 
       /* this code was a in the loop, need to  investigate how to run all at once */
       /* apprently this needs triple testing */
-      pdedp_rcrd_resid(depo_ptr);
+      pdedp_rcrd_resid(cfg_ptr, depo_ptr);
       if (pdedp_optimize(depo_ptr)){
         pdedp_checkbdry(depo_ptr);
         /* repeat sampling */
-        pdedp_rcrd_resid(depo_ptr);
+        pdedp_rcrd_resid(cfg_ptr, depo_ptr);
       }
 
       pdedp_out(depo_ptr);
