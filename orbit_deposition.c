@@ -89,6 +89,10 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->pdedp_otpup = cfg_ptr->pdedp_otpup;
   Depo_ptr->pdedp_focusdep = cfg_ptr->pdedp_focusdep;
   Depo_ptr->pdedp_optimize = cfg_ptr->pdedp_optimize;
+  if(Depo_ptr->initial_update_pdedp){
+    printf("Warning, found initial pdedp_update TRUE, setting optimize FALSE\n");
+    Depo_ptr->pdedp_optimize = 0;
+  }
   Depo_ptr->res_id_arr_j = 10000;
   Depo_ptr->res_id_arr_i = 4;
   Depo_ptr->res_id_arr = (double*)calloc((unsigned)(cfg_ptr->nprt *
@@ -877,7 +881,158 @@ void fulldepmp(Deposition_t* Depo_ptr){
   return;
 }
 
-void pdedp_checkbdry(Deposition_t* Depo_ptr){
-  /* long function. */
+void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
+  /* Check the range used for compute p(DE,DP | E, Pz,mu)
+   and adjust the (DE,DPz) range on-the-fly to optimize sampling.
+  */
+
+  /*  */
+  Equilib_t* eqlb_ptr = cfg_ptr->eqlb_ptr;
+  Particles_t* ptcl_ptr = cfg_ptr->ptcl_ptr;
+  double** const GD = get_GD(eqlb_ptr);
+  double** const B = get_B(eqlb_ptr);
+  const double pw = get_pw(eqlb_ptr);
+  const double engn = get_engn(cfg_ptr);
+
+  /*don't touch grid if rel. difference is smaller than this */
+  const double dthres = 1.;
+  int recompute;
+  int k;
+  double mumin, mumax, Pzmin, Pzmax, pde_engn;
+  double fctE, fctPz, fctMu;
+  double demax_old, dPzmax_old, stp;
+
+  printf("Checking pDEDP boundaries ...\n");
+
+  /* First, find boundary for mu and Pz based on
+     energy range used in pDEDP calculation */
+
+  /* maximum energy, normalized units */
+
+  pde_engn = depo_ptr->pde_Emax * 10.533 *
+      get_prot(ptcl_ptr) * pow(GD[0][0],2) /
+      (get_rmaj(eqlb_ptr) * get_zprt(ptcl_ptr) * get_bkg(cfg_ptr) * pow(B[0][0],2));
+  /* cf. engn definition in initial.f */
+
+  /* min/max B field */
+  const double Bmn = bfield(eqlb_ptr, pw, 0.);
+  const double Bmx = bfield(eqlb_ptr, pw, M_PI);
+
+  /* redefine range of mu
+     add buffer to the actual range */
+  mumin = 0.;
+  mumax = 1./Bmn * (depo_ptr->pde_nbinmu + 1.) / depo_ptr->pde_nbinmu;
+
+  /* upper limit for Pz, add buffer */
+  Pzmax = gfun(eqlb_ptr, 0)/pw*sqrt(2. * engn) *
+      (depo_ptr->pde_nbinPz + 1.) / depo_ptr->pde_nbinPz;
+
+  /* lower limit for Pz, add buffer */
+  Pzmin = -1. - gfun(eqlb_ptr, pw)/pw*sqrt(2. * engn) / Bmx *
+      (depo_ptr->pde_nbinPz + 1.) /depo_ptr->pde_nbinPz;
+
+
+  /* Check wheter the Pz,mu range needs to be adjusted. */
+
+  fctMu = (depo_ptr->pde_mumax - mumax ) / depo_ptr->pde_mumax;
+  fctPz = fmax(fabs((depo_ptr->pde_Pzmax - Pzmax) / depo_ptr->pde_Pzmax),
+              fabs((depo_ptr->pde_Pzmax - Pzmin) / depo_ptr->pde_Pzmin));
+
+    if(fctMu > dthres || fctPz > dthres ||
+       Pzmin < depo_ptr->pde_Pzmin || Pzmax > depo_ptr->pde_Pzmax ||
+       mumax > depo_ptr->pde_mumax) {
+      /* update */
+
+      /* display info with updated grid */
+      printf("  -> New Pz,mu grid computed:\n");
+      printf("  original: Pz1= %f,    Pz2= %f,    mu=%f\n",
+             depo_ptr->pde_Pzmin,
+             depo_ptr->pde_Pzmax,
+             depo_ptr->pde_mumax);
+      printf("  updated: Pz1= %f,    Pz2= %f,    mu=%f\n",
+             Pzmin, Pzmax, mumax);
+
+      depo_ptr->pde_Pzmax = Pzmax;
+      depo_ptr->pde_Pzmin = Pzmin;
+      depo_ptr->pde_mumin = 0.;
+      depo_ptr->pde_mumax = mumax;
+
+
+      /* Pz */
+      stp=(depo_ptr->pde_Pzmax - depo_ptr->pde_Pzmin)/depo_ptr->pde_nbinPz;
+      for(k=0; k < depo_ptr->pde_nbinPz; k++){
+        depo_ptr->pde_varPz[k] = depo_ptr->pde_Pzmin + ((double)k)* stp + stp/2.;
+      }
+
+      /* mu Bo/E */
+      stp=(depo_ptr->pde_mumax - depo_ptr->pde_mumin) / depo_ptr->pde_nbinmu;
+      for(k=0; k < depo_ptr->pde_nbinmu; k++){
+        depo_ptr->pde_varmu[k] = depo_ptr->pde_mumin +((double)k) * stp + stp/2.;
+      }
+
+      recompute = 1;
+    } else {
+      printf(" -> Pz,mu grid looks OK - \n\n");
+    }
+
+  /* Check wheter the DE,DPz range needs to be
+     adjusted. */
+  fctE=(depo_ptr->pde_maxDE - depo_ptr->pde_DEmax) / depo_ptr->pde_DEmax;
+  fctPz=(depo_ptr->pde_maxDPz - depo_ptr->pde_DPzmax) / depo_ptr->pde_DPzmax;
+
+  if(fabs(fctE) < dthres && fabs(fctPz) < dthres &&
+     fctE <= 1  && fctPz <= 1){
+    printf("  -> DE,DPz grid looks OK - \n\n");
+  } else {
+    /* update range */
+    /* keep copy  */
+    double demax_old = depo_ptr->pde_DEmax;
+    double dPzmax_old = depo_ptr->pde_DPzmax;
+
+
+    /* new values */
+    depo_ptr->pde_DEmax = (1. + fctE) * depo_ptr->pde_DEmax;
+    depo_ptr->pde_DPzmax = (1. + fctPz) * depo_ptr->pde_DPzmax;
+
+
+    /* round off [doesn't need to preserve precision] */
+    depo_ptr->pde_DEmax = 1E-2 * (ceil(1E2 * depo_ptr->pde_DEmax));
+    depo_ptr->pde_DPzmax = 1E-4 * (ceil(1E4 * depo_ptr->pde_DPzmax));
+
+    /* symmetric grid */
+    depo_ptr->pde_DEmin = -depo_ptr->pde_DEmax;
+    depo_ptr->pde_DPzmin = -depo_ptr->pde_DPzmax;
+
+
+    /*  define new grid */
+    /* Delta E */
+    stp = 2. * depo_ptr->pde_DEmax / depo_ptr->pde_nbinDE;
+    for(k=0; k < depo_ptr->pde_nbinDE; k++){
+      depo_ptr->pde_varDE[k] = -depo_ptr->pde_DEmax + ((double)k) * stp + stp/2.;
+    }
+    /* Delta Pz */
+    stp = 2. * depo_ptr->pde_DPzmax / depo_ptr->pde_nbinDPz;
+    for(k=0; k<depo_ptr->pde_nbinDPz; k++){
+      depo_ptr->pde_varDPz[k] = -depo_ptr->pde_DPzmax + ((double)k) * stp + stp/2.;
+    }
+
+    /* update flag */
+    recompute = 1;
+  }
+  /* If range of Pz, mu, DE, or DPz has changed, */
+  /* update pDEDP computation */
+  if(recompute != 0){
+    /* reset pDEDP before resampling */
+    memset(depo_ptr->pde_pdedp, 0, sizeof_pdedp(depo_ptr)*sizeof(double));  /* zero */
+    /* compute pDEDP probability based on  updated range */
+    pdedp_rcrd_resid(cfg_ptr, depo_ptr);
+  }
+
+  /* reset flag - no further optimizations */
+
+  depo_ptr->pdedp_optimize = false;
+
+  printf("- done.\n\n");
+
   return;
 }

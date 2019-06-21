@@ -105,6 +105,7 @@ void initialize_Config(Config_t*);
 
 void set_xc(Config_t*, double);
 double get_xc(Config_t*);
+double get_bkg(Config_t*);
 void set_eps(Config_t*, double);
 double get_eps(Config_t*);
 double get_engn(Config_t*);

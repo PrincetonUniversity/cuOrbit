@@ -243,9 +243,7 @@ void initialize_Config(Config_t* cfg_ptr){
       /* apprently this needs triple testing */
       pdedp_rcrd_resid(cfg_ptr, depo_ptr);
       if (pdedp_optimize(depo_ptr)){
-        pdedp_checkbdry(depo_ptr);
-        /* repeat sampling */
-        pdedp_rcrd_resid(cfg_ptr, depo_ptr);
+        pdedp_checkbdry(cfg_ptr, depo_ptr);
       }
 
       pdedp_out(depo_ptr);
@@ -482,6 +480,9 @@ double get_xc(Config_t* cfg_ptr){
   return cfg_ptr->xc;
 }
 
+double get_bkg(Config_t* cfg_ptr){
+  return cfg_ptr->bkg;
+}
 
 void set_eps(Config_t* cfg_ptr, double val){
   cfg_ptr->xc = val;
