@@ -58,6 +58,10 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
     else if (MATCH("output", "pdedp_file")) {
       pconfig->pdedp_file = strdup(value);
     }
+    else if (MATCH("output", "bfield_file")) {
+      pconfig->bfield_file = strdup(value);
+    }
+
 
     /* Perturb Config Vars*/
     else if (MATCH("perturbation", "falf")) {
@@ -259,7 +263,7 @@ void initialize_Config(Config_t* cfg_ptr){
     pdedp_out(depo_ptr);
   }
 
-  rcrd_bfield(depo_ptr);
+  rcrd_bfield(cfg_ptr, depo_ptr);
 
   /* i think this is just diagnostic output */
   /* wrt6();  */

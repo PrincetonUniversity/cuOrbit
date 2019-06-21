@@ -7,6 +7,7 @@
 
 #include "orbit_config_api.h"
 #include "orbit_deposition.h"
+#include "orbit_equilibrium.h"  /* bfield */
 #include "orbit_particles.h"  /* ekev */
 #include "orbit_perturbation.h"
 #include "orbit_util.h"
@@ -17,6 +18,7 @@ const int ibin=40;  /* used in temp array in pdedp_finalize */
 typedef struct Deposition {
   /* pdedp */
   char* pdedp_file;
+  char* bfield_file;
   int nruns;
   bool compute_pdedp;
   bool initial_update_pdedp;
@@ -76,6 +78,7 @@ Deposition_t* Deposition_ctor(){
 void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
 
   Depo_ptr->pdedp_file = strndup(cfg_ptr->pdedp_file, MAXFNAME);
+  Depo_ptr->bfield_file = strndup(cfg_ptr->bfield_file, MAXFNAME);
   Depo_ptr->nruns = cfg_ptr->nruns;
   Depo_ptr->compute_pdedp = cfg_ptr->compute_pdedp;
   Depo_ptr->initial_update_pdedp = cfg_ptr->initial_update_pdedp;
@@ -200,7 +203,7 @@ void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   FILE *ifp;
   const char *mode = "r";
 
-  class_domain(Depo_ptr, cfg_ptr);
+  class_domain(cfg_ptr);
 
   ifp = fopen(Depo_ptr->pdedp_file, mode);  /* xxx add f status */
   if (ifp == NULL) {
@@ -390,12 +393,7 @@ void pdedp_init(Deposition_t* Depo_ptr){
   return;
 }
 
-void fulldepmp(Deposition_t* Depo_ptr){
-  /* loops over k and k/2, can live on device one day */
-  return;
-}
-
-void class_kdomain(Deposition_t* Depo_ptr, Config_t* cfg_ptr, int k){
+void class_kdomain(Config_t* cfg_ptr, int k){
 
 
   /*    -  Orbit classification
@@ -502,16 +500,11 @@ void class_kdomain(Deposition_t* Depo_ptr, Config_t* cfg_ptr, int k){
   return;
 }
 
-void class_domain(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
+void class_domain(Config_t* cfg_ptr){
   int k;
   for(k=0; cfg_ptr->nprt; k++){
-    class_kdomain(Depo_ptr, cfg_ptr, k);
+    class_kdomain(cfg_ptr, k);
   }
-  return;
-}
-
-void pdedp_checkbdry(Deposition_t* Depo_ptr){
-  /* long function. */
   return;
 }
 
@@ -854,8 +847,37 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
   return;
 }
 
-void rcrd_bfield(Deposition_t* Depo_ptr){
+void rcrd_bfield(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
+  /*  record P, Bfield(P,0), Bfield(P,pi)  */
+  double pdum;
+  FILE *ofp = fopen(Depo_ptr->bfield_file, "w");  /* add f status */
+  if (ofp == NULL) {
+    fprintf(stderr, "\nCan't open output file %s!\n", Depo_ptr->bfield_file);
+    exit(1);
+  }
+  printf("\nOutputting bfield file %s\n",  Depo_ptr->bfield_file);
+
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  Equilib_t* eqlb_ptr = cfg_ptr->eqlb_ptr;
+  fprintf(ofp, "P, Bfield(P,0), Bfield(P,pi)\n");
+  for(int j=1; j<=200; j++){
+    pdum = (-1. + .02*j)*pw;
+    fprintf(ofp, "%f %f %f\n",
+            pdum,
+            bfield(eqlb_ptr, pdum, 0.),
+            bfield(eqlb_ptr, pdum, M_PI));
+  }
+
   return;
 }
 
 
+void fulldepmp(Deposition_t* Depo_ptr){
+  /* loops over k and k/2, can live on device one day */
+  return;
+}
+
+void pdedp_checkbdry(Deposition_t* Depo_ptr){
+  /* long function. */
+  return;
+}

@@ -51,6 +51,7 @@ typedef struct Config {
   char* displ_file;
   /* outputs */
   char* pdedp_file;
+  char* bfield_file;
 
   Equilib_t* eqlb_ptr;
 
