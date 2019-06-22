@@ -16,6 +16,7 @@ typedef struct Particles Particles_t;
 void initialize_Particles(Particles_t*, Config_t*);
 Particles_t* Particles_ctor();
 
+double* get_b(Particles_t*);
 double* get_g(Particles_t*);
 double* get_q(Particles_t*);
 double* get_en(Particles_t*);
@@ -30,6 +31,7 @@ double* get_time(Particles_t*);
 double* get_dt(Particles_t*);
 double* get_tim1(Particles_t*);
 double* get_wt(Particles_t*);
+double* get_zet(Particles_t*);
 
 double get_zprt(Particles_t*);
 double get_prot(Particles_t*);

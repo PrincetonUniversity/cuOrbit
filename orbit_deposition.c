@@ -875,12 +875,6 @@ void rcrd_bfield(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
   return;
 }
 
-
-void fulldepmp(Deposition_t* Depo_ptr){
-  /* loops over k and k/2, can live on device one day */
-  return;
-}
-
 void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* Check the range used for compute p(DE,DP | E, Pz,mu)
    and adjust the (DE,DPz) range on-the-fly to optimize sampling.
@@ -1036,3 +1030,236 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   return;
 }
+
+void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
+  /* loops over k and k/2, can live on device one day */
+
+  int k, kd, np2, ier;
+  double dum,xproj,tdum;
+  double edum,pzdum,mudum,bdum;
+  double nprt;
+
+  const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
+  const double einj2 = depo_ptr->pde_Emax;
+  Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
+  double* pol = get_pol(Ptcl);
+  double* thet = get_thet(Ptcl);
+  double* pot = get_pot(Ptcl);
+  double* dt = get_dt(Ptcl);
+  double* ptch=get_ptch(Ptcl);
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  const double engn = get_engn(cfg_ptr);
+  double* en = get_en(Ptcl);
+  double* rho = get_rho(Ptcl);
+  const double dt0 = cfg_ptr->dt0;
+  double* zet = get_zet(Ptcl);
+  double ekev = get_ekev(Ptcl);
+  double* rmu = get_rmu(cfg_ptr->ptcl_ptr);
+  double* b = get_b(cfg_ptr->ptcl_ptr);
+  double* g = get_g(cfg_ptr->ptcl_ptr);
+  int* otp = get_otp(Ptcl);
+
+  /* Full deposition*/
+  np2 = .5* cfg_ptr->nprt;
+
+
+  /* xxx i think this must have been a bug in the code I received... */
+  /* outside-co moving */
+  for(kd=0; kd < np2; kd++){
+    ptch[kd] = rand_double();  /* rand */
+    thet[kd] = 0.;
+    dt[kd] = dt0;
+    pol[kd] =  .001 + .999 * rand_double();
+    pol[kd] = pol[kd]*pw;
+    zet[kd] = rand_double() * 2. * M_PI;
+    en[kd] = (einj1 + rand_double() * (einj2 - einj1))
+        * engn / ekev;   /* kinetic energy */
+  }
+  /* -inside-counter moving */
+  for(kd=0; kd < np2; kd++){
+    ptch[kd] = -rand_double();
+    thet[kd] = M_PI;
+    dt[kd] = dt0;
+    pol[kd] = .001+ .999*rand_double();
+    pol[kd] = pol[kd] * pw;
+    zet[kd] = rand_double() * 2.* M_PI;
+    en[kd] = (einj1+rand_double()*(einj2-einj1))*engn/ekev; /* kinetic energy */
+  }
+
+  nprt = kd;  /* xxx not sure about this? */
+  printf(" fulldepmp deposit");
+  /*!      call field(nprt) */
+  for(k=0; k<nprt; k++){
+    kfield(cfg_ptr, Ptcl, k);
+    rho[k] = ptch[k]*sqrt(2. * en[k]) /b[k];
+    rmu[k] = en[k] / b[k] -
+        .5 * rho[k] * rho[k] * b[k];
+    en[k] = en[k] + pot[k];
+
+    /* DEBUG: */
+    edum = en[k];    /* !*ekev/engn*/
+    pzdum = (g[k]*rho[k] - pol[k]) / pw;
+    bdum = bfield(cfg_ptr->eqlb_ptr, pol[k], thet[k]);
+    mudum = rmu[k];  /* /en[k] */
+    /*!       mudum=edum/bdum*(1.0-ptch[k]*ptch[k]) */
+  }
+
+  /* re-sample lost particles */
+  class_domain(cfg_ptr);
+  fullredepmp(cfg_ptr, depo_ptr);
+
+  return;
+}
+
+void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
+  int k,kd,np2,nlost,nmaxs,imaxs;
+  double dum,xproj,tdum;
+
+  const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
+  const double einj2 = depo_ptr->pde_Emax;
+  Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
+  double* pol = get_pol(Ptcl);
+  double* thet = get_thet(Ptcl);
+  double* pot = get_pot(Ptcl);
+  double* dt = get_dt(Ptcl);
+  double* ptch=get_ptch(Ptcl);
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  const double engn = get_engn(cfg_ptr);
+  double* en = get_en(Ptcl);
+  double* rho = get_rho(Ptcl);
+  const double dt0 = cfg_ptr->dt0;
+  double* zet = get_zet(Ptcl);
+  double ekev = get_ekev(Ptcl);
+  double* rmu = get_rmu(Ptcl);
+  double* b = get_b(Ptcl);
+  double* g = get_g(Ptcl);
+  int* otp = get_otp(Ptcl);
+
+  nmaxs=5E3; /* max number of attemps to redeposit particle */
+  /* -  Full deposition, */
+  np2 = .5 * cfg_ptr->nprt;
+  /*      np2 = nprt */
+  printf("Entering FULLREDEPMP...");
+
+  nlost=0;
+
+  /* -outside-co moving */
+  for(kd=0; kd < np2; kd++){
+    imaxs=1;
+
+    if(depo_ptr->pdedp_focusdep && imaxs < nmaxs){
+      check_res_ptc(cfg_ptr, kd);
+      imaxs += 1;
+    }
+
+    if(pol[kd] >= pw || otp[kd] == 2 ||
+       otp[kd] == 4 || otp[kd] == 6){
+      /* lost, replace it */
+
+      nlost+=1;
+      ptch[kd] = rand_double();
+      thet[kd] = 0.;
+      dt[kd] = dt0;
+      pol[kd] =  .002*pw + .997*pw*rand_double();
+      zet[kd] = 2. * M_PI * rand_double();
+      /* kinetic energy*/
+      en[kd] = (einj1 + rand_double() * (einj2-einj1)) * engn / ekev;
+      kfield(cfg_ptr, Ptcl, kd);
+      rho[kd] = ptch[kd]*sqrt(2.*en[kd])/b[kd];
+      rmu[kd] = en[kd]/b[kd] - .5*rho[kd]*rho[kd]*b[kd];
+      en[kd] = en[kd] + pot[kd];
+    }
+  }
+
+  /* -inside-counter moving */
+  for(kd=0; kd < np2; kd++)
+  {
+    imaxs=1;
+
+    if(cfg_ptr->pdedp_focusdep && imaxs < nmaxs){
+      check_res_ptc(cfg_ptr, kd);
+      imaxs += 1;
+    }
+    if(pol[kd] >= pw || otp[kd] == 2 ||
+       otp[kd] == 4 || otp[kd] == 6){
+      /* lost, replace it */
+      nlost += 1;
+      ptch[kd] = -rand_double();
+      thet[kd] = M_PI;
+      dt[kd] = dt0;
+      pol[kd] = .002 * pw + .997 *pw * rand_double();
+      zet[kd] =  2. * M_PI * rand_double();
+      /* kinetic energy */
+      en[kd] = (einj1 + rand_double() * (einj2-einj1)) * engn / ekev;
+      kfield(cfg_ptr, Ptcl, kd);
+      rho[kd] = ptch[kd]*sqrt(2.*en[kd])/b[kd];
+      rmu[kd] = en[kd]/b[kd] - .5*rho[kd]*rho[kd]*b[kd];
+      en[kd] = en[kd] + pot[kd];
+    }
+  }
+  if (nlost > 0){
+    printf("- Number of lost particles: %d -> iterate sampling...\n", nlost);
+    class_domain(cfg_ptr);
+    fullredepmp(cfg_ptr, depo_ptr);   /* goto 11 */
+  }
+
+  return;
+}
+
+void check_res_ptc(Config_t* cfg_ptr, int kd){
+  int j, k, ind;
+  double ptot, pmax;
+  double edum, pzdum, mudum, zdum;
+  double tmp;
+
+  Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
+  Deposition_t* depo_ptr = cfg_ptr->depo_ptr;
+  double* pol = get_pol(Ptcl);
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  const double engn = get_engn(cfg_ptr);
+  double* en = get_en(Ptcl);
+  double* rho = get_rho(Ptcl);
+  double ekev = get_ekev(Ptcl);
+  double* rmu = get_rmu(Ptcl);
+  double* b = get_b(Ptcl);
+  double* g = get_g(Ptcl);
+
+  ptot = 0.;
+  pmax = 0.;
+
+  edum = en[kd]*ekev/engn;
+  pzdum=(g[kd]*rho[kd] - pol[kd])/pw;
+  mudum=rmu[kd]/en[kd];
+
+  const int iE = get_bin(edum, depo_ptr->pde_varE, depo_ptr->pde_nbinE);
+  const int iPz = get_bin(pzdum, depo_ptr->pde_varPz, depo_ptr->pde_nbinPz);
+  const int iMu = get_bin(mudum, depo_ptr->pde_varmu, depo_ptr->pde_nbinmu);
+
+  if(iE <= 0 || iE >= depo_ptr->pde_nbinE ||
+       iPz <= 0 || iPz >= depo_ptr->pde_nbinPz ||
+     iMu <= 0 || iMu >= depo_ptr->pde_nbinmu){
+    pol[kd] =2. * pw;
+    return;
+  }
+  /* else, valid bin - proceed */
+  for(j=0; j < depo_ptr->pde_nbinDE; j++){
+    for(k=0; k < depo_ptr->pde_nbinPz; k++){
+      /* (j,k,iE,iPz,iMu) */
+      /* this loop looks pretty wrong, lets make them all the same yeah? */
+      ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, k, j);
+      tmp = depo_ptr->pde_pdedp[ind];
+      ptot = ptot + tmp;
+      if(pmax < tmp){
+        pmax=tmp;
+      }
+    }
+  }
+
+  if(ptot <= pmax){
+    /* throw away particle */
+    pol[kd] = 2. * pw;
+  }
+
+  return;
+}
+

@@ -110,6 +110,9 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
 
 }
 
+double* get_b(Particles_t* ptcl_ptr){
+  return ptcl_ptr->b;
+}
 
 double* get_g(Particles_t* ptcl_ptr){
   return ptcl_ptr->g;

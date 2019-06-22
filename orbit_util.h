@@ -27,4 +27,15 @@ inline bool atob(const char* a){
     exit(1);
   }
 }
+
+inline double rand_double(){
+  /* stupid simple c rng between 0 1  */
+  return rand()/(double)RAND_MAX;
+}
+
+inline double rand_double_range(const double low, const double high){
+    /* stupid simple c rng between low and high  */
+   return (high - low) * rand_double() + low;
+}
+
 #endif

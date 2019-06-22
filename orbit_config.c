@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdbool.h>
+#include <time.h>
 #include "inih/ini.h"
 
 #include "orbit_config_api.h"
@@ -167,9 +168,22 @@ static int config_file_handler(char* config_fname, Config_t* config){
 
 void initialize_Config(Config_t* cfg_ptr){
 
+  char config_file[] = "INPUT/config.ini";
+  config_file_handler(config_file, cfg_ptr);
+  printf("From config %s:  nprt %d seed %d\n",
+         config_file, cfg_ptr->nprt, cfg_ptr->seed);
 
-  config_file_handler("INPUT/config.ini", cfg_ptr);
-  printf("rx'd nprt %d seed %d\n", cfg_ptr->nprt, cfg_ptr->seed);
+  /* Init RNG, right now, just use simple c one, its not great */
+  long seed = cfg_ptr->seed;
+  if(seed == -1){
+    /* use a pretty random seed */
+    seed = ((long)time(NULL));
+    printf("Initilized RNG with %ld\n", seed);
+  }
+  srand(seed);
+  printf("Initilized RNG with %ld\n", seed);
+
+
   /* initialize the other model components */
   initialize_Equilib(cfg_ptr->eqlb_ptr, cfg_ptr);
 
@@ -211,10 +225,7 @@ void initialize_Config(Config_t* cfg_ptr){
        } else {
        fulldepmp_co();
        } */
-    fulldepmp(depo_ptr);
-
-
-    /* xxx init and fulldepmp/fulldepmp_co go about here */
+    fulldepmp(cfg_ptr, depo_ptr);
 
 
     /* maybe break this out into a compute area. */
