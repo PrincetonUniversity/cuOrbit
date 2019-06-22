@@ -506,7 +506,7 @@ void class_kdomain(Config_t* cfg_ptr, int k){
 
 void class_domain(Config_t* cfg_ptr){
   int k;
-  for(k=0; cfg_ptr->nprt; k++){
+  for(k=0; k < cfg_ptr->nprt; k++){
     class_kdomain(cfg_ptr, k);
   }
   return;
@@ -1263,3 +1263,53 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   return;
 }
 
+void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
+  /*    all confined orbits, broad energy range, co- only */
+  int k, kd, np2, nprt0;
+  double dum, xproj, tdum;
+
+  const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
+  const double einj2 = depo_ptr->pde_Emax;
+  Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
+  double* ptch=get_ptch(Ptcl);
+  double* thet = get_thet(Ptcl);
+  double* dt = get_dt(Ptcl);
+  double* pol = get_pol(Ptcl);
+  double* pot = get_pot(Ptcl);
+  double* zet = get_zet(Ptcl);
+  double* en = get_en(Ptcl);
+  const double engn = get_engn(cfg_ptr);
+  double ekev = get_ekev(Ptcl);
+  double* rho = get_rho(Ptcl);
+  double* rmu = get_rmu(Ptcl);
+  const double dt0 = cfg_ptr->dt0;
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  double* b = get_b(Ptcl);
+
+  /*   Full deposition,
+       outside-co moving */
+  for(kd=0; kd < cfg_ptr->nprt; kd++){
+    ptch[kd] = rand_double();
+    thet[kd] = 0.;
+    dt[kd] = dt0;
+    pol[kd] =  .002*pw + .996 * pw * rand_double();
+    zet[kd]=2. * M_PI * rand_double();    /*  random toroidal */
+    en[kd] = (einj1 + rand_double()*(einj2-einj1)) * engn/ekev; /* kinetic energy */
+  }
+
+  cfg_ptr->nprt = kd;
+  nprt0 = kd;
+  printf("%d fulldepmp_co deposit", nprt0);
+  for(k=0; k < cfg_ptr->nprt; k++){
+    kfield(cfg_ptr, Ptcl, kd);
+    rho[k] = ptch[k]*sqrt(2.*en[k])/b[k];
+    rmu[k] = en[k]/b[k] - .5*rho[k]*rho[k]*b[k];
+    en[k] = en[k] + pot[k];
+  }
+
+  /* re-sample lost particles */
+  class_domain(cfg_ptr);
+  fullredepmp(cfg_ptr, depo_ptr);   /* goto 11 */
+
+  return;
+}

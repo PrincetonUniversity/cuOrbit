@@ -219,13 +219,14 @@ void initialize_Config(Config_t* cfg_ptr){
       }
     }
 
-    /* for now we just  use the fulldepmp
-       if( irun_pdedp % 2  == 0){
-       fulldepmp();
-       } else {
-       fulldepmp_co();
-       } */
-    fulldepmp(cfg_ptr, depo_ptr);
+    /* XXXXX, yeah something off here */
+    /* /\* for now we just  use the fulldepmp *\/ */
+    /* if( irun_pdedp % 2  == 0){ */
+    /*   fulldepmp(cfg_ptr, depo_ptr); */
+    /* } else { */
+    /*   fulldepmp_co(cfg_ptr, depo_ptr); */
+    /* } */
+    /* /\*dbg fulldepmp(cfg_ptr, depo_ptr);*\/ */
 
 
     /* maybe break this out into a compute area. */
