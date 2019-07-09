@@ -359,6 +359,26 @@ double get_omeg0(Perturb_t* ptrb_ptr){
     return ptrb_ptr->omeg0;
 }
 
+double get_npert(Perturb_t* ptrb_ptr){
+    return ptrb_ptr->npert;
+}
+
+int get_md1(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->md1;
+}
+
+int get_md2(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->md2;
+}
+
+double* get_omegv(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->omegv;
+}
+
+double* get_phaz(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->phaz;
+}
+
 double pol2pot(Config_t* cfg_ptr, double pdum){
   double potout;
   const double pw = get_pw(cfg_ptr->eqlb_ptr);

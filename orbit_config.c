@@ -343,17 +343,17 @@ void set1(Config_t* cfg_ptr){
   thet[0] = 0;
 
   /* xxx not sure why exactly we do this... */
-  field(cfg_ptr, Ptcl, 1);
+  field(cfg_ptr, 1);
   /* or this */
   q0 = q[0];
   pol[0] = get_pw(Eq);
-  field(cfg_ptr, Ptcl, 1);
+  field(cfg_ptr, 1);
   qw = q[0];
   for(k=1; k<=200; k++){
     pol[k] = 0.005 * k * get_pw(Eq);
     thet[k] = 0;
   }
-  field(cfg_ptr, Ptcl, 200);
+  field(cfg_ptr, 200);
   pq1 = 9.99E9;
   rq1 = 9.99E9;
   if (darray_max(q, (size_t)nprt)>1. || darray_min(q, (size_t)nprt)<1.){
@@ -526,5 +526,9 @@ double get_pamp(Config_t* cfg_ptr){
 
 double get_rprof(Config_t* cfg_ptr){
   return cfg_ptr->rprof;
+}
+
+double get_trun(Config_t* cfg_ptr){
+  return cfg_ptr->trun;
 }
 

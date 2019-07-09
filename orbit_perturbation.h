@@ -17,5 +17,12 @@ void splna(Perturb_t* , Equilib_t*, Particles_t*);
 void splnx(Perturb_t* , Equilib_t*, Particles_t*);
 void set_omeg0(Perturb_t*, double);
 double get_omeg0(Perturb_t*);
+double get_npert(Perturb_t*);
+int get_md1(Perturb_t*);
+int get_md2(Perturb_t*);
+
+double* get_phaz(Perturb_t*);
+double* get_omegv(Perturb_t*);
+
 double pol2pot(Config_t*, double);
 #endif

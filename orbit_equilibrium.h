@@ -30,6 +30,7 @@ double get_ped(Equilib_t*);
 double get_lsp(Equilib_t*);
 double get_lst(Equilib_t*);
 double get_nrip(Equilib_t*);
+double get_krip(Equilib_t*);
 
 
 /* utils */

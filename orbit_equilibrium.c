@@ -623,6 +623,10 @@ double get_nrip(Equilib_t* Eq_ptr){
   return Eq_ptr->nrip;
 }
 
+double get_krip(Equilib_t* Eq_ptr){
+  return Eq_ptr->krip;
+}
+
 
 void vspline(Equilib_t* Eq_ptr){
   const int lsp = get_lsp(Eq_ptr);

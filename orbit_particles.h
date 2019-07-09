@@ -38,7 +38,7 @@ double get_prot(Particles_t*);
 double get_prot(Particles_t*);
 double get_ekev(Particles_t*);
 
-void field(Config_t*, Particles_t*, const int);
-void kfield(Config_t*, Particles_t*, int);
+void field(Config_t*, const int);
+void kfield(Config_t*, int);
 
 #endif

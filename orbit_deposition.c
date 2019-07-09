@@ -1090,7 +1090,7 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   printf(" fulldepmp deposit");
   /*!      call field(nprt) */
   for(k=0; k<nprt; k++){
-    kfield(cfg_ptr, Ptcl, k);
+    kfield(cfg_ptr, k);
     rho[k] = ptch[k]*sqrt(2. * en[k]) /b[k];
     rmu[k] = en[k] / b[k] -
         .5 * rho[k] * rho[k] * b[k];
@@ -1164,7 +1164,7 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
       zet[kd] = 2. * M_PI * rand_double();
       /* kinetic energy*/
       en[kd] = (einj1 + rand_double() * (einj2-einj1)) * engn / ekev;
-      kfield(cfg_ptr, Ptcl, kd);
+      kfield(cfg_ptr, kd);
       rho[kd] = ptch[kd]*sqrt(2.*en[kd])/b[kd];
       rmu[kd] = en[kd]/b[kd] - .5*rho[kd]*rho[kd]*b[kd];
       en[kd] = en[kd] + pot[kd];
@@ -1191,7 +1191,7 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
       zet[kd] =  2. * M_PI * rand_double();
       /* kinetic energy */
       en[kd] = (einj1 + rand_double() * (einj2-einj1)) * engn / ekev;
-      kfield(cfg_ptr, Ptcl, kd);
+      kfield(cfg_ptr, kd);
       rho[kd] = ptch[kd]*sqrt(2.*en[kd])/b[kd];
       rmu[kd] = en[kd]/b[kd] - .5*rho[kd]*rho[kd]*b[kd];
       en[kd] = en[kd] + pot[kd];
@@ -1301,7 +1301,7 @@ void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   nprt0 = kd;
   printf("%d fulldepmp_co deposit", nprt0);
   for(k=0; k < cfg_ptr->nprt; k++){
-    kfield(cfg_ptr, Ptcl, kd);
+    kfield(cfg_ptr, kd);
     rho[k] = ptch[k]*sqrt(2.*en[k])/b[k];
     rmu[k] = en[k]/b[k] - .5*rho[k]*rho[k]*b[k];
     en[k] = en[k] + pot[k];
