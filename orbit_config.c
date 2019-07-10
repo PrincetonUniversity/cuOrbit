@@ -73,6 +73,8 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->alimit = atof(value);
     } else if (MATCH("perturbation", "global_scaling_factor")) {
       pconfig->global_scaling_factor = atof(value);
+    } else if (MATCH("perturbation", "npert")) {
+      pconfig->npert = atof(value);
     } else if (MATCH("perturbation", "freq_scaling_factor")) {
       pconfig->freq_scaling_factor = atof(value);
     }
@@ -244,8 +246,8 @@ void initialize_Config(Config_t* cfg_ptr){
     printf("\t sim. time [ms] \t:  %f\n", nstep_all*dum);
     printf("\t time step [us] \t:  %f\n\n",
            1E6 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr));
+    ///XXXX time steps to skip
 
-    printf("FFFF\n");
     /* launch the stepping functions*/
     do_particles(cfg_ptr);
     /* end of main run*/

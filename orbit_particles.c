@@ -597,10 +597,9 @@ void do_particles(Config_t* cfg_ptr){
 
   int particle_id;
   int ktm;
-  printf("GBG nstep %d\n", get_nstep_all(cfg_ptr));
   for(particle_id=0; particle_id < cfg_ptr->ptcl_ptr->nprt; particle_id++){
     for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
-      printf("DBG particle id %d ktm %d\n", particle_id, ktm);
+      /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
 
       konestep(cfg_ptr, particle_id);
 

@@ -12,7 +12,7 @@ bool compute_pdedp(Deposition_t*);
 bool initial_update_pdedp(Deposition_t*);
 bool pdedp_optimize(Deposition_t*);
 
-int get_pdedp_dtsamp(Deposition_t*);
+double get_pdedp_dtsamp(Deposition_t*);
 int get_pdedp_tskip(Deposition_t*);
 void set_pdedp_tskip(Deposition_t*, double);
 bool get_initial_update_pdedp(Deposition_t*);

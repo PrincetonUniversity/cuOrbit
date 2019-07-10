@@ -57,6 +57,7 @@ typedef struct Config {
 
   /* Pertubation */
   Perturb_t* ptrb_ptr;
+  int npert;
   double falf;
   double ascale;
   double alimit;

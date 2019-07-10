@@ -64,6 +64,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   ptrb_ptr->alimit = config_ptr->alimit;
   ptrb_ptr->global_scaling_factor = config_ptr->global_scaling_factor;
   ptrb_ptr->freq_scaling_factor = config_ptr->freq_scaling_factor;
+  ptrb_ptr->npert = config_ptr->npert;
   //ptrb_ptr->sng = config_ptr->sng;
 
   /* in set1 */
@@ -161,6 +162,9 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   ptrb_ptr->damp = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
   ptrb_ptr->harm = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
   ptrb_ptr->omegv = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->phaz = (double*)calloc(
+      (unsigned)ptrb_ptr->modes * (unsigned)config_ptr->nprt,
+      sizeof(double));  /* xxx check size , and pmegv*/
 
   ptrb_ptr->mmod = (int*)calloc((unsigned)ptrb_ptr->modes, sizeof(int));
   ptrb_ptr->nmod = (int*)calloc((unsigned)ptrb_ptr->modes, sizeof(int));

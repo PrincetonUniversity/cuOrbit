@@ -138,7 +138,7 @@ bool pdedp_optimize(Deposition_t* Depo_ptr){
 }
 
 
-int get_pdedp_dtsamp(Deposition_t* Depo_ptr){
+double get_pdedp_dtsamp(Deposition_t* Depo_ptr){
   return Depo_ptr->pdedp_dtsamp;
 }
 
