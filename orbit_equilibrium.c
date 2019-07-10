@@ -483,7 +483,6 @@ static int compute_kd(Equilib_t* Eq_ptr, double x){
   return kd;
 }
 
-
 double gfun(Equilib_t* Eq_ptr, double px){
   /* gives g as function of poloidal flux */
   const int jd = compute_jd(Eq_ptr, px);
@@ -673,4 +672,47 @@ void vspline(Equilib_t* Eq_ptr){
     vd3[j] = (vd2[jp] - vd2[j])/(2.*dpx);
   }
   return;
+}
+
+double rpol(Equilib_t* Eq_ptr, double pdum){
+  int jd;
+  const int lspm1 = Eq_ptr->lsp - 1;
+  const double pw = Eq_ptr->pw;
+  jd = ((int) pdum * lspm1 / pw) + 1;
+  jd = imin(jd, lspm1);
+  jd = imax(jd, 1);
+  const double dpx = pdum - (jd -1) * pw / (lspm1);
+  const double dp2 = dpx * dpx;
+  /* zero inds */
+  jd--;
+  return Eq_ptr->rp1[jd] + Eq_ptr->rp2[jd]*dpx + Eq_ptr->rp3[jd]*dp2;
+}
+
+double polr_mp(Equilib_t* Eq_ptr, double rdum, double pd){
+  const double eps = compute_eps(Eq_ptr);
+  if(rdum >= eps){
+    return Eq_ptr->pw;
+  }
+  if(rdum <= 0.){
+    return 1.E-8;
+  }
+
+  int nstp = 0;
+  const double rtol = 1.E-3;
+
+  double rz = rpol(Eq_ptr, pd);
+
+  while( fabs(rz-rdum) > rtol && nstp<1){
+    pd *= (rdum/rz);
+    rz = rpol(Eq_ptr, pd);
+  }
+
+  return pd;
+}
+
+double compute_eps(Equilib_t* eqlb_ptr){
+  const double xproj0 = xproj(eqlb_ptr, 0., 0.);
+  const double xproj1 = xproj(eqlb_ptr, eqlb_ptr->ped, 0.);
+
+  return  (xproj1 - xproj0)/xproj0;
 }

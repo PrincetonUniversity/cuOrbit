@@ -38,7 +38,20 @@ double get_prot(Particles_t*);
 double get_prot(Particles_t*);
 double get_ekev(Particles_t*);
 
-void field(Config_t*, const int);
+double* get_dadp(Particles_t*);
+double* get_dadt(Particles_t*);
+double* get_dadz(Particles_t*);
+double* get_padt(Particles_t*);
+
+
+void field(Config_t*, int);
 void kfield(Config_t*, int);
+
+void ptrbak(Config_t*, int);
+void ptrb2k(Config_t*, int);
+
+void do_particles(Config_t* );
+void konestep(Config_t*, int);
+
 
 #endif

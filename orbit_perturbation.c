@@ -42,11 +42,6 @@ typedef struct Perturb {
   /* double *dbdt; */
   /* double *dbdp; */
   /* double *dbdz; */
-  double *alp;
-  double *dadp;
-  double *dadt;
-  double *dadz;
-  double *padt;
   double *phaz;
   /* displacements xi1-xi3 */
   double *xi1, *xi2, *xi3;
@@ -169,8 +164,6 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
 
   ptrb_ptr->mmod = (int*)calloc((unsigned)ptrb_ptr->modes, sizeof(int));
   ptrb_ptr->nmod = (int*)calloc((unsigned)ptrb_ptr->modes, sizeof(int));
-
-
 
   for(md=0; md < ptrb_ptr->modes; md++){
     fscanf(ifp, "** m = %d ", &(ptrb_ptr->mmod[md]));
@@ -359,8 +352,16 @@ double get_omeg0(Perturb_t* ptrb_ptr){
     return ptrb_ptr->omeg0;
 }
 
-double get_npert(Perturb_t* ptrb_ptr){
+int get_nflr(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->nflr;
+}
+
+int get_npert(Perturb_t* ptrb_ptr){
     return ptrb_ptr->npert;
+}
+
+int get_lpt(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->lpt;
 }
 
 int get_md1(Perturb_t* ptrb_ptr){
@@ -379,6 +380,17 @@ double* get_phaz(Perturb_t* ptrb_ptr){
   return ptrb_ptr->phaz;
 }
 
+double* get_a1(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->a1;
+}
+double* get_a2(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->a2;
+}
+double* get_a3(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->a3;
+}
+
+
 double pol2pot(Config_t* cfg_ptr, double pdum){
   double potout;
   const double pw = get_pw(cfg_ptr->eqlb_ptr);
@@ -387,3 +399,32 @@ double pol2pot(Config_t* cfg_ptr, double pdum){
   potout = pamp * exp(rprof * pdum / pw);
   return potout;
 }
+
+double* get_alfv(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->alfv;
+}
+
+double* get_amp(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->amp;
+}
+
+int* get_mmod(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->mmod;
+}
+
+int* get_nmod(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->nmod;
+}
+
+double* get_xi1(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->xi1;
+}
+
+double* get_xi2(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->xi2;
+}
+
+double* get_xi3(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->xi3;
+}
+

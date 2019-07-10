@@ -245,8 +245,9 @@ void initialize_Config(Config_t* cfg_ptr){
     printf("\t time step [us] \t:  %f\n\n",
            1E6 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr));
 
+    printf("FFFF\n");
     /* launch the stepping functions*/
-    /* ... */
+    do_particles(cfg_ptr);
     /* end of main run*/
 
     if (compute_pdedp(depo_ptr)){
@@ -532,3 +533,10 @@ double get_trun(Config_t* cfg_ptr){
   return cfg_ptr->trun;
 }
 
+int get_nstep_all(Config_t* cfg_ptr){
+  return cfg_ptr->nstep_all;
+}
+
+double get_dt0(Config_t* cfg_ptr){
+  return cfg_ptr->dt0;
+}

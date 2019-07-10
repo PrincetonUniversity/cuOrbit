@@ -44,5 +44,8 @@ void vspline(Equilib_t*);
 
 double xproj(Equilib_t*, double, double);
 double zproj(Equilib_t*, double, double);
+double rpol(Equilib_t*, double);
+double polr_mp(Equilib_t*, double, double);
+double compute_eps(Equilib_t*);
 
 #endif

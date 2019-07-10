@@ -115,5 +115,7 @@ double get_bmin(Config_t*);
 double get_pamp(Config_t*);
 double get_rprof(Config_t*);
 double get_trun(Config_t*);
+int get_nstep_all(Config_t*);
+double get_dt0(Config_t*);
 
 #endif

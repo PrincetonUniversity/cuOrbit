@@ -53,6 +53,14 @@ typedef struct Particles {
   double* nout;
   double* nfin;
   double* e0;
+  double* dptdp;
+  double* dptdt;
+  double* dptdz;
+  double *alp;
+  double *dadp;
+  double *dadt;
+  double *dadz;
+  double *padt;
 
 } Particles_t;
 
@@ -120,6 +128,16 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
   ptcl_ptr->nout=(double*)calloc(ptcl_ptr->idm, sizeof(double));
   ptcl_ptr->nfin=(double*)calloc(ptcl_ptr->idm, sizeof(double));
   ptcl_ptr->e0=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dptdp=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dptdt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dptdz=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->alp = (double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dadp = (double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dadt = (double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dadz = (double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->padt = (double*)calloc(ptcl_ptr->idm, sizeof(double));
+
+
 
 }
 
@@ -185,6 +203,26 @@ double get_prot(Particles_t* ptcl_ptr){
 }
 double get_ekev(Particles_t* ptcl_ptr){
   return ptcl_ptr->ekev;
+}
+
+double* get_alp(Particles_t* ptcl_ptr){
+  return ptcl_ptr->alp;
+}
+
+double* get_dadp(Particles_t* ptcl_ptr){
+  return ptcl_ptr->dadp;
+}
+
+double* get_dadt(Particles_t* ptcl_ptr){
+  return ptcl_ptr->dadt;
+}
+
+double* get_dadz(Particles_t* ptcl_ptr){
+  return ptcl_ptr->dadz;
+}
+
+double* get_padt(Particles_t* ptcl_ptr){
+  return ptcl_ptr->padt;
 }
 
 
@@ -308,8 +346,8 @@ void kfield(Config_t* cfg_ptr, int k){
   }
 
   if( get_npert(cfg_ptr->ptrb_ptr) > 0) {
-    /* ptrbak() */
-    /* ptrb2k() */
+    ptrbak(cfg_ptr, k);
+    ptrb2k(cfg_ptr, k);
   }
 
   return;
@@ -326,7 +364,7 @@ void kupdate(Config_t* cfg_ptr, int k){
   double* tim1 = get_tim1(Ptcl);
   const double pw = get_pw(cfg_ptr->eqlb_ptr);
   double* b = Ptcl->b;
-  double* rmu = Ptcl->b;
+  double* rmu = Ptcl->rmu;
   double* dt = Ptcl->dt;
   double* w1 = Ptcl->w1;
   double* w3 = Ptcl->w3;
@@ -367,5 +405,367 @@ void kupdate(Config_t* cfg_ptr, int k){
     phaz[md*idm + k] = phaz[md*idm + k] + omegv[md]*dt[k];
   }
 
+  return;
+}
+
+void ptrb2k(Config_t* cfg_ptr, int k)
+{
+  double* dptdp = cfg_ptr->ptcl_ptr->dptdp;
+  double* pot = cfg_ptr->ptcl_ptr->pot;
+  double* pol = cfg_ptr->ptcl_ptr->pol;
+  const double pamp = get_pamp(cfg_ptr);
+  const double rprof = get_rprof(cfg_ptr);
+  const double engn = get_engn(cfg_ptr);
+  const double ekev = get_ekev(cfg_ptr->ptcl_ptr);
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  double dum;
+
+  dum = pamp*engn/ekev;
+  pot[k] =  pot[k] + dum*exp(-rprof*pol[k]/pw);
+  dptdp[k] = dptdp[k] - rprof/pw*dum*exp(-rprof*pol[k]/pw);
+
+  return;
+}
+
+void ptrbak(Config_t* cfg_ptr, int k)
+{
+  Equilib_t* Eqlb = cfg_ptr->eqlb_ptr;
+  Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
+  Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
+  double* alp = get_alp(Ptcl);
+  double* dadp = get_dadp(Ptcl);
+  double* dadt = get_dadt(Ptcl);
+  double* dadz = get_dadz(Ptcl);
+  double* padt = get_padt(Ptcl);
+  double* pot = Ptcl->pot;
+  double* dptdt = Ptcl->dptdt;
+  double* dptdz = Ptcl->dptdz;
+  double* dptdp = Ptcl->dptdp;
+  int nflr = get_nflr(Ptrb);
+  double* en = Ptcl->en;
+  double* pol = Ptcl->pol;
+  const double zprt = Ptcl->zprt;
+  const double pamp = get_pamp(cfg_ptr);
+  const double rprof = get_rprof(cfg_ptr);
+  const double engn = get_engn(cfg_ptr);
+  const double ekev = get_ekev(Ptcl);
+  const double pw = get_pw(Eqlb);
+  const int md1 = get_md1(Ptrb);
+  const int md2 = get_md2(Ptrb);
+  double* ptch = Ptcl->ptch;
+  double prot = Ptcl->prot;
+  double* alfv = get_alfv(Ptrb);
+  double* amp = get_amp(Ptrb);
+  double* a1 = get_a1(Ptrb);
+  double* a2 = get_a2(Ptrb);
+  double* a3 = get_a3(Ptrb);
+  double* xi1 = get_xi1(Ptrb);
+  double* xi2 = get_xi2(Ptrb);
+  double* xi3 = get_xi3(Ptrb);
+  int* nmod = get_nmod(Ptrb);
+  int* mmod = get_mmod(Ptrb);
+  const double* thet = get_thet(Ptcl);
+  const double* zet = get_zet(Ptcl);
+  const int idm = Ptcl->idm;
+  double* b = Ptcl->b;
+  double* g = Ptcl->g;
+  double* gp = Ptcl->gp;
+  double* q = Ptcl->q;
+  double* qp = Ptcl->qp;
+  double* ri = Ptcl->ri;
+  double* rip = Ptcl->rip;
+  const double bkg = get_bkg(cfg_ptr);
+  double* phaz = get_phaz(Ptrb);
+  double* omegv = get_omegv(Ptrb);
+  int lpt = get_lpt(Ptrb);
+
+
+  /* locals */
+  int md,n,m,jd;
+  int kf,nflr0;
+  double pdum,dpx,dp2,agg;
+  double alnm,alnmp,cnm,snm;
+  double xinm,xinmp,gqi,gqip,gmni,gmnip;
+  double edum,xisnm,xicnm,xipsnm;
+  double x0p,x1p,rhol;
+  double psi_flr,dpsi_flr,ph_flr,dph_flr;
+  int ind;
+  int lptm1;
+  int nval;
+
+  alp[k] = 0.;
+  dadp[k] = 0.;
+  dadt[k] = 0.;
+  dadz[k] = 0.;
+  padt[k] = 0.;
+  pot[k] = 0.;
+  dptdt[k] = 0.;
+  dptdz[k] = 0.;
+  dptdp[k] = 0.;
+
+  // make sure energy is finite
+  nflr0=nflr;
+  edum=en[k]*ekev/engn;
+  if((edum-edum) != 0){
+    nflr0=1 ;// skip FLR corrections if no finite energy
+  }
+
+  // compute GC particle position, Larmor radius
+  if(nflr0 > 1){
+    x0p=rpol(Eqlb, pol[k]); // gives rminor [m] from Psi_pol
+    dph_flr = M_PI / nflr;
+    rhol=1.02 * sqrt(prot) / zprt * (1.-ptch[k] * ptch[k]) *
+      sqrt(1.E3 * en[k] * ekev / engn) / (1.E3 * bkg * b[k]); // [m] from NRL Plasma Formulary
+
+    // look for max displacement perpendicular to flux surface
+    x1p = x0p+rhol;
+    psi_flr=polr_mp(Eqlb,  x1p, pol[k]+0.05);
+    // get DPsi
+    dpsi_flr = fabs(psi_flr-pol[k]);
+  }
+
+  //do  312 md = md1,md2 ! loop over harmonics
+  for(md=md1-1; md<md2; md++){
+    nval = alfv[md];  /* xxx does this need to be saved in a struct ?*/
+
+    n = nmod[md];
+    m = mmod[md];
+
+    //! reset variables
+    xisnm = 0.;
+    xicnm = 0.;
+    xipsnm = 0.;
+
+    //do kf=1,nflr0 ! loop over gyro-orbit, average perturbation
+    for(kf=1; kf<=nflr0; kf++){
+      if(nflr0 == 1){
+        pdum = pol[k];
+      }
+      if(nflr0 > 1) {
+        ph_flr=(kf-1.)*dph_flr;
+        pdum=pol[k]+dpsi_flr*cos(ph_flr);
+      }
+
+      lptm1 = (lpt) - 1;
+      jd = pdum*(lptm1)/pw + 1;
+      jd = imin(jd,lptm1);
+      jd = imax(jd,1);
+      dpx = pdum - (jd-1)*pw/(lptm1);
+      dp2 = dpx*dpx;
+      // zero inds
+      jd--;
+      ind = md*910 + jd;
+      alnm = amp[nval]*(a1[ind] + a2[ind]*dpx + a3[ind]*dp2);
+      alnmp = amp[nval]*( a2[ind] + 2*a3[ind]*dpx);
+      xinm = amp[nval]*(xi1[ind] + xi2[ind]*dpx + xi3[ind]*dp2);
+      xinmp = amp[nval]*( xi2[ind] + 2*xi3[ind]*dpx);
+      agg = n*zet[k] - m*thet[k];
+      cnm = cos(agg - phaz[md*idm + k]);
+      snm = sin(agg - phaz[md*idm + k]);
+      alp[k] = alp[k] + alnm*snm/nflr0;
+      dadp[k] = dadp[k] + alnmp*snm/nflr0;
+      dadt[k] = dadt[k] - m*alnm*cnm/nflr0;
+      dadz[k] = dadz[k] + alnm*n*cnm/nflr0;
+      padt[k] = padt[k] - omegv[md]*alnm*cnm/nflr0;
+
+      xisnm = xisnm + xinm*snm/nflr0;
+      xicnm = xicnm + xinm*cnm/nflr0;
+      xipsnm = xipsnm + xinmp*snm/nflr0;
+
+    }  //end loop - mock-up FLR effects
+
+    // - compute the potential for each particle to make E parallel zero
+    gqi = g[k]*q[k] + ri[k];
+    gqip = gp[k]*q[k] + g[k]*qp[k] + rip[k];
+    gmni = m*g[k] + n*ri[k];
+    gmnip = m*gp[k] + n*rip[k];
+    pot[k]= pot[k] - xisnm*gqi*omegv[md]/gmni;
+    dptdt[k] = dptdt[k] + m*xicnm*gqi*omegv[md]/gmni;
+    dptdz[k] = dptdz[k] - n*xicnm*gqi*omegv[md]/gmni;
+    dptdp[k] = dptdp[k] - xipsnm*gqi*omegv[md]/gmni
+      - xisnm*gqip*omegv[md]/gmni
+      + xisnm*gqi*omegv[md]*gmnip/(gmni*gmni);
+  } // loop over harmonics
+
+  return;
+}
+
+
+void do_particles(Config_t* cfg_ptr){
+    // before we begin, we need to compute "eps"
+  const double eps = compute_eps(cfg_ptr->eqlb_ptr);
+
+  int particle_id;
+  int ktm;
+  printf("GBG nstep %d\n", get_nstep_all(cfg_ptr));
+  for(particle_id=0; particle_id < cfg_ptr->ptcl_ptr->nprt; particle_id++){
+    for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
+      printf("DBG particle id %d ktm %d\n", particle_id, ktm);
+
+      konestep(cfg_ptr, particle_id);
+
+      kupdate(cfg_ptr, particle_id);
+
+    }
+  }
+}
+
+void konestep(Config_t* cfg_ptr, int k){
+
+  Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
+  Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
+  double* nout = Ptcl->nout;
+  double* nfin = Ptcl->nfin;
+  double* dt = Ptcl->dt;
+  double* dptdp = cfg_ptr->ptcl_ptr->dptdp;
+  double* pol = cfg_ptr->ptcl_ptr->pol;
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  double* time = get_time(Ptcl);
+  double* tim1 = get_tim1(Ptcl);
+  double trun = get_trun(cfg_ptr);
+  int npert = get_npert(Ptrb);
+  double* b = Ptcl->b;
+  double* g = Ptcl->g;
+  double* gp = Ptcl->gp;
+  double* q = Ptcl->q;
+  double* qp = Ptcl->qp;
+  double* ri = Ptcl->ri;
+  double* rip = Ptcl->rip;
+  double* alp = Ptcl->alp;
+  double* zet = Ptcl->zet;
+  double* thet = Ptcl->thet;
+  double* rho = Ptcl->rho;
+  double* rmu = Ptcl->rmu;
+  double* dadp = Ptcl->dadp;
+  double* dbdp = Ptcl->dbdp;
+  double* dadz = Ptcl->dadz;
+  double* dbdz = Ptcl->dbdz;
+  double* dadt = Ptcl->dadt;
+  double* dbdt = Ptcl->dbdt;
+  double* dptdt = Ptcl->dptdt;
+  double* dptdz = Ptcl->dptdz;
+  double* padt = Ptcl->padt;
+  const double chrg = Ptcl->chrg;
+  const double dt0 = get_dt0(cfg_ptr);
+
+  int n1,j,i,ndum;
+  double xdum,ydum,rbb,dedb,deni,fac1,fac2,pdum,xdot,ydot;
+  /* local temps */
+  double y_[4];
+  double d_[4];
+  double e_[4];
+  double a_[4];
+  double bx_[4];
+  double h_;
+  double nt_;
+  double c1_[4];
+  double zdots_;
+
+  n1=4;
+
+  dt[k]=dt0;
+
+  nout[k] = .6 * (1. + copysign(1., pol[k]- pw) );
+  nfin[k] =  .6 * (1. + copysign(1., time[k] - trun));
+  nt_ = .6 * (1.  + copysign(1., pol[k]-.05 *pw));
+  dt[k] = nt_ * dt[k] + (1 - nt_) * dt0;
+
+  xdum = sqrt(pol[k])*cos(thet[k]);
+  ydum = sqrt(pol[k])*sin(thet[k]);
+
+
+  y_[0] = nt_ * pol[k] + (1-nt_)*xdum;
+  y_[1] = nt_ * thet[k] + (1-nt_)*ydum;
+  y_[2] = zet[k];
+  y_[3] = rho[k];
+
+  // XXXX gbw, check this, looks like i typo'd
+  d_[0] = y_[0];
+  d_[1] = y_[1];
+  d_[2] = y_[2];
+  d_[3] = y_[3];
+  h_ = dt[k]/6.0 ;
+
+  for(j=0; j < 4; j++){
+    kfield(cfg_ptr, 1);
+
+
+    if(npert ==  0){
+      //goto 61
+      if(k == 0){
+        printf("FAILURE: integ without perturbations is not yet implimented\n");
+      }
+      return;
+    }
+
+    rbb = y_[3] * b[k]*b[k];
+    dedb = b[k] * y_[3]*y_[3] + rmu[k];
+    deni = 1. / ( g[k]*q[k] + ri[k] + (chrg * y_[3]+alp[k]) * (g[k]*rip[k] - ri[k]*gp[k]));
+    fac1 = 1 - gp[k]*(chrg*y_[3] + alp[k]) - g[k]*dadp[k];
+    fac2 = q[k] + rip[k]*(chrg*y_[3] + alp[k]) + ri[k]*dadp[k];
+    //   pol dot
+
+
+    e_[0] = (-ri[k]*rbb*dadz[k]
+             - chrg*g[k]*dedb*dbdt[k]
+             + g[k]*rbb*dadt[k]
+             - chrg*g[k]*dptdt[k]
+             + chrg*ri[k]*dptdz[k]
+             + chrg*ri[k]*dedb*dbdz[k]) * deni;
+    //   thet dot
+    e_[1] = (chrg*dedb*dbdp[k]*g[k]+ rbb*fac1 + chrg*g[k]*dptdp[k])*deni;
+    //   zet dot
+    e_[2] = (-chrg*dedb*dbdp[k]*ri[k] + rbb*fac2 - chrg*ri[k]*dptdp[k])*deni;
+
+    //   rho dot   - term in  dbdz*dadp given by Mynick
+    e_[3] = ( -fac2 * (dedb*dbdz[k]+ dptdz[k])
+              - fac1* (dedb*dbdt[k] + dptdt[k])
+              + (dedb*dbdp[k]+dptdp[k])
+              * (ri[k]*dadz[k] - g[k]*dadt[k])) *deni - chrg*padt[k] ;
+    pdum = y_[0] * y_[0] + y_[1] * y_[1];
+    xdot = .5 * y_[0] * e_[0] / pdum - y_[1] * e_[1];
+    ydot = .5 *y_[1] * e_[0]/pdum + y_[0] *e_[1];
+    e_[0] = nt_*e_[0] + (1-nt_)*xdot;
+    e_[1] = nt_*e_[1] + (1-nt_)*ydot;
+    e_[0] = e_[0] * (1-nout[k])*(1-nfin[k]);
+    e_[1] = e_[1] * (1-nout[k])*(1-nfin[k]);
+    e_[2] = e_[2] * (1-nout[k])*(1-nfin[k]);
+    e_[3] = e_[3] * (1-nout[k])*(1-nfin[k]);
+
+    //goto 62, like 42, the answere to the universe and everything in it,  but twenty years older.
+    for(i=0; i<n1; i++){
+      if(j==0){
+        //for(i=0; i<n1; i++){
+        a_[i] = h_ * e_[i];
+        y_[i] = d_[i] + 3 * a_[i];
+        //}
+      }
+      if(j==1){
+        // for(i=0; i<n1; i++){
+        bx_[i] = h_ * e_[i];
+        y_[i] = d_[i] + 3 * bx_[i];
+        //}
+      }
+      if(j==2){
+        //for(i=0; i<n1; i++){
+        c1_[i] = h_ * e_[i];
+        y_[i] = d_[i] + 6 * c1_[i];
+        //}
+      }
+      if(j==3){
+        //for(i=0; i<n1; i++){
+        y_[i] = d_[i] + a_[i] + 2 * bx_[i] + 2 * c1_[i] + h_ * e_[i];
+        //}
+      }
+    }
+    // 40
+    ndum = .6 * (1 - copysign(1. , y_[0]));
+    pol[k] = nt_*y_[0] + (1-nt_)*(y_[0]*y_[0] + y_[1]*y_[1]);
+    thet[k] = nt_*y_[1] + (1-nt_)*(atan(y_[1]/y_[0]) + ndum * M_PI);
+    zet[k] = y_[2];
+    rho[k] = y_[3];
+    nout[k] = .6 * (1. + copysign(1., pol[k]-pw));
+
+  } //j
   return;
 }
