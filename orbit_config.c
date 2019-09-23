@@ -290,6 +290,7 @@ void set1(Config_t* cfg_ptr){
   int j, k;
   int kdum;
   double dum;
+  double dvol;
   double pdum, qdum, tdum;
   double q0, qw;
   Equilib_t* Eq = cfg_ptr->eqlb_ptr;
@@ -415,10 +416,11 @@ void set1(Config_t* cfg_ptr){
   const int nint0 = 100;
   for(k=1; k<=nint0; k++){
     for(j=1; j<=nint0; j++){
-      pz = get_pw(Eq) - (j - .5) * pdum/((double)nint0);
-      tz = k * 2 * M_PI / ((double)nint0);
-      cfg_ptr->pvol += pdum * 2 * M_PI * giac(Eq, pz, tz) / (
-          (double)(nint0*nint0));
+      pz = get_pw(Eq) - (((double)j) - .5) * pdum/((double)nint0);
+      tz = ((double)k) * 2. * M_PI / ((double)nint0);
+      dvol = pdum * 2. * M_PI * giac(Eq, pz, tz) / ((double)(nint0*nint0));
+      cfg_ptr->pvol += dvol;
+      printf("DBG p,th,giac,dvol %f %f %f %f\n", pz, tz, giac(Eq, pz, tz), dvol);
     }  /* j */
   }    /* k */
   cfg_ptr->pvol *=  2 * M_PI;  /* 2*pi*R */

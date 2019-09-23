@@ -467,7 +467,7 @@ double get_rmaj(Equilib_t* Eq_ptr){
 int compute_jd(Equilib_t* Eq_ptr, double x){
   /* computes jd in zero inds */
   int jd;
-  jd = (int) (x * (Eq_ptr->lsp - 1) / Eq_ptr->pw) - 1;
+  jd = (int) (x * (Eq_ptr->lsp - 1) / Eq_ptr->pw);
   jd = imin(jd, Eq_ptr->lsp - 2);
   jd = imax(jd, 0);
   return jd;
@@ -509,6 +509,7 @@ double rifun(Equilib_t* Eq_ptr, double px){
 double giac(Equilib_t* Eq_ptr, double px, double tx){
   /* jacobian as function of poloidal flux */
   const double lst = Eq_ptr->lst;
+  const double lsp = Eq_ptr->lsp;
   int idum;
   double tdum;
   const int jd = compute_jd(Eq_ptr, px);
@@ -521,7 +522,10 @@ double giac(Equilib_t* Eq_ptr, double px, double tx){
   const int kd = compute_kd(Eq_ptr, tdum);
   const double dtx = tdum - (double)(kd) * pi2 / lst;
   const double dt2 = dtx*dtx;
-  const int ind = jd*lst + kd;
+  //const int ind = jd*lst + kd;  /* ugh col order bug */
+  //printf("DBG jd kd %i %i\n", jd, kd);
+  printf("DBG dpx %f dtx %f\n",dpx,dtx);
+  const int ind = kd*lsp + jd;
   return Eq_ptr->g1[ind] + Eq_ptr->g2[ind]*dpx + Eq_ptr->g3[ind]*dp2
       + Eq_ptr->g4[ind]*dtx + Eq_ptr->g5[ind]*dpx*dtx + Eq_ptr->g6[ind]*dtx*dp2
       + Eq_ptr->g7[ind]*dt2 + Eq_ptr->g8[ind]*dt2*dpx + Eq_ptr->g9[ind]*dt2*dp2;
