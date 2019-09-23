@@ -265,35 +265,7 @@ void initialize_Equilib(Equilib_t* Equilib_ptr, Config_t* cfg_ptr){
     for(l=0; l<Equilib_ptr->lst; l++){
       fscanf(ifp, "%lf ", &(Equilib_ptr->b9[ind + l]));
     }
-    /* G */
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g1[ind + l]));
-    }
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g2[ind + l]));
-    }
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g3[ind + l]));
-    }
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g4[ind + l]));
-    }
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g5[ind + l]));
-    }
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g6[ind + l]));
-    }
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g7[ind + l]));
-    }
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g8[ind + l]));
-    }
-    for(l=0; l<Equilib_ptr->lst; l++){
-      fscanf(ifp, "%lf ", &(Equilib_ptr->g9[ind + l]));
-    }
-    /* X */
+        /* X */
     for(l=0; l<Equilib_ptr->lst; l++){
       fscanf(ifp, "%lf ", &(Equilib_ptr->x1[ind + l]));
     }
@@ -348,6 +320,34 @@ void initialize_Equilib(Equilib_t* Equilib_ptr, Config_t* cfg_ptr){
     }
     for(l=0; l<Equilib_ptr->lst; l++){
       fscanf(ifp, "%lf ", &(Equilib_ptr->z9[ind + l]));
+    }
+    /* G */
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g1[ind + l]));
+    }
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g2[ind + l]));
+    }
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g3[ind + l]));
+    }
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g4[ind + l]));
+    }
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g5[ind + l]));
+    }
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g6[ind + l]));
+    }
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g7[ind + l]));
+    }
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g8[ind + l]));
+    }
+    for(l=0; l<Equilib_ptr->lst; l++){
+      fscanf(ifp, "%lf ", &(Equilib_ptr->g9[ind + l]));
     }
 
     /*  */
@@ -413,7 +413,20 @@ void initialize_Equilib(Equilib_t* Equilib_ptr, Config_t* cfg_ptr){
 
   fclose(ifp);
 
+  /* /\* dbg G *\/ */
+  /* /\* g is lsp *lst *\/ */
+  /* double sumofag= 0.; */
+  /* ind = 0; */
+  /* for(j=0; j< Equilib_ptr->lsp; j++){ */
+  /*   for(l=0; l< Equilib_ptr->lst; l++){ */
+  /*     sumofag += Equilib_ptr->g1[ind]; */
+  /*     ind++; */
+  /*   } */
+  /* } */
+  /* printf("g1[0] %f sum(g1) = %f\n", Equilib_ptr->g1[0], sumofag); */
+
 }
+
 
 double** get_B(Equilib_t* Eq_ptr){
   return Eq_ptr->B;
@@ -522,10 +535,8 @@ double giac(Equilib_t* Eq_ptr, double px, double tx){
   const int kd = compute_kd(Eq_ptr, tdum);
   const double dtx = tdum - (double)(kd) * pi2 / lst;
   const double dt2 = dtx*dtx;
-  //const int ind = jd*lst + kd;  /* ugh col order bug */
-  //printf("DBG jd kd %i %i\n", jd, kd);
-  printf("DBG dpx %f dtx %f\n",dpx,dtx);
-  const int ind = kd*lsp + jd;
+  const int ind = jd*lst + kd;
+  //printf("DBG dpx %f dtx %f g1 %f\n",dpx,dtx, Eq_ptr->g1[ind]);
   return Eq_ptr->g1[ind] + Eq_ptr->g2[ind]*dpx + Eq_ptr->g3[ind]*dp2
       + Eq_ptr->g4[ind]*dtx + Eq_ptr->g5[ind]*dpx*dtx + Eq_ptr->g6[ind]*dtx*dp2
       + Eq_ptr->g7[ind]*dt2 + Eq_ptr->g8[ind]*dt2*dpx + Eq_ptr->g9[ind]*dt2*dp2;

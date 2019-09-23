@@ -420,7 +420,7 @@ void set1(Config_t* cfg_ptr){
       tz = ((double)k) * 2. * M_PI / ((double)nint0);
       dvol = pdum * 2. * M_PI * giac(Eq, pz, tz) / ((double)(nint0*nint0));
       cfg_ptr->pvol += dvol;
-      printf("DBG p,th,giac,dvol %f %f %f %f\n", pz, tz, giac(Eq, pz, tz), dvol);
+      //printf("DBG p,th,giac,dvol %f %f %f %f\n", pz, tz, giac(Eq, pz, tz), dvol);
     }  /* j */
   }    /* k */
   cfg_ptr->pvol *=  2 * M_PI;  /* 2*pi*R */
