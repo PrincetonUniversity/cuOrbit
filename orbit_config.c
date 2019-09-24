@@ -233,12 +233,11 @@ void initialize_Config(Config_t* cfg_ptr){
 
     /* maybe break this out into a compute area. */
     double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
-    const int nstep_all =((int) 10.* get_pdedp_dtsamp(depo_ptr) / dum) + 1;
+    const int nstep_all = round(10.* get_pdedp_dtsamp(depo_ptr) / dum) + 1;
     cfg_ptr->nstep_all = nstep_all;
     set_pdedp_tskip(depo_ptr,
-                    imax(((int) nstep_all / 1E4 + 1),
+                    imax(round(nstep_all / 1E4) + 1,
                          5));    /* stay in array bounds */
-    int npt_done = 0;    /* xxx ? */
 
     printf("\n\n --- Start main run --- \n" );
     printf("\t no. of particles \t: %d\n", cfg_ptr->nprt);
