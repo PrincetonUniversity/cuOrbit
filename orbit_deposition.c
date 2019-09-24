@@ -1139,7 +1139,7 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* -  Full deposition, */
   np2 = .5 * cfg_ptr->nprt;
   /*      np2 = nprt */
-  printf("Entering FULLREDEPMP...");
+  printf("Entering FULLREDEPMP...\n");
 
   nlost=0;
 
