@@ -38,7 +38,7 @@ void main_loop(Config_t* cfg_ptr){
     }
 
     /* XXXXX, yeah something off here */
-    /* for now we just  use the fulldepmp per mario*/
+    /* for now we just  use the fulldepmp per mario */
     /* if( irun_pdedp % 2  == 0){ */
     /*   fulldepmp(cfg_ptr, depo_ptr); */
     /* } else { */
@@ -47,7 +47,6 @@ void main_loop(Config_t* cfg_ptr){
     fulldepmp(cfg_ptr, depo_ptr);
 
 
-    /* maybe break this out into a compute area. */
     double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
     const int nstep_all = round(10. * get_pdedp_dtsamp(depo_ptr) / dum) + 1;
     cfg_ptr->nstep_all = nstep_all;

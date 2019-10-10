@@ -1062,8 +1062,6 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* Full deposition*/
   np2 = .5* cfg_ptr->nprt;
 
-
-  /* xxx i think this must have been a bug in the code I received... */
   /* outside-co moving */
   for(kd=0; kd < np2; kd++){
     ptch[kd] = rand_double();  /* rand */
@@ -1075,19 +1073,20 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     en[kd] = (einj1 + rand_double() * (einj2 - einj1))
         * engn / ekev;   /* kinetic energy */
   }
+
   /* -inside-counter moving */
   for(kd=0; kd < np2; kd++){
     ptch[kd] = -rand_double();
     thet[kd] = M_PI;
     dt[kd] = dt0;
-    pol[kd] = .001+ .999*rand_double();
+    pol[kd] = .001 + .999*rand_double();
     pol[kd] = pol[kd] * pw;
     zet[kd] = rand_double() * 2.* M_PI;
     en[kd] = (einj1+rand_double()*(einj2-einj1))*engn/ekev; /* kinetic energy */
   }
 
-  nprt = kd;  /* xxx not sure about this? */
-  printf(" fulldepmp deposit");
+  nprt = np2;  /* xxx not sure about this? */
+  printf(" fulldepmp deposit\n");
   /*!      call field(nprt) */
   for(k=0; k<nprt; k++){
     kfield(cfg_ptr, k);
@@ -1138,7 +1137,7 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   nmaxs=5E3; /* max number of attemps to redeposit particle */
   /* -  Full deposition, */
   np2 = .5 * cfg_ptr->nprt;
-  /*      np2 = nprt */
+  /* np2 = cfg_ptr->nprt; */
   printf("Entering FULLREDEPMP...\n");
 
   nlost=0;
@@ -1299,7 +1298,7 @@ void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   cfg_ptr->nprt = kd;
   nprt0 = kd;
-  printf("%d fulldepmp_co deposit", nprt0);
+  printf("%d fulldepmp_co deposit\n", nprt0);
   for(k=0; k < cfg_ptr->nprt; k++){
     kfield(cfg_ptr, kd);
     rho[k] = ptch[k]*sqrt(2.*en[k])/b[k];

@@ -678,7 +678,6 @@ void konestep(Config_t* cfg_ptr, int k){
   y_[2] = zet[k];
   y_[3] = rho[k];
 
-  // XXXX gbw, check this, looks like i typo'd
   d_[0] = y_[0];
   d_[1] = y_[1];
   d_[2] = y_[2];
@@ -687,7 +686,6 @@ void konestep(Config_t* cfg_ptr, int k){
 
   for(j=0; j < 4; j++){
     kfield(cfg_ptr, 1);
-
 
     if(npert ==  0){
       //goto 61
