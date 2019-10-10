@@ -69,6 +69,9 @@ typedef struct Deposition {
   int nstoche;
   int nstochp;
 
+  /* less annoying prints */
+  bool recursing;
+
 } Deposition_t;
 
 Deposition_t* Deposition_ctor(){
@@ -110,6 +113,9 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->dmubk = cfg_ptr->dmubk;
   Depo_ptr->nstoche = cfg_ptr->nstoche;
   Depo_ptr->nstochp = cfg_ptr->nstochp;
+
+  /* less annoying recursive printing */
+  Depo_ptr->recursing = false;
 
   return;
 }
@@ -1138,7 +1144,11 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* -  Full deposition, */
   np2 = .5 * cfg_ptr->nprt;
   /* np2 = cfg_ptr->nprt; */
-  printf("Entering FULLREDEPMP...\n");
+
+  /* dont print this recursively */
+  if(! depo_ptr->recursing){
+    printf("Entering FULLREDEPMP...\n");
+  }
 
   nlost=0;
 
@@ -1199,8 +1209,11 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   if (nlost > 0){
     printf("- Number of lost particles: %d -> iterate sampling...\n", nlost);
     class_domain(cfg_ptr);
+    depo_ptr->recursing = true;
     fullredepmp(cfg_ptr, depo_ptr);   /* goto 11 */
   }
+  /* the prodigal particle has returned */
+  depo_ptr->recursing = false;
 
   return;
 }
