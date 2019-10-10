@@ -10,7 +10,6 @@
 
 /* these are set in the .c file for now */
 extern const int IDP;
-extern const int IDT;
 extern const double pi2;
 extern const double pi2i;
 
