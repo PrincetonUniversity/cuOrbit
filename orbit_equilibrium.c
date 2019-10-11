@@ -550,7 +550,7 @@ double xproj(Equilib_t* Eq_ptr, double px, double tx){
   const int jd = compute_jd(Eq_ptr, px);
   double dpx = px - jd * Eq_ptr->pw / (Eq_ptr->lsp-1);
 
-  const double sdum = 0.5 - 0.5* copysign(1.,  jd - 1.5);
+  const double sdum = 0.5 - 0.5* copysign(1.,  jd - 0.5);
   dpx =  (1. - sdum) * dpx + sdum * sqrt(fmax(1.E-20, dpx));
   const double dp2 = dpx*dpx;
 
@@ -575,7 +575,7 @@ double zproj(Equilib_t* Eq_ptr, double px, double tx){
   const int jd = compute_jd(Eq_ptr, px);
   double dpx = px - jd * Eq_ptr->pw / (Eq_ptr->lsp-1);
 
-  const double sdum = 0.5 - 0.5* copysign(1.,  jd - 1.5);
+  const double sdum = 0.5 - 0.5* copysign(1.,  jd - 0.5);
   dpx =  (1. - sdum) * dpx + sdum * sqrt(fmax(1.E-20, dpx));
   const double dp2 = dpx*dpx;
 
@@ -603,7 +603,7 @@ double bfield(Equilib_t* Eq_ptr, double px, double tx){
   const int jd = compute_jd(Eq_ptr, px);
 
   dpx = px - ((double)jd) * Eq_ptr->pw / (Eq_ptr->lsp-1);
-  const double sdum = .5 - .5 * copysign(1., jd - 1.5); //XXXXXX this is wrong
+  const double sdum = .5 - .5 * copysign(1., jd - 0.5);
   dpx = (1. - sdum) * dpx + sdum * sqrt( fmax(1E-20, dpx));
   const double dp2 = dpx*dpx;
   idum = (int)(tx * pi2i);
