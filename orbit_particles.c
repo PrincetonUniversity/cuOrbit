@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "cuda_helpers.h"
 #include "orbit_config_api.h"
 #include "orbit_particles.h"
 #include "orbit_util.h"
@@ -65,7 +66,7 @@ typedef struct Particles {
 } Particles_t;
 
 Particles_t* Particles_ctor(){
-  return (Particles_t*)calloc(1, sizeof(Particles_t));
+  return (Particles_t*)umacalloc(1, sizeof(Particles_t));
 }
 
 
@@ -88,54 +89,54 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
 
 
   /* arrays */
-  ptcl_ptr->otp = (int*)calloc(ptcl_ptr->idm, sizeof(int));
+  ptcl_ptr->otp = (int*)umacalloc(ptcl_ptr->idm, sizeof(int));
 
-  ptcl_ptr->pol=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->zet=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->thet=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->rho=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->en=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->rmu=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->ptch=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->pot=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->time=(double*)calloc(ptcl_ptr->idm, sizeof(double));  /* time step */
-  ptcl_ptr->g=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->gp=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->q=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->qp=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->b=(double*)calloc(ptcl_ptr->idm, sizeof(double));  /* B, I associated with particle */
-  ptcl_ptr->ri=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->rip=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->w1=(double*)calloc(ptcl_ptr->idm, sizeof(double)); /* particle stepping */
-  ptcl_ptr->w2=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->w3=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dbdt=(double*)calloc(ptcl_ptr->idm, sizeof(double)); /* derivatives */
-  ptcl_ptr->dbdp=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dbdz=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dbdpp=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dbdpt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->pol=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->zet=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->thet=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->rho=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->en=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->rmu=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->ptch=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->pot=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->time=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));  /* time step */
+  ptcl_ptr->g=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->gp=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->q=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->qp=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->b=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));  /* B, I associated with particle */
+  ptcl_ptr->ri=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->rip=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->w1=(double*)umacalloc(ptcl_ptr->idm, sizeof(double)); /* particle stepping */
+  ptcl_ptr->w2=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->w3=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dbdt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double)); /* derivatives */
+  ptcl_ptr->dbdp=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dbdz=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dbdpp=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dbdpt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
 
-  ptcl_ptr->rpl=(double*)calloc(ptcl_ptr->idm, sizeof(double)); /* derivatives */
-  ptcl_ptr->rplp=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->rplt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->rpl=(double*)umacalloc(ptcl_ptr->idm, sizeof(double)); /* derivatives */
+  ptcl_ptr->rplp=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->rplt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
 
   /* stuff from set1 */
-  ptcl_ptr->dt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->tim1=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->wt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->tim1=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->wt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
 
   /* used during kupdate (stepping) */
-  ptcl_ptr->nout=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->nfin=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->e0=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dptdp=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dptdt=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dptdz=(double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->alp = (double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dadp = (double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dadt = (double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->dadz = (double*)calloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->padt = (double*)calloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->nout=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->nfin=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->e0=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dptdp=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dptdt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dptdz=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->alp = (double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dadp = (double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dadt = (double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->dadz = (double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->padt = (double*)umacalloc(ptcl_ptr->idm, sizeof(double));
 
 
 
