@@ -6,7 +6,7 @@
 #include "orbit_config_api.h"
 #include "orbit_util.h"
 
-typedef struct Equilib {
+struct Equilib {
   double pw;
   double ped;
   double pwd;
@@ -45,7 +45,7 @@ typedef struct Equilib {
   double* vd2;
   double* vd3;
 
-} Equilib_t;
+};
 
 Equilib_t* Equilib_ctor(){
   return (Equilib_t*)calloc(1, sizeof(Equilib_t));

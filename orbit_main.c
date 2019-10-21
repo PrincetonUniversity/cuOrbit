@@ -14,10 +14,11 @@
 #include "orbit_main.h"
 
 void main_loop(Config_t* cfg_ptr){
-
+  int irun_pdedp;
+  
   Deposition_t* depo_ptr = cfg_ptr->depo_ptr;
 
-  for(int irun_pdedp=0; irun_pdedp < cfg_ptr->nruns; irun_pdedp++){
+  for(irun_pdedp=0; irun_pdedp < cfg_ptr->nruns; irun_pdedp++){
     if(irun_pdedp>0){
       set_initial_update_pdedp(cfg_ptr->depo_ptr, true);
     }

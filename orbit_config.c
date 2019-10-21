@@ -9,10 +9,10 @@
 #include "orbit_config_api.h"
 #include "orbit_util.h"
 
-const int IDP=250;
+const int IDP = 250;
 /* move these to util or consts or something */
 const double pi2 = 2. * M_PI;
-const double pi2i = 1. / pi2;
+const double pi2i = 0.5 / M_PI;
 
 Config_t* Config_ctor(){
   Config_t* Cfg = (Config_t*)calloc(1, sizeof(Config_t));
@@ -221,6 +221,7 @@ void set1(Config_t* cfg_ptr){
   double xdum, zdum;
   double xl, xr, zb, zt, rmd;
 
+  dum = 0;
   for(k=1; k<=1000; k++){
     pdum = 0.001 * k * get_pw(Eq);
     dum = dum + qfun(Eq, pdum);

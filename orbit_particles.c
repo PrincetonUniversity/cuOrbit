@@ -6,7 +6,7 @@
 #include "orbit_particles.h"
 #include "orbit_util.h"
 
-typedef struct Particles {
+struct Particles {
   int nprt;   /* number of particles (use in place of IDM*/
   double chrg;  /* 1 for ion, -1 for electron */
   double zprt;
@@ -62,7 +62,7 @@ typedef struct Particles {
   double *dadz;
   double *padt;
 
-} Particles_t;
+};
 
 Particles_t* Particles_ctor(){
   return (Particles_t*)calloc(1, sizeof(Particles_t));

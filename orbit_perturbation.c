@@ -11,7 +11,7 @@
 
 const int NAMP_ = 155;
 
-typedef struct Perturb {
+struct Perturb {
   int npert;
   int nflr;
   int lpt;
@@ -47,7 +47,7 @@ typedef struct Perturb {
   double *xi1, *xi2, *xi3;
   /* alphas a1-a3*/
   double *a1, *a2, *a3;
-} Perturb_t;
+};
 
 Perturb_t* Perturb_ctor(){
   return (Perturb_t*)calloc(1, sizeof(Perturb_t));

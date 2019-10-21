@@ -2,14 +2,14 @@ CC=cc
 NVCC=nvcc
 
 SILENCE= -Wno-unused-variable
-#-Wmissing-field-initializers # I think this was for nvcc or something
-CFLAGS= -Wall -Wextra -Wsign-conversion -pedantic $(SILENCE) -g -O3
+#-Wmissing-field-initializers # I think this was for nvcc or something -pedantic
+CFLAGS= -std=c99 -Wall -Wextra -Wsign-conversion $(SILENCE) -g -O3
 CLIBS=
 CFLAGS+= $(CLIBS)
 #CFLAGS += $(INCLUDES)
 #-Wsign-conversion (some nvidia libs can make this a noisy warning, might be fixed now)
 LDFLAGS= -shared
-NVCCFLAGS= --compiler-options '$(CFLAGS)' -g -O3 --use_fast_math
+NVCCFLAGS= -x c --compiler-options '$(CFLAGS)' -g -O3 --use_fast_math
 NVCCLDFLAGS= --compiler-options '-shared -fPIC '
 #NVOPT= --maxrregcount=32
 #NVCCFLAGS += $(NVOPT)
