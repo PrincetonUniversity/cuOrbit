@@ -2,6 +2,7 @@ CC=cc
 
 SILENCE= -Wno-unused-variable
 #-Wmissing-field-initializers # I think this was for nvcc or something
+INCLUDES=
 CFLAGS= -Wall -Wextra -Wsign-conversion -pedantic $(SILENCE) -g -O3
 CLIBS=
 CFLAGS+= $(CLIBS)
@@ -10,8 +11,9 @@ CFLAGS+= $(CLIBS)
 LDFLAGS= -shared
 
 ifeq ($(CC),nvcc)
-	CFLAGS := --compiler-options '$(CFLAGS)' -g -O3 --use_fast_math
-	LDFLAGS := --compiler-options '$(LDFLAGS) -fPIC '
+	CFLAGS := --compiler-options '$(CFLAGS) -Wno-c++11-extensions -Wno-c++11-long-long' -g -O3 --use_fast_math
+	LDFLAGS := --compiler-options '-fPIC ' $(LDFLAGS)
+	INCLUDES += -I/usr/local/cuda/include
 	#NVOPT= --maxrregcount=32
 	#NVCCFLAGS += $(NVOPT)
 endif
@@ -21,14 +23,11 @@ endif
 
 all: test.x
 
-# libcuorbit.so:
-# 	$(NVCC) $(NVCCLDFLAGS) $(NVCCFLAGS) $^ -o $@
-
 %.o: %.c *.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 %.o: %.cu *.h
-	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) -c $< -o $@
+	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) $(INCLUDES) -c $< -o $@
 
 liborbit.so: orbit_main.o orbit_config.o  orbit_particles.o orbit_equilibrium.o \
              orbit_perturbation.o orbit_deposition.o \
