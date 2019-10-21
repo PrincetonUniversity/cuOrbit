@@ -11,6 +11,7 @@
 #include "orbit_particles.h"  /* ekev */
 #include "orbit_perturbation.h"
 #include "orbit_util.h"
+#include "cuda_helpers.h"
 
 const size_t MAXFNAME=255;
 const int ibin=40;  /* used in temp array in pdedp_finalize */
@@ -75,7 +76,7 @@ typedef struct Deposition {
 } Deposition_t;
 
 Deposition_t* Deposition_ctor(){
-  return (Deposition_t*)calloc(1, sizeof(Deposition_t));
+  return (Deposition_t*)umacalloc(1, sizeof(Deposition_t));
 }
 
 void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
@@ -98,7 +99,7 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   }
   Depo_ptr->res_id_arr_j = 10000;
   Depo_ptr->res_id_arr_i = 4;
-  Depo_ptr->res_id_arr = (double*)calloc((unsigned)(cfg_ptr->nprt *
+  Depo_ptr->res_id_arr = (double*)umacalloc((unsigned)(cfg_ptr->nprt *
                                          Depo_ptr->res_id_arr_j *
                                           Depo_ptr->res_id_arr_i),
                                          sizeof(double));  /* hardcoded? ask mp*/
@@ -122,12 +123,12 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
 
 void initialize_pdedp(Deposition_t* Depo_ptr){
   const size_t sz = sizeof(double);
-  Depo_ptr->pde_varDE = (double*)calloc((unsigned)Depo_ptr->pde_nbinDE, sz);
-  Depo_ptr->pde_varDPz = (double*)calloc((unsigned)Depo_ptr->pde_nbinDPz, sz);
-  Depo_ptr->pde_varE = (double*)calloc((unsigned)Depo_ptr->pde_nbinE, sz);
-  Depo_ptr->pde_varPz = (double*)calloc((unsigned)Depo_ptr->pde_nbinPz, sz);
-  Depo_ptr->pde_varmu = (double*)calloc((unsigned)Depo_ptr->pde_nbinmu, sz);
-  Depo_ptr->pde_pdedp = (double*)calloc(sizeof_pdedp(Depo_ptr), sz);
+  Depo_ptr->pde_varDE = (double*)umacalloc((unsigned)Depo_ptr->pde_nbinDE, sz);
+  Depo_ptr->pde_varDPz = (double*)umacalloc((unsigned)Depo_ptr->pde_nbinDPz, sz);
+  Depo_ptr->pde_varE = (double*)umacalloc((unsigned)Depo_ptr->pde_nbinE, sz);
+  Depo_ptr->pde_varPz = (double*)umacalloc((unsigned)Depo_ptr->pde_nbinPz, sz);
+  Depo_ptr->pde_varmu = (double*)umacalloc((unsigned)Depo_ptr->pde_nbinmu, sz);
+  Depo_ptr->pde_pdedp = (double*)umacalloc(sizeof_pdedp(Depo_ptr), sz);
   Depo_ptr->pdedp_initialized = true;
 }
 
@@ -389,7 +390,7 @@ void pdedp_init(Deposition_t* Depo_ptr){
     Depo_ptr->pde_varDPz[k] = Depo_ptr->pde_DPzmin + k * stp + stp/2.;
   }
 
-  Depo_ptr->pde_pdedp = calloc(sizeof_pdedp(Depo_ptr), sizeof(double));
+  Depo_ptr->pde_pdedp = umacalloc(sizeof_pdedp(Depo_ptr), sizeof(double));
 
 
   /*      -------------------------------------------------------

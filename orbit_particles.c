@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "cuda_helpers.h"
 #include "orbit_config_api.h"
 #include "orbit_particles.h"
 #include "orbit_util.h"
+#include "cuda_helpers.h"
 
 typedef struct Particles {
   int nprt;   /* number of particles (use in place of IDM*/

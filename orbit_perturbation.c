@@ -8,6 +8,7 @@
 #include "orbit_config_api.h"
 #include "orbit_perturbation.h"
 #include "orbit_util.h"
+#include "cuda_helpers.h"
 
 const int NAMP_ = 155;
 
@@ -50,7 +51,7 @@ typedef struct Perturb {
 } Perturb_t;
 
 Perturb_t* Perturb_ctor(){
-  return (Perturb_t*)calloc(1, sizeof(Perturb_t));
+  return (Perturb_t*)umacalloc(1, sizeof(Perturb_t));
 }
 
 
@@ -148,26 +149,26 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   /* malloc xi */
   printf("Malloc'ing arrays for Perturbation\n");
   sz = (unsigned)(ptrb_ptr->lpt * ptrb_ptr->modes);
-  ptrb_ptr->xi1 = (double*)calloc(sz, sizeof(double));
-  ptrb_ptr->xi2 = (double*)calloc(sz, sizeof(double));
-  ptrb_ptr->xi3 = (double*)calloc(sz, sizeof(double));
-  ptrb_ptr->a1 = (double*)calloc(sz, sizeof(double));
-  ptrb_ptr->a2 = (double*)calloc(sz, sizeof(double));
-  ptrb_ptr->a3 = (double*)calloc(sz, sizeof(double));
+  ptrb_ptr->xi1 = (double*)umacalloc(sz, sizeof(double));
+  ptrb_ptr->xi2 = (double*)umacalloc(sz, sizeof(double));
+  ptrb_ptr->xi3 = (double*)umacalloc(sz, sizeof(double));
+  ptrb_ptr->a1 = (double*)umacalloc(sz, sizeof(double));
+  ptrb_ptr->a2 = (double*)umacalloc(sz, sizeof(double));
+  ptrb_ptr->a3 = (double*)umacalloc(sz, sizeof(double));
 
-  ptrb_ptr->xx = (double*)calloc((unsigned)ptrb_ptr->lpt, sizeof(double));
+  ptrb_ptr->xx = (double*)umacalloc((unsigned)ptrb_ptr->lpt, sizeof(double));
 
-  ptrb_ptr->alfv = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
-  ptrb_ptr->amp = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
-  ptrb_ptr->damp = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
-  ptrb_ptr->harm = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
-  ptrb_ptr->omegv = (double*)calloc((unsigned)ptrb_ptr->modes, sizeof(double));
-  ptrb_ptr->phaz = (double*)calloc(
+  ptrb_ptr->alfv = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->amp = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->damp = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->harm = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->omegv = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->phaz = (double*)umacalloc(
       (unsigned)ptrb_ptr->modes * (unsigned)config_ptr->nprt,
       sizeof(double));  /* xxx check size , and pmegv*/
 
-  ptrb_ptr->mmod = (int*)calloc((unsigned)ptrb_ptr->modes, sizeof(int));
-  ptrb_ptr->nmod = (int*)calloc((unsigned)ptrb_ptr->modes, sizeof(int));
+  ptrb_ptr->mmod = (int*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(int));
+  ptrb_ptr->nmod = (int*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(int));
 
   for(md=0; md < ptrb_ptr->modes; md++){
     fscanf(ifp, "** m = %d ", &(ptrb_ptr->mmod[md]));

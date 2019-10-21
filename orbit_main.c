@@ -12,6 +12,7 @@
 #include "orbit_particles.h"
 #include "orbit_deposition.h"
 #include "orbit_main.h"
+#include "cuda_helpers.h"
 
 void main_loop(Config_t* cfg_ptr){
 

@@ -1,8 +1,12 @@
 #include <stdlib.h>
 #include <string.h>
-#include "cuda_helpers.h"
+
+#ifdef __NVCC__
 #include <cuda.h>
 #include <cuda_runtime.h>
+#endif
+
+#include "cuda_helpers.h"
 
 /* Make an equiv to calloc for CUDA UMA*/
 void* umacalloc(size_t num, size_t size){

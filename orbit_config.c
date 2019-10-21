@@ -8,6 +8,7 @@
 
 #include "orbit_config_api.h"
 #include "orbit_util.h"
+#include "cuda_helpers.h"
 
 const int IDP=250;
 /* move these to util or consts or something */
@@ -15,7 +16,7 @@ const double pi2 = 2. * M_PI;
 const double pi2i = 1. / pi2;
 
 Config_t* Config_ctor(){
-  Config_t* Cfg = (Config_t*)calloc(1, sizeof(Config_t));
+  Config_t* Cfg = (Config_t*)umacalloc(1, sizeof(Config_t));
     /* Create the other model componenets */
   Cfg->eqlb_ptr = Equilib_ctor();
   Cfg->ptcl_ptr = Particles_ctor();
