@@ -237,7 +237,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   }  /* k */
 
   /*  does this really need 1 based?, lets try without*/
-  //ptrb_ptr->md1 = 0;
+  ptrb_ptr->md1 = 0;
   /* and do we need md2 at all? looks vestigile, lets try without*/
   //ptrb_ptr->md2 = ptrb_ptr->modes;
 

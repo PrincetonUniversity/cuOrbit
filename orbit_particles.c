@@ -402,7 +402,7 @@ void kupdate(Config_t* cfg_ptr, int k){
   ptch[k] = ptch[k] * nout[k] + (1  - nout[k])*rho[k]*b[k]/sqrt(2. * en[k] - 2. * pot[k]);
   nesc = nesc + nout[k];
   ntim = ntim + nfin[k];
-  for(md=md1-1; md<md2; md++){// zero inds...
+  for(md=md1; md<md2; md++){// zero inds...
     phaz[md*idm + k] = phaz[md*idm + k] + omegv[md]*dt[k];
   }
 
@@ -529,7 +529,7 @@ void ptrbak(Config_t* cfg_ptr, int k)
   }
 
   //do  312 md = md1,md2 ! loop over harmonics
-  for(md=md1-1; md<md2; md++){
+  for(md=md1; md<md2; md++){
     nval = alfv[md];  /* xxx does this need to be saved in a struct ?*/
 
     n = nmod[md];
@@ -564,6 +564,7 @@ void ptrbak(Config_t* cfg_ptr, int k)
       xinm = amp[nval]*(xi1[ind] + xi2[ind]*dpx + xi3[ind]*dp2);
       xinmp = amp[nval]*( xi2[ind] + 2*xi3[ind]*dpx);
       agg = n*zet[k] - m*thet[k];
+      printf("DBG md %d , idm %d , k %d , phaz[md*idm + k]\n",md, idm, k);
       cnm = cos(agg - phaz[md*idm + k]);
       snm = sin(agg - phaz[md*idm + k]);
       alp[k] = alp[k] + alnm*snm/nflr0;

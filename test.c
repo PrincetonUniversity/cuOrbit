@@ -1,4 +1,4 @@
-
+#include <stdio.h>
 #include "orbit_config_api.h"
 #include "orbit_main.h"
 
@@ -9,11 +9,11 @@ int main(){
   /* Contruct a config object,
    which conttructs Perturb, Equlib, and Particles */
   Config_t* Cfg=Config_ctor();
+
+  printf("Initialize Config\n");
   initialize_Config(Cfg);
 
   main_loop(Cfg);
-
-  /* these will be managed by the config soon */
 
   return 0;
 }
