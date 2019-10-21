@@ -14,4 +14,6 @@ int main(){
   main_loop(Cfg);
 
   /* these will be managed by the config soon */
+
+  return 0;
 }

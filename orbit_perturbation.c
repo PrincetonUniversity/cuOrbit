@@ -12,7 +12,7 @@
 
 const int NAMP_ = 155;
 
-typedef struct Perturb {
+struct Perturb {
   int npert;
   int nflr;
   int lpt;
@@ -48,7 +48,7 @@ typedef struct Perturb {
   double *xi1, *xi2, *xi3;
   /* alphas a1-a3*/
   double *a1, *a2, *a3;
-} Perturb_t;
+};
 
 Perturb_t* Perturb_ctor(){
   return (Perturb_t*)umacalloc(1, sizeof(Perturb_t));
@@ -139,7 +139,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   for(j=0; j < ptrb_ptr->lpt; j++){
     /* zero md */ //xxx according to code, we can just skip these...overwrite below... confirm with Mario
     //fscanf(ifp, "%lf ", &(ptrb_ptr->xi1[j]));
-    fscanf(ifp, "%*lf ");
+    fscanf(ifp, "%*f ");
   }
 
   fscanf(ifp, "%*[^\n]\n");  /* skip*/

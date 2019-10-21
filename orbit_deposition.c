@@ -16,7 +16,7 @@
 const size_t MAXFNAME=255;
 const int ibin=40;  /* used in temp array in pdedp_finalize */
 
-typedef struct Deposition {
+struct Deposition {
   /* pdedp */
   char* pdedp_file;
   char* bfield_file;
@@ -73,7 +73,7 @@ typedef struct Deposition {
   /* less annoying prints */
   bool recursing;
 
-} Deposition_t;
+};
 
 Deposition_t* Deposition_ctor(){
   return (Deposition_t*)umacalloc(1, sizeof(Deposition_t));

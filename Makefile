@@ -1,9 +1,10 @@
 CC=cc
 
 SILENCE= -Wno-unused-variable
-#-Wmissing-field-initializers # I think this was for nvcc or something
 INCLUDES=
-CFLAGS= -Wall -Wextra -Wsign-conversion -pedantic $(SILENCE) -g -O3
+LIBRARIES= -L. -lm
+#-Wmissing-field-initializers # I think this was for nvcc or something -pedantic
+CFLAGS= -fPIC -std=gnu99 -Wall -Wextra -Wsign-conversion $(SILENCE) -g -O3
 CLIBS=
 CFLAGS+= $(CLIBS)
 #CFLAGS += $(INCLUDES)
@@ -36,7 +37,7 @@ liborbit.so: orbit_main.o orbit_config.o  orbit_particles.o orbit_equilibrium.o 
 	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
 
 test.x: test.o liborbit.so
-	$(CC) $(CFLAGS) $^ -o $@ -L. -lorbit
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBRARIES) -lorbit
 
 clean:
 	-rm -f inih/*.o

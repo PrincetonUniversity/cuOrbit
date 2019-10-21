@@ -7,7 +7,7 @@
 #include "orbit_util.h"
 #include "cuda_helpers.h"
 
-typedef struct Equilib {
+struct Equilib {
   double pw;
   double ped;
   double pwd;
@@ -46,7 +46,7 @@ typedef struct Equilib {
   double* vd2;
   double* vd3;
 
-} Equilib_t;
+};
 
 Equilib_t* Equilib_ctor(){
   return (Equilib_t*)umacalloc(1, sizeof(Equilib_t));

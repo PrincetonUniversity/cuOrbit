@@ -7,7 +7,7 @@
 #include "orbit_util.h"
 #include "cuda_helpers.h"
 
-typedef struct Particles {
+struct Particles {
   int nprt;   /* number of particles (use in place of IDM*/
   double chrg;  /* 1 for ion, -1 for electron */
   double zprt;
@@ -63,7 +63,7 @@ typedef struct Particles {
   double *dadz;
   double *padt;
 
-} Particles_t;
+};
 
 Particles_t* Particles_ctor(){
   return (Particles_t*)umacalloc(1, sizeof(Particles_t));
@@ -493,6 +493,9 @@ void ptrbak(Config_t* cfg_ptr, int k)
   int ind;
   int lptm1;
   int nval;
+  /* to appease compiler */
+  dpsi_flr = 0.;
+  dph_flr = 0.;
 
   alp[k] = 0.;
   dadp[k] = 0.;
@@ -650,15 +653,15 @@ void konestep(Config_t* cfg_ptr, int k){
 
   int n1,j,i,ndum;
   double xdum,ydum,rbb,dedb,deni,fac1,fac2,pdum,xdot,ydot;
-  /* local temps */
+  /* local temps, note compiler is suspicuous of those I have init 0..check */
   double y_[4];
   double d_[4];
   double e_[4];
-  double a_[4];
-  double bx_[4];
+  double a_[4]= {0.};
+  double bx_[4] = {0.};
   double h_;
   double nt_;
-  double c1_[4];
+  double c1_[4] = {0.};
   double zdots_;
 
   n1=4;

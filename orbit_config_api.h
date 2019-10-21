@@ -14,7 +14,7 @@ extern const double pi2;
 extern const double pi2i;
 
 
-typedef struct Config {
+struct Config {
   /* meta */
   char* name;
 
@@ -97,7 +97,7 @@ typedef struct Config {
   bool pdedp_focusdep;
   bool pdedp_optimize;
 
-} Config_t;
+};
 
 
 Config_t* Config_ctor();
