@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef __NVCC__
 #define HANDLE_ERROR(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
@@ -13,6 +14,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
       if (abort) exit(code);
    }
 }
+#endif
 
 
 void* umacalloc(size_t num, size_t size);

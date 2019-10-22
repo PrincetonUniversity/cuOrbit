@@ -4,7 +4,7 @@ SILENCE= -Wno-unused-variable
 INCLUDES=
 LIBRARIES= -L. -lm
 #-Wmissing-field-initializers # I think this was for nvcc or something -pedantic
-CFLAGS= -fPIC -std=gnu99 $(SILENCE) -Wall -Wextra -Wsign-conversion -g -O0 
+CFLAGS= -fPIC -std=gnu99 $(SILENCE) -Wall -Wextra -Wsign-conversion -g -O3 
 #CFLAGS += $(INCLUDES)
 #-Wsign-conversion (some nvidia libs can make this a noisy warning, might be fixed now)
 LDFLAGS=
