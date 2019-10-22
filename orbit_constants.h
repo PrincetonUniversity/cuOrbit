@@ -7,7 +7,7 @@
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
-const double pi2 = 2. * M_PI;
-const double pi2i = 0.5 / M_PI;
+static const double pi2 = 2. * M_PI;
+static const double pi2i = 0.5 / M_PI;
 
 #endif
