@@ -13,7 +13,7 @@ void* umacalloc(size_t num, size_t size){
   void* ptr;
 #ifdef __NVCC__
   /* XXXX add cuda check on both of these returns later */
-  cudaMallocManaged(&ptr, num*size, cudaMemAttachGlobal);
+  HANDLE_ERROR(cudaMallocManaged(&ptr, num*size, cudaMemAttachGlobal));
   /* check if host memset faster, our arrays are generally small... */
   /* cudaMemset(ptr, 0, num*size); */
   memset(ptr, 0, num*size);

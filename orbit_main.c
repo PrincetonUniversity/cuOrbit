@@ -21,7 +21,7 @@
 
 void main_loop(Config_t* cfg_ptr){
   int irun_pdedp;
-  
+
   Deposition_t* depo_ptr = cfg_ptr->depo_ptr;
 
   for(irun_pdedp=0; irun_pdedp < cfg_ptr->nruns; irun_pdedp++){
@@ -80,23 +80,24 @@ void main_loop(Config_t* cfg_ptr){
 
     int N = cfg_ptr->nprt;
 
-    cudaOccupancyMaxPotentialBlockSize( &minGridSize,
-                                        &dimBlock,
-                                        do_particles,  /* kernel we're qrying */
-                                        0,  /* smemsize, laffs, don't worry about it */
-                                        0); /* ubound block, 0 none */
+    HANDLE_ERROR(cudaOccupancyMaxPotentialBlockSize(
+        &minGridSize,
+        &dimBlock,
+        do_particles,  /* kernel we're qrying */
+        0,  /* smemsize, laffs, don't worry about it */
+        0)); /* ubound block, 0 none */
     /* compute the grid size given recomended block */
     dimGrid = (N + dimBlock - 1) / dimBlock;
+    printf("Launching do_particles as %d blocks of %d threads\n", dimGrid, dimBlock);
 
     /* launch it */
     do_particles<<<(unsigned)dimGrid, (unsigned)dimBlock>>>(cfg_ptr);
 
-    /*  */
-#ifdef FORCE_KERNEL_CHECK
-    cudaPeekAtLastError();
-    printf("..peek-OK..");
-    cudaDeviceSynchronize();
-#endif
+    /* peek */
+    HANDLE_ERROR(cudaPeekAtLastError());
+
+    /* you need this for UVM... */
+    HANDLE_ERROR(cudaDeviceSynchronize());
 
 #else
     do_particles(cfg_ptr);
