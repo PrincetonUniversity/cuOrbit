@@ -446,8 +446,6 @@ void ptrbak(Config_t* cfg_ptr, int k)
   double* en = Ptcl->en;
   double* pol = Ptcl->pol;
   const double zprt = Ptcl->zprt;
-  const double pamp = get_pamp(cfg_ptr);
-  const double rprof = get_rprof(cfg_ptr);
   const double engn = get_engn(cfg_ptr);
   const double ekev = get_ekev(Ptcl);
   const double pw = get_pw(Eqlb);
@@ -597,8 +595,6 @@ void ptrbak(Config_t* cfg_ptr, int k)
 
 
 void do_particles(Config_t* cfg_ptr){
-    // before we begin, we need to compute "eps"
-  const double eps = compute_eps(cfg_ptr->eqlb_ptr);
 
   int particle_id;
   int ktm;
