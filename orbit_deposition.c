@@ -144,40 +144,69 @@ bool pdedp_optimize(Deposition_t* Depo_ptr){
   return Depo_ptr->pdedp_optimize;
 }
 
-
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_pdedp_dtsamp(Deposition_t* Depo_ptr){
   return Depo_ptr->pdedp_dtsamp;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_pdedp_tskip(Deposition_t* Depo_ptr){
   return Depo_ptr->pdedp_tskip;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_pdedp_tskip(Deposition_t* Depo_ptr, double pdedp_tskip){
   Depo_ptr->pdedp_tskip = pdedp_tskip;
   return;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 bool get_initial_update_pdedp(Deposition_t* Depo_ptr){
   return Depo_ptr->initial_update_pdedp;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_initial_update_pdedp(Deposition_t* Depo_ptr, bool val){
   Depo_ptr->initial_update_pdedp = val;
   return;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 bool get_pdedp_focusdep(Deposition_t* Depo_ptr){
   return Depo_ptr->pdedp_focusdep;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_pdedp_focusdep(Deposition_t* Depo_ptr, bool val){
   Depo_ptr->pdedp_focusdep = val;
   return;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 size_t sizeof_pdedp(Deposition_t* Depo_ptr){
   return (size_t) (Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu *
           Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz);
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 static inline int get_pdedp_ind(Deposition_t* Depo_ptr, int iE, int iPz, int imu, int iDE, int iDPz){
   const int ind = Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu * Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * iE +
       Depo_ptr->pde_nbinmu * Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz * iPz +
@@ -186,6 +215,9 @@ static inline int get_pdedp_ind(Deposition_t* Depo_ptr, int iE, int iPz, int imu
   return ind;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 static inline int get_bin(double val, double* arr, const int dim){
   int k;
   int indx = -1;

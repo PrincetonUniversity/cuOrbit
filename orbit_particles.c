@@ -142,86 +142,171 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
 
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_b(Particles_t* ptcl_ptr){
   return ptcl_ptr->b;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_g(Particles_t* ptcl_ptr){
   return ptcl_ptr->g;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_q(Particles_t* ptcl_ptr){
   return ptcl_ptr->q;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_en(Particles_t* ptcl_ptr){
   return ptcl_ptr->en;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_pol(Particles_t* ptcl_ptr){
   return ptcl_ptr->pol;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_rho(Particles_t* ptcl_ptr){
   return ptcl_ptr->rho;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_rmu(Particles_t* ptcl_ptr){
   return ptcl_ptr->rho;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int* get_otp(Particles_t* ptcl_ptr){
   return ptcl_ptr->otp;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_ptch(Particles_t* ptcl_ptr){
   return ptcl_ptr->ptch;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_thet(Particles_t* ptcl_ptr){
   return ptcl_ptr->thet;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_pot(Particles_t* ptcl_ptr){
   return ptcl_ptr->pot;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_zet(Particles_t* ptcl_ptr){
   return ptcl_ptr->zet;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_time(Particles_t* ptcl_ptr){
   return ptcl_ptr->time;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_dt(Particles_t* ptcl_ptr){
   return ptcl_ptr->dt;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_tim1(Particles_t* ptcl_ptr){
   return ptcl_ptr->tim1;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_wt(Particles_t* ptcl_ptr){
   return ptcl_ptr->wt;
 }
 
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_zprt(Particles_t* ptcl_ptr){
   return ptcl_ptr->zprt;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_prot(Particles_t* ptcl_ptr){
   return ptcl_ptr->prot;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_ekev(Particles_t* ptcl_ptr){
   return ptcl_ptr->ekev;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_alp(Particles_t* ptcl_ptr){
   return ptcl_ptr->alp;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_dadp(Particles_t* ptcl_ptr){
   return ptcl_ptr->dadp;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_dadt(Particles_t* ptcl_ptr){
   return ptcl_ptr->dadt;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_dadz(Particles_t* ptcl_ptr){
   return ptcl_ptr->dadz;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_padt(Particles_t* ptcl_ptr){
   return ptcl_ptr->padt;
 }
@@ -235,6 +320,9 @@ void field(Config_t* cfg_ptr, const int nprts){
   return;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void kfield(Config_t* cfg_ptr, int k){
   Particles_t* ptcl_ptr = cfg_ptr->ptcl_ptr;
   Equilib_t* const  Eq = cfg_ptr->eqlb_ptr;
@@ -355,6 +443,9 @@ void kfield(Config_t* cfg_ptr, int k){
 
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void kupdate(Config_t* cfg_ptr, int k){
    //locals
   int nesc;
@@ -409,6 +500,9 @@ void kupdate(Config_t* cfg_ptr, int k){
   return;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void ptrb2k(Config_t* cfg_ptr, int k)
 {
   double* dptdp = cfg_ptr->ptcl_ptr->dptdp;
@@ -428,6 +522,9 @@ void ptrb2k(Config_t* cfg_ptr, int k)
   return;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void ptrbak(Config_t* cfg_ptr, int k)
 {
   Equilib_t* Eqlb = cfg_ptr->eqlb_ptr;
@@ -610,6 +707,9 @@ void do_particles(Config_t* cfg_ptr){
   }
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void konestep(Config_t* cfg_ptr, int k){
 
   Particles_t* Ptcl = cfg_ptr->ptcl_ptr;

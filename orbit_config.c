@@ -408,58 +408,100 @@ void set1(Config_t* cfg_ptr){
 }
 
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_xc(Config_t* cfg_ptr, double val){
   cfg_ptr->xc = val;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_xc(Config_t* cfg_ptr){
   return cfg_ptr->xc;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_bkg(Config_t* cfg_ptr){
   return cfg_ptr->bkg;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_eps(Config_t* cfg_ptr, double val){
-  cfg_ptr->xc = val;
+  cfg_ptr->eps = val;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_eps(Config_t* cfg_ptr){
-  return cfg_ptr->xc;
+  return cfg_ptr->eps;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_engn(Config_t* cfg_ptr){
   return cfg_ptr->engn;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_bax(Config_t* cfg_ptr){
   return cfg_ptr->bax;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_bmax(Config_t* cfg_ptr){
   return cfg_ptr->bmax;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_bmin(Config_t* cfg_ptr){
   return cfg_ptr->bmin;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_pamp(Config_t* cfg_ptr){
   return cfg_ptr->pamp;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_rprof(Config_t* cfg_ptr){
   return cfg_ptr->rprof;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_trun(Config_t* cfg_ptr){
   return cfg_ptr->trun;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_nstep_all(Config_t* cfg_ptr){
   return cfg_ptr->nstep_all;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_dt0(Config_t* cfg_ptr){
   return cfg_ptr->dt0;
 }

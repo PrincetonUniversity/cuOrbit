@@ -428,56 +428,110 @@ void initialize_Equilib(Equilib_t* Equilib_ptr, Config_t* cfg_ptr){
 
 }
 
-
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_B(Equilib_t* Eq_ptr){
   return Eq_ptr->B;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_G(Equilib_t* Eq_ptr){
   return Eq_ptr->G;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_R(Equilib_t* Eq_ptr){
   return Eq_ptr->R;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_X(Equilib_t* Eq_ptr){
   return Eq_ptr->X;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_Z(Equilib_t* Eq_ptr){
   return Eq_ptr->Z;
 }
 
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_QD(Equilib_t* Eq_ptr){
   return Eq_ptr->QD;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_RD(Equilib_t* Eq_ptr){
   return Eq_ptr->RD;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_GD(Equilib_t* Eq_ptr){
   return Eq_ptr->GD;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_PD(Equilib_t* Eq_ptr){
   return Eq_ptr->PD;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_PS(Equilib_t* Eq_ptr){
   return Eq_ptr->PS;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_RP(Equilib_t* Eq_ptr){
   return Eq_ptr->RP;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double** get_VD(Equilib_t* Eq_ptr){
   return Eq_ptr->VD;
 }
 
 
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_pw(Equilib_t* Eq_ptr){
   return Eq_ptr->pw;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_rmaj(Equilib_t* Eq_ptr){
   return Eq_ptr->rmaj;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int compute_jd(Equilib_t* Eq_ptr, double x){
   /* computes jd in zero inds */
   int jd;
@@ -622,22 +676,37 @@ double bfield(Equilib_t* Eq_ptr, double px, double tx){
       + Eq_ptr->b7[ind]*dt2 + Eq_ptr->b8[ind]*dt2*dpx + Eq_ptr->b9[ind]*dt2*dp2;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_ped(Equilib_t* Eq_ptr){
   return Eq_ptr->ped;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_lsp(Equilib_t* Eq_ptr){
   return Eq_ptr->lsp;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_lst(Equilib_t* Eq_ptr){
   return Eq_ptr->lst;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_nrip(Equilib_t* Eq_ptr){
   return Eq_ptr->nrip;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_krip(Equilib_t* Eq_ptr){
   return Eq_ptr->krip;
 }
@@ -690,6 +759,9 @@ void vspline(Equilib_t* Eq_ptr){
   return;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double rpol(Equilib_t* Eq_ptr, double pdum){
   int jd;
   const int lspm1 = Eq_ptr->lsp - 1;

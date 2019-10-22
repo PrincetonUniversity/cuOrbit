@@ -23,9 +23,16 @@ double darray_min(double* A, size_t nA){
   return val;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int imax(int a, int b){
   return a > b ? a : b;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int imin(int a, int b){
   return a < b ? a : b;
 }

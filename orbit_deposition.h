@@ -3,6 +3,11 @@
 
 #include "orbit_config.h"
 
+#ifdef __NVCC__
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
 typedef struct Deposition Deposition_t;
 void initialize_Deposition(Deposition_t*, Config_t*);
 Deposition_t* Deposition_ctor();
@@ -12,12 +17,39 @@ bool compute_pdedp(Deposition_t*);
 bool initial_update_pdedp(Deposition_t*);
 bool pdedp_optimize(Deposition_t*);
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_pdedp_dtsamp(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_pdedp_tskip(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_pdedp_tskip(Deposition_t*, double);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 bool get_initial_update_pdedp(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_initial_update_pdedp(Deposition_t*, bool);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 bool get_pdedp_focusdep(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_pdedp_focusdep(Deposition_t*, bool);
 
 size_t sizeof_pdedp(Deposition_t*);

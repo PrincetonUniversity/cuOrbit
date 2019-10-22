@@ -8,6 +8,11 @@
 #include "orbit_particles.h"
 #include "orbit_deposition.h"
 
+#ifdef __NVCC__
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
 /* these are set in the .c file for now */
 extern const int IDP;
 extern const double pi2;
@@ -103,19 +108,78 @@ struct Config {
 Config_t* Config_ctor();
 void initialize_Config(Config_t*);
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_xc(Config_t*, double);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_xc(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_bkg(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 void set_eps(Config_t*, double);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_eps(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_engn(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_bax(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_bmax(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_bmin(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_pamp(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_rprof(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_trun(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_nstep_all(Config_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_dt0(Config_t*);
 
 #endif

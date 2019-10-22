@@ -353,44 +353,78 @@ void set_omeg0(Perturb_t* ptrb_ptr, double val){
   ptrb_ptr->omeg0 = val;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_omeg0(Perturb_t* ptrb_ptr){
     return ptrb_ptr->omeg0;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_nflr(Perturb_t* ptrb_ptr){
   return ptrb_ptr->nflr;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_npert(Perturb_t* ptrb_ptr){
     return ptrb_ptr->npert;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_lpt(Perturb_t* ptrb_ptr){
   return ptrb_ptr->lpt;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_md1(Perturb_t* ptrb_ptr){
   return ptrb_ptr->md1;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int get_md2(Perturb_t* ptrb_ptr){
   return ptrb_ptr->md2;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_omegv(Perturb_t* ptrb_ptr){
   return ptrb_ptr->omegv;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_phaz(Perturb_t* ptrb_ptr){
   return ptrb_ptr->phaz;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_a1(Perturb_t* ptrb_ptr){
   return ptrb_ptr->a1;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_a2(Perturb_t* ptrb_ptr){
   return ptrb_ptr->a2;
 }
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_a3(Perturb_t* ptrb_ptr){
   return ptrb_ptr->a3;
 }
@@ -405,30 +439,51 @@ double pol2pot(Config_t* cfg_ptr, double pdum){
   return potout;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_alfv(Perturb_t* ptrb_ptr){
   return ptrb_ptr->alfv;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_amp(Perturb_t* ptrb_ptr){
   return ptrb_ptr->amp;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int* get_mmod(Perturb_t* ptrb_ptr){
   return ptrb_ptr->mmod;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 int* get_nmod(Perturb_t* ptrb_ptr){
   return ptrb_ptr->nmod;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_xi1(Perturb_t* ptrb_ptr){
   return ptrb_ptr->xi1;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_xi2(Perturb_t* ptrb_ptr){
   return ptrb_ptr->xi2;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_xi3(Perturb_t* ptrb_ptr){
   return ptrb_ptr->xi3;
 }
