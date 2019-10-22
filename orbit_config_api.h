@@ -13,11 +13,8 @@
 #include <cuda_runtime.h>
 #endif
 
-/* these are set in the .c file for now */
+/* this is set in the .c file for now */
 extern const int IDP;
-extern const double pi2;
-extern const double pi2i;
-
 
 struct Config {
   /* meta */

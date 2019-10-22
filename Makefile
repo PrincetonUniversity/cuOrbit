@@ -10,11 +10,13 @@ CFLAGS= -fPIC -std=gnu99 $(SILENCE) -Wall -Wextra -Wsign-conversion -g -O0
 LDFLAGS=
 
 ifeq ($(CC),nvcc)
-	CFLAGS := --compiler-options '$(CFLAGS) ' -g -O3 --use_fast_math
+	# treat files as CU, treat files as device-code-relocatable (dc)
+	NVCCFLAGS += -x=cu -dc
+	CFLAGS := $(NVCCFLAGS) --compiler-options '$(CFLAGS) ' -g -O3 --use_fast_math
 	LDFLAGS := --compiler-options '-fPIC ' $(LDFLAGS)
 	INCLUDES += -I/usr/local/cuda/include
 	#NVOPT= --maxrregcount=32
-	#NVCCFLAGS += $(NVOPT)
+
 else
 	CFLAGS += -pedantic -Wno-c++11-extensions -Wno-c++11-long-long
 	LDFLAGS +=$(CFLAGS)

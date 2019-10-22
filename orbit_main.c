@@ -5,6 +5,11 @@
 #include <stdbool.h>
 #include <time.h>
 
+#ifdef __NVCC__
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
 #include "orbit_config_api.h"
 #include "orbit_util.h"
 #include "orbit_perturbation.h"
@@ -73,18 +78,18 @@ void main_loop(Config_t* cfg_ptr){
                            the maximum occupancy for a full device launch */
     int dimGrid=0;    /*  The actual grid size needed, based on input size */
 
-    int N = ((int)cfg_ptr->ptcl_ptr->nprt);
+    int N = cfg_ptr->nprt;
 
     cudaOccupancyMaxPotentialBlockSize( &minGridSize,
                                         &dimBlock,
                                         do_particles,  /* kernel we're qrying */
-                                        0,  /* laffs, don't worry about it */
-                                        N );  /* how many we want total */
+                                        0,  /* smemsize, laffs, don't worry about it */
+                                        0); /* ubound block, 0 none */
     /* compute the grid size given recomended block */
     dimGrid = (N + dimBlock - 1) / dimBlock;
 
     /* launch it */
-    do_particles<<<dimGrid, dimBlock>>>(cfg_ptr);
+    do_particles<<<(unsigned)dimGrid, (unsigned)dimBlock>>>(cfg_ptr);
 
     /*  */
 #ifdef FORCE_KERNEL_CHECK

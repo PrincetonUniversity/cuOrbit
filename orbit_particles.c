@@ -2,10 +2,17 @@
 #include <stdio.h>
 #include <math.h>
 
+#ifdef __NVCC__
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
 #include "orbit_config_api.h"
 #include "orbit_particles.h"
 #include "orbit_util.h"
+#include "orbit_constants.h"
 #include "cuda_helpers.h"
+
 
 struct Particles {
   int nprt;   /* number of particles (use in place of IDM*/
@@ -694,7 +701,20 @@ void ptrbak(Config_t* cfg_ptr, int k)
 
 #ifdef __NVCC__
 __global__
-#endif
+void do_particles(Config_t* cfg_ptr){
+
+  /* 1D grid of 1D blocks */
+  const int particle_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+  int ktm;
+
+  for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
+    /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
+    konestep(cfg_ptr, particle_id);
+    kupdate(cfg_ptr, particle_id);
+  }
+}
+#else
 void do_particles(Config_t* cfg_ptr){
 
   int particle_id;
@@ -709,21 +729,6 @@ void do_particles(Config_t* cfg_ptr){
   }
 }
 
-#ifdef __NVCC__
-__global__
-void do_particles(Config_t* cfg_ptr){
-
-  /* 1D grid of 1D blocks */
-  const int particle_id = blockIdx.x * blockDim.x + threadIdx.x
-
-  int ktm;
-
-  for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
-    /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
-    konestep(cfg_ptr, particle_id);
-    kupdate(cfg_ptr, particle_id);
-  }
-}
 #endif
 
 

@@ -8,16 +8,11 @@
 
 #include "orbit_config_api.h"
 #include "orbit_util.h"
+#include "orbit_constants.h"
 #include "cuda_helpers.h"
 
+/* todo, fix this... config var? */
 const int IDP = 250;
-/* move these to util or consts or something */
-/* note M_PI was dropped for c99 */
-#ifndef M_PI
-    #define M_PI 3.14159265358979323846
-#endif
-const double pi2 = 2. * M_PI;
-const double pi2i = 0.5 / M_PI;
 
 Config_t* Config_ctor(){
   Config_t* Cfg = (Config_t*)umacalloc(1, sizeof(Config_t));

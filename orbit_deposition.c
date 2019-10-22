@@ -422,7 +422,7 @@ void pdedp_init(Deposition_t* Depo_ptr){
     Depo_ptr->pde_varDPz[k] = Depo_ptr->pde_DPzmin + k * stp + stp/2.;
   }
 
-  Depo_ptr->pde_pdedp = umacalloc(sizeof_pdedp(Depo_ptr), sizeof(double));
+  Depo_ptr->pde_pdedp = (double*)umacalloc(sizeof_pdedp(Depo_ptr), sizeof(double));
 
 
   /*      -------------------------------------------------------

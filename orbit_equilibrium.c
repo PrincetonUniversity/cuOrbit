@@ -4,6 +4,7 @@
 
 #include "orbit_equilibrium.h"
 #include "orbit_config_api.h"
+#include "orbit_constants.h"
 #include "orbit_util.h"
 #include "cuda_helpers.h"
 
@@ -541,6 +542,9 @@ int compute_jd(Equilib_t* Eq_ptr, double x){
   return jd;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 static int compute_kd(Equilib_t* Eq_ptr, double x){
   /* computes kd in zero inds */
   const double lst = Eq_ptr->lst;
@@ -597,6 +601,9 @@ double giac(Equilib_t* Eq_ptr, double px, double tx){
       + Eq_ptr->g7[ind]*dt2 + Eq_ptr->g8[ind]*dt2*dpx + Eq_ptr->g9[ind]*dt2*dp2;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double xproj(Equilib_t* Eq_ptr, double px, double tx){
   /* major radius position as function of poloidal flux, theta  */
   const double lst = Eq_ptr->lst;
@@ -776,6 +783,9 @@ double rpol(Equilib_t* Eq_ptr, double pdum){
   return Eq_ptr->rp1[jd] + Eq_ptr->rp2[jd]*dpx + Eq_ptr->rp3[jd]*dp2;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double polr_mp(Equilib_t* Eq_ptr, double rdum, double pd){
   const double eps = compute_eps(Eq_ptr);
   if(rdum >= eps){
@@ -798,6 +808,9 @@ double polr_mp(Equilib_t* Eq_ptr, double rdum, double pd){
   return pd;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double compute_eps(Equilib_t* eqlb_ptr){
   const double xproj0 = xproj(eqlb_ptr, 0., 0.);
   const double xproj1 = xproj(eqlb_ptr, eqlb_ptr->ped, 0.);

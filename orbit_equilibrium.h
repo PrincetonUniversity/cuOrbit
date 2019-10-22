@@ -123,6 +123,9 @@ double bfield(Equilib_t*, double, double);
 double giac(Equilib_t*, double, double);
 void vspline(Equilib_t*);
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double xproj(Equilib_t*, double, double);
 double zproj(Equilib_t*, double, double);
 
@@ -131,7 +134,14 @@ __host__ __device__
 #endif
 double rpol(Equilib_t*, double);
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double polr_mp(Equilib_t*, double, double);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double compute_eps(Equilib_t*);
 
 #endif
