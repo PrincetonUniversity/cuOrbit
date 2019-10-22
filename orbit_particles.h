@@ -163,6 +163,9 @@ __host__ __device__
 void ptrb2k(Config_t*, int);
 
 /* launcher... */
+#ifdef __NVCC__
+__host__ __global__
+#endif
 void do_particles(Config_t* );
 
 #ifdef __NVCC__

@@ -690,22 +690,42 @@ void ptrbak(Config_t* cfg_ptr, int k)
   return;
 }
 
+/* For do_particles, we'll define different code for cpu and gpu */
 
+#ifdef __NVCC__
+__global__
+#endif
 void do_particles(Config_t* cfg_ptr){
 
   int particle_id;
   int ktm;
+
   for(particle_id=0; particle_id < cfg_ptr->ptcl_ptr->nprt; particle_id++){
     for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
       /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
-
       konestep(cfg_ptr, particle_id);
-
       kupdate(cfg_ptr, particle_id);
-
     }
   }
 }
+
+#ifdef __NVCC__
+__global__
+void do_particles(Config_t* cfg_ptr){
+
+  /* 1D grid of 1D blocks */
+  const int particle_id = blockIdx.x * blockDim.x + threadIdx.x
+
+  int ktm;
+
+  for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
+    /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
+    konestep(cfg_ptr, particle_id);
+    kupdate(cfg_ptr, particle_id);
+  }
+}
+#endif
+
 
 #ifdef __NVCC__
 __host__ __device__

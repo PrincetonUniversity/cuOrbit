@@ -65,7 +65,37 @@ void main_loop(Config_t* cfg_ptr){
     ///XXXX time steps to skip
 
     /* launch the stepping functions*/
+
+#ifdef __NVCC__
+    /* compute a reasonable launch size */
+    int dimBlock=0;   /*  The launch configurator returned block size */
+    int minGridSize=0; /*  The minimum grid size needed to achieve
+                           the maximum occupancy for a full device launch */
+    int dimGrid=0;    /*  The actual grid size needed, based on input size */
+
+    int N = ((int)cfg_ptr->ptcl_ptr->nprt);
+
+    cudaOccupancyMaxPotentialBlockSize( &minGridSize,
+                                        &dimBlock,
+                                        do_particles,  /* kernel we're qrying */
+                                        0,  /* laffs, don't worry about it */
+                                        N );  /* how many we want total */
+    /* compute the grid size given recomended block */
+    dimGrid = (N + dimBlock - 1) / dimBlock;
+
+    /* launch it */
+    do_particles<<<dimGrid, dimBlock>>>(cfg_ptr);
+
+    /*  */
+#ifdef FORCE_KERNEL_CHECK
+    cudaPeekAtLastError();
+    printf("..peek-OK..");
+    cudaDeviceSynchronize();
+#endif
+
+#else
     do_particles(cfg_ptr);
+#endif
     /* end of main run*/
 
     if (compute_pdedp(depo_ptr)){
