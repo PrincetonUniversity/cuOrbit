@@ -581,7 +581,6 @@ double rifun(Equilib_t* Eq_ptr, double px){
 double giac(Equilib_t* Eq_ptr, double px, double tx){
   /* jacobian as function of poloidal flux */
   const double lst = Eq_ptr->lst;
-  const double lsp = Eq_ptr->lsp;
   int idum;
   double tdum;
   const int jd = compute_jd(Eq_ptr, px);

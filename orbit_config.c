@@ -201,22 +201,16 @@ void initialize_Config(Config_t* cfg_ptr){
 
 void set1(Config_t* cfg_ptr){
   int j, k;
-  int kdum;
   double dum;
   double dvol;
-  double pdum, qdum, tdum;
-  double q0, qw;
+  double pdum, tdum, ddum;
   Equilib_t* Eq = cfg_ptr->eqlb_ptr;
   Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
   Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
-  double * const q = get_q(Ptcl);
   const int nprt = cfg_ptr->nprt;
 
   double psiwal;
-  double pq1;
-  double rq1;
-  double pdp, pdq, pqm, pqp, qdm, qdp, rqm, rqp;
-  double denom, bdum, rdum, ddum;
+  double denom, bdum, rdum;
   double pz, tz;
   double xdum, zdum;
   double xl, xr, zb, zt, rmd;
@@ -263,41 +257,14 @@ void set1(Config_t* cfg_ptr){
   /* xxx not sure why exactly we do this... */
   field(cfg_ptr, 1);
   /* or this */
-  q0 = q[0];
   pol[0] = get_pw(Eq);
   field(cfg_ptr, 1);
-  qw = q[0];
   for(k=1; k<=200; k++){
     pol[k] = 0.005 * k * get_pw(Eq);
     thet[k] = 0;
   }
   field(cfg_ptr, 200);
-  pq1 = 9.99E9;
-  rq1 = 9.99E9;
-  if (darray_max(q, (size_t)nprt)>1. || darray_min(q, (size_t)nprt)<1.){
-    for(k=1; k<=200; k++){
-      kdum = k;
-      pq1 = pol[k-1];
-      if(q[k] > 1.){
-        break;
-      }
-    }
-    pqp = 0.005 * kdum * get_pw(Eq);
-    pqm = 0.005 * (kdum -1) * get_pw(Eq);
-    rqp = xproj(Eq, pqp, 0.) - get_xc(cfg_ptr);
-    rqm = xproj(Eq, pqm, 0.) - get_xc(cfg_ptr);
-    qdp = q[kdum];
-    if(kdum == 1){
-      rq1 = xproj(Eq, pq1, 0.) - get_xc(cfg_ptr);
-    }else{
-      qdm = q[kdum-1];
-      if(kdum == 1){
-        qdum = q0;
-      }
-      rq1 = rqp - (rqp-rqm)*(qdp - 1.)/(qdp - qdm);
-      pq1 = pqp - (pqp-pqm)*(qdp - 1.)/(qdp - qdm);
-    }
-  }
+
   cfg_ptr->engn = 10.533 * get_prot(Ptcl) * get_ekev(Ptcl) * pow(GD[0][0], 2) /
       pow( get_rmaj(Eq) * get_zprt(Ptcl) * cfg_ptr->bkg * B[0][0], 2);
 
@@ -372,8 +339,7 @@ void set1(Config_t* cfg_ptr){
   const double gdump = GD[1][0];
   const double ridum = RD[0][0];
   const double ridump = RD[1][0];
-  qdum = QD[0][0];
-  const double qdump = QD[1][0];
+  const double qdum = QD[0][0];
   bdum = cfg_ptr->bax;
   bool invalid=false;
   for(j=1; j<=10; j++){
@@ -383,11 +349,11 @@ void set1(Config_t* cfg_ptr){
     if(dum < 0) continue;
     rdum = sqrt(dum) / bdum;
     ddum = gdum * qdum + ridum + rdum * (gdum*ridump - ridum*gdump);
-    if(dum < 0){
+    if(ddum < 0){
       invalid=true;
     };
     ddum = gdum*qdum + ridum - rdum * (gdum*ridump - ridum*gdump);
-    if(dum < 0){
+    if(ddum < 0){
       invalid=true;
     };
   }

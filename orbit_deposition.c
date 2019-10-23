@@ -14,7 +14,6 @@
 #include "cuda_helpers.h"
 
 const size_t MAXFNAME=255;
-const int ibin=40;  /* used in temp array in pdedp_finalize */
 
 struct Deposition {
   /* pdedp */
@@ -242,7 +241,6 @@ void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
     for P(DE,DP| E,P,mu) from a text file (UFILE)*/
   int i;
   int je, jp, jmu, jde, jdp;
-  size_t sz;
   FILE *ifp;
   const char *mode = "r";
 
@@ -445,12 +443,13 @@ void class_kdomain(Config_t* cfg_ptr, int k){
       otp=5, trapped confined, otp = 6, trapped lost
       otp=7, stagnation, otp = 8, conf potato, otp = 9, trap potato
   */
-  int ndum,ntot,ntlos,km,ku,kv,kt,j;
-  double xdum,zdum,edum,pdum,podum,dum,dum1,dum2,vol;
-  double pzdum,elt,ert,eax,etp1,etp2,mu,mube;
-  double evmin,evmax,ev0,mub,rhod,elt2;
-  double Epot,Ekin, E_ax,E_min_lcfs,E_max_lcfs;
-  double E_th0,E_thpi,mu2;
+
+  double mub,mube,pdum,edum,dum;
+  double Epot,elt2,evmin,evmax,ev0;
+  double pzdum,elt,ert,eax,etp1,etp2,mu;
+  double rhod;
+  double E_ax,E_min_lcfs,E_max_lcfs;
+  double E_th0,E_thpi;
   const double ekev=get_ekev(cfg_ptr->ptcl_ptr);
   const double engn=get_engn(cfg_ptr);
   const double pw=get_pw(cfg_ptr->eqlb_ptr);
@@ -575,7 +574,6 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
            and fill in empty bins */
   double  cnt_aver=0.;
   int cnt_;
-  int ind;
   int nbins=0;
   for(int iE=0; iE < Depo_ptr->pde_nbinE; iE++){
     for(int iPz=0; iPz < Depo_ptr->pde_nbinPz; iPz++){
@@ -628,7 +626,6 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
 void pdedp_out(Deposition_t* Depo_ptr){
   /* writes out the dist file */
   int k;
-  int ind;
   FILE *ofp;
   ofp = fopen(Depo_ptr->pdedp_file, "w");  /* add f status */
   if (ofp == NULL) {
@@ -931,9 +928,9 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   const double dthres = 1.;
   int recompute;
   int k;
-  double mumin, mumax, Pzmin, Pzmax, pde_engn;
+  double mumax, Pzmin, Pzmax, pde_engn;
   double fctE, fctPz, fctMu;
-  double demax_old, dPzmax_old, stp;
+  double stp;
 
   printf("Checking pDEDP boundaries ...\n");
 
@@ -953,7 +950,6 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   /* redefine range of mu
      add buffer to the actual range */
-  mumin = 0.;
   mumax = 1./Bmn * (depo_ptr->pde_nbinmu + 1.) / depo_ptr->pde_nbinmu;
 
   /* upper limit for Pz, add buffer */
@@ -1019,8 +1015,8 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   } else {
     /* update range */
     /* keep copy  */
-    double demax_old = depo_ptr->pde_DEmax;
-    double dPzmax_old = depo_ptr->pde_DPzmax;
+    /* double demax_old = depo_ptr->pde_DEmax; */
+    /* double dPzmax_old = depo_ptr->pde_DPzmax; */
 
 
     /* new values */
@@ -1073,10 +1069,9 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* loops over k and k/2, can live on device one day */
 
-  int k, kd, np2, ier;
-  double dum,xproj,tdum;
-  double edum,pzdum,mudum,bdum;
+  int k, kd, np2;
   double nprt;
+  double mudum;
 
   const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
   const double einj2 = depo_ptr->pde_Emax;
@@ -1095,8 +1090,6 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   double ekev = get_ekev(Ptcl);
   double* rmu = get_rmu(cfg_ptr->ptcl_ptr);
   double* b = get_b(cfg_ptr->ptcl_ptr);
-  double* g = get_g(cfg_ptr->ptcl_ptr);
-  int* otp = get_otp(Ptcl);
 
   /* Full deposition*/
   np2 = .5* cfg_ptr->nprt;
@@ -1135,9 +1128,9 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     en[k] = en[k] + pot[k];
 
     /* DEBUG: */
-    edum = en[k];    /* !*ekev/engn*/
-    pzdum = (g[k]*rho[k] - pol[k]) / pw;
-    bdum = bfield(cfg_ptr->eqlb_ptr, pol[k], thet[k]);
+    /* edum = en[k]; */    /* !*ekev/engn*/
+    /* pzdum = (g[k]*rho[k] - pol[k]) / pw; */
+    /* bdum = bfield(cfg_ptr->eqlb_ptr, pol[k], thet[k]); */
     mudum = rmu[k];  /* /en[k] */
     /*!       mudum=edum/bdum*(1.0-ptch[k]*ptch[k]) */
   }
@@ -1150,8 +1143,7 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 }
 
 void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
-  int k,kd,np2,nlost,nmaxs,imaxs;
-  double dum,xproj,tdum;
+  int kd,np2,nlost,nmaxs,imaxs;
 
   const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
   const double einj2 = depo_ptr->pde_Emax;
@@ -1170,7 +1162,6 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   double ekev = get_ekev(Ptcl);
   double* rmu = get_rmu(Ptcl);
   double* b = get_b(Ptcl);
-  double* g = get_g(Ptcl);
   int* otp = get_otp(Ptcl);
 
   nmaxs=5E3; /* max number of attemps to redeposit particle */
@@ -1254,7 +1245,7 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 void check_res_ptc(Config_t* cfg_ptr, int kd){
   int j, k, ind;
   double ptot, pmax;
-  double edum, pzdum, mudum, zdum;
+  double edum, pzdum, mudum;
   double tmp;
 
   Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
@@ -1266,7 +1257,6 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   double* rho = get_rho(Ptcl);
   double ekev = get_ekev(Ptcl);
   double* rmu = get_rmu(Ptcl);
-  double* b = get_b(Ptcl);
   double* g = get_g(Ptcl);
 
   ptot = 0.;
@@ -1310,8 +1300,7 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
 
 void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /*    all confined orbits, broad energy range, co- only */
-  int k, kd, np2, nprt0;
-  double dum, xproj, tdum;
+  int k, kd, nprt0;
 
   const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
   const double einj2 = depo_ptr->pde_Emax;

@@ -4,7 +4,7 @@ SILENCE= -Wno-unused-variable
 INCLUDES=
 LIBRARIES= -L. -lm
 #-Wmissing-field-initializers # I think this was for nvcc or something -pedantic
-CFLAGS= -fPIC -std=gnu99 $(SILENCE) -Wall -Wextra -Wsign-conversion -g -O3 
+CFLAGS= -fPIC $(SILENCE) -Wall -Wextra -Wsign-conversion -g -O3 
 #CFLAGS += $(INCLUDES)
 #-Wsign-conversion (some nvidia libs can make this a noisy warning, might be fixed now)
 LDFLAGS=
@@ -18,7 +18,7 @@ ifeq ($(CC),nvcc)
 	#NVOPT= --maxrregcount=32
 
 else
-	CFLAGS += -pedantic -Wno-c++11-extensions -Wno-c++11-long-long
+	CFLAGS += -std=gnu99 -pedantic -Wno-c++11-extensions -Wno-c++11-long-long
 	LDFLAGS +=$(CFLAGS)
 endif
 
