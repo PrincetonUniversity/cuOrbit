@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "orbit_config_api.h"
-#include "orbit_main.h"
 
 
 // test

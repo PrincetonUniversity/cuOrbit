@@ -14,6 +14,7 @@
 #endif
 
 /* this is set in the .c file for now */
+/* xxx, get rid of this static IDP business */
 extern const int IDP;
 
 struct Config {
@@ -178,5 +179,7 @@ int get_nstep_all(Config_t*);
 __host__ __device__
 #endif
 double get_dt0(Config_t*);
+
+void main_loop(Config_t* cfg_ptr);
 
 #endif

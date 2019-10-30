@@ -1,51 +1,58 @@
 CC=cc
 
-SILENCE= -Wno-unused-variable
-INCLUDES=
-LIBRARIES= -L. -lm
-#-Wmissing-field-initializers # I think this was for nvcc or something -pedantic
-CFLAGS= -fPIC $(SILENCE) -Wall -Wextra -Wsign-conversion -g -O3 
-#CFLAGS += $(INCLUDES)
-#-Wsign-conversion (some nvidia libs can make this a noisy warning, might be fixed now)
+SILENCE = -Wno-unused-variable
+INCLUDES =
+LIBRARIES = -L. -lm
+CFLAGS= -fPIC $(SILENCE) -Wall -Wextra -Wsign-conversion -g -O3
+CFLAGS += $(INCLUDES)
 LDFLAGS=
 
+# if we are compiling towards CUDA or Host, we alter our flags accordingly
 ifeq ($(CC),nvcc)
 	# treat files as CU, treat files as device-code-relocatable (dc)
 	NVCCFLAGS += -x=cu -dc
 	CFLAGS := $(NVCCFLAGS) --compiler-options '$(CFLAGS) ' -g -O3 --use_fast_math
 	LDFLAGS := --compiler-options '-fPIC ' $(LDFLAGS)
 	INCLUDES += -I/usr/local/cuda/include
-	#NVOPT= --maxrregcount=32
-
 else
-	CFLAGS += -std=gnu99 -pedantic -Wno-c++11-extensions -Wno-c++11-long-long
+	CFLAGS += -std=gnu99 -pedantic
 	LDFLAGS +=$(CFLAGS)
 endif
 
 
-.PHONY: clean all
+all: cuOrbit.x
 
-all: test.x
+# alternatively you can yourself just invoke: make CC=nvcc
+gpu:
+	$(MAKE) all CC=nvcc
 
 %.o: %.c *.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-# %.o: %.cu *.h
-# 	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) $(INCLUDES) -c $< -o $@
+## We don't currently need, but maybe one day if you add CUDA only optimizations
+%.o: %.cu *.h
+	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) $(INCLUDES) -c $< -o $@
 
-liborbit.so: orbit_main.o orbit_config.o  orbit_particles.o orbit_equilibrium.o \
-             orbit_perturbation.o orbit_deposition.o \
-             orbit_util.o inih/ini.o \
-             cuda_helpers.o
+liborbit.so: inih/ini.o \
+		orbit_config.o \
+		orbit_deposition.o \
+		orbit_equilibrium.o \
+		orbit_main.o \
+		orbit_particles.o \
+		orbit_perturbation.o \
+		orbit_util.o \
+		cuda_helpers.o
 	$(CC) -shared $(LDFLAGS) $^ -o $@
 
-test.x: test.o liborbit.so
+cuOrbit.x: cuOrbit.o liborbit.so
 	$(CC) $(LDFLAGS) $< -o $@ $(LIBRARIES) -lorbit
 
 clean:
 	-rm -f inih/*.o
 	-rm -f *.o
-	-rm -f *.oo
-	-rm -f *.so
-	-rm -f *.x
-	-rm -rf test.x.dSYM
+	-rm -f liborbit.so
+	-rm -f cuOrbit.x
+	-rm -rf cuOrbit.x.dSYM
+
+.PHONY: all
+.PHONY: clean
