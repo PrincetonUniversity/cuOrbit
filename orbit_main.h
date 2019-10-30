@@ -8,6 +8,5 @@
 #include <cuda_runtime.h>
 #endif
 
-void main_loop(Config_t* cfg_ptr);
 
 #endif

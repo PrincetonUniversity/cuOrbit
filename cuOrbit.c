@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "orbit_config_api.h"
-#include "orbit_main.h"
 
 
 // test
@@ -8,12 +7,12 @@ int main(){
 
   /* Contruct a config object,
    which conttructs Perturb, Equlib, and Particles */
-  Config_t* Cfg=Config_ctor();
+  orbit_Config_t* Cfg=orbit_Config_ctor();
 
   printf("Initialize Config\n");
-  initialize_Config(Cfg);
+  orbit_initialize_Config(Cfg);
 
-  main_loop(Cfg);
+  orbit_main_loop(Cfg);
 
   return 0;
 }
