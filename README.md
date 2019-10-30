@@ -60,7 +60,7 @@ already abstracted to variables near top of file.
 
 ### Running
 
-Either of the two build methods will create a library,
+Either of the two build methods will create a library `libcuorbit.so`,
 and an executable `cuOrbit.x`.
 The executable runs using only that library with an associated `orbit_config_api.h` header.
 

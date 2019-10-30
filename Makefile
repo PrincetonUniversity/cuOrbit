@@ -33,7 +33,7 @@ gpu:
 %.o: %.cu *.h
 	$(NVCC) -x cu -dc $(NVCCLDFLAGS) $(NVCCFLAGS) $(INCLUDES) -c $< -o $@
 
-liborbit.so: inih/ini.o \
+libcuorbit.so: inih/ini.o \
 		orbit_config.o \
 		orbit_deposition.o \
 		orbit_equilibrium.o \
@@ -44,13 +44,13 @@ liborbit.so: inih/ini.o \
 		cuda_helpers.o
 	$(CC) -shared $(LDFLAGS) $^ -o $@
 
-cuOrbit.x: cuOrbit.o liborbit.so
-	$(CC) $(LDFLAGS) $< -o $@ $(LIBRARIES) -lorbit
+cuOrbit.x: cuOrbit.o libcuorbit.so
+	$(CC) $(LDFLAGS) $< -o $@ $(LIBRARIES) -lcuorbit
 
 clean:
 	-rm -f inih/*.o
 	-rm -f *.o
-	-rm -f liborbit.so
+	-rm -f libcuorbit.so
 	-rm -f cuOrbit.x
 	-rm -rf cuOrbit.x.dSYM
 

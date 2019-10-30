@@ -748,7 +748,7 @@ void do_particles(Config_t* cfg_ptr){
   HANDLE_ERROR(cudaOccupancyMaxPotentialBlockSize(
       &minGridSize,
       &dimBlock,
-      do_particles,  /* kernel we're qrying */
+      do_particles_dev,  /* kernel we're qrying */
       0,  /* smemsize, laffs, don't worry about it */
       0)); /* ubound block, 0 none */
   /* compute the grid size given recomended block */
