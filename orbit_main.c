@@ -44,8 +44,8 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
       }
     }
 
-    /* XXXXX, yeah something off here */
-    /* for now we just  use the fulldepmp per mario */
+    /* /\* XXXXX, yeah something off here *\/ */
+    /* /\* for now we just  use the fulldepmp per mario *\/ */
     /* if( irun_pdedp % 2  == 0){ */
     /*   fulldepmp(cfg_ptr, depo_ptr); */
     /* } else { */
@@ -76,8 +76,8 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
 
     if (compute_pdedp(depo_ptr)){
 
-      /* this code was a in the loop, need to  investigate how to run all at once */
-      /* apprently this needs triple testing */
+      /* this code was in the loop, needto  investigate how to run all at once */
+      /* apparently this needs triple testing */
       pdedp_rcrd_resid(cfg_ptr, depo_ptr);
       if (pdedp_optimize(depo_ptr)){
         pdedp_checkbdry(cfg_ptr, depo_ptr);

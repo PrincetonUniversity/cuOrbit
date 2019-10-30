@@ -95,6 +95,7 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   if(Depo_ptr->initial_update_pdedp){
     printf("Warning, found initial pdedp_update TRUE, setting optimize FALSE\n");
     Depo_ptr->pdedp_optimize = 0;
+    abort();  /* for now, abort */
   }
   Depo_ptr->res_id_arr_j = 10000;
   Depo_ptr->res_id_arr_i = 4;
@@ -347,11 +348,13 @@ void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
       for(jmu=0; jmu < Depo_ptr->pde_nbinmu; jmu++){
         for(jde=0; jde < Depo_ptr->pde_nbinDE; jde++){
           for(jdp=0; jdp < Depo_ptr->pde_nbinDPz; jdp++){
-            i = Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * jmu +
-                Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * jp +
-                Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * je +
-                Depo_ptr->pde_nbinDE * jdp + jde;
+            /* i = Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * jmu + */
+            /*     Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * jp + */
+            /*     Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * je + */
+            /*     Depo_ptr->pde_nbinDE * jdp + jde; */
+            i = get_pdedp_ind(Depo_ptr, je, jp, jmu, jde, jdp);
             fscanf(ifp, "%lf ", &Depo_ptr->pde_pdedp[i]);
+            /* printf("DBG PDEDP READ\t%g\n", Depo_ptr->pde_pdedp[i]); */
           }
         }
       }
@@ -420,8 +423,8 @@ void pdedp_init(Deposition_t* Depo_ptr){
     Depo_ptr->pde_varDPz[k] = Depo_ptr->pde_DPzmin + k * stp + stp/2.;
   }
 
+  /* malloc and initialize to 0 */
   Depo_ptr->pde_pdedp = (double*)umacalloc(sizeof_pdedp(Depo_ptr), sizeof(double));
-
 
   /*      -------------------------------------------------------
           Initialize variables to monitor the maximum
@@ -557,6 +560,7 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
     then nomalizes.
 
   if pde_pdedp lives on card, this is trivial there*/
+  int ind;
   double* const pde_pdedp = Depo_ptr->pde_pdedp;
   double sum_p[40][40][40];
 
@@ -582,8 +586,8 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
         sum_p[iE][iPz][imu]=0.;
         for(int iDE=0; iDE < Depo_ptr->pde_nbinDE; iDE++){
           for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
-            cnt_ += pde_pdedp[
-                get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz)];
+            ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
+            cnt_ += pde_pdedp[ind];
           }
         }
         if(cnt_ > 0) {
@@ -593,7 +597,8 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
           nbins += 1;
         } else {
           /* fill with 1 count at (DE,DPz)=(0,0)*/
-          pde_pdedp[get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE0, iDPz0)] = 1.;
+          ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE0, iDPz0);
+          pde_pdedp[ind] = 1.;
           sum_p[iE][iPz][imu]=1.;
         }
       }
@@ -608,8 +613,8 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
       for(int imu=0; imu < Depo_ptr->pde_nbinmu; imu++){
         for(int iDE=0; iDE < Depo_ptr->pde_nbinDE; iDE++){
           for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
-            pde_pdedp[get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz)] *=
-                cnt_aver/sum_p[iE][iPz][imu];
+            ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
+            pde_pdedp[ind] *=cnt_aver/sum_p[iE][iPz][imu];
           }
         }
       }
@@ -868,18 +873,23 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
         iDE =  get_bin(dedum, Depo_ptr->pde_varDE, Depo_ptr->pde_nbinDE);
         iDPz =  get_bin(dedum, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
 
-        if (Depo_ptr->pdedp_optimize == 1 &&
-            newE > 0 &&
+        if (newE > 0 &&
             iE >= 1 &&
             iE <= Depo_ptr->pde_nbinE  &&
             iPz >= 1 &&
             iPz <= Depo_ptr->pde_nbinPz &&
             imu >= 1 &&
             imu <= Depo_ptr->pde_nbinmu){
+
+          if (Depo_ptr->pdedp_optimize == 1){
+            ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
+            Depo_ptr->pde_pdedp[ind] += 1;
+          }
+
           Depo_ptr->pde_maxDE = fmax(fabs(1.05 * dedum),
-                                    Depo_ptr->pde_maxDE);
+                                     Depo_ptr->pde_maxDE);
           Depo_ptr->pde_maxDPz = fmax(fabs(1.05 * dpzdum),
-                                     Depo_ptr->pde_maxDPz);
+                                      Depo_ptr->pde_maxDPz);
         }
       }
     }  /* j */
@@ -1185,9 +1195,14 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
       imaxs += 1;
     }
 
+    /* printf("pol[%d] %f \t\t pw %f\n", kd, pol[kd], pw); */
+
     if(pol[kd] >= pw || otp[kd] == 2 ||
        otp[kd] == 4 || otp[kd] == 6){
       /* lost, replace it */
+      printf("dbg lost1 %d\n", nlost);
+      /* if(pol[kd] >= pw) printf("if(pol[kd] >= pw\n"); */
+      if(otp[kd] == 2 || otp[kd] == 4 || otp[kd] == 6) printf("otp %d\n", otp[kd]);
 
       nlost+=1;
       ptch[kd] = rand_double();
@@ -1216,6 +1231,7 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     if(pol[kd] >= pw || otp[kd] == 2 ||
        otp[kd] == 4 || otp[kd] == 6){
       /* lost, replace it */
+      printf("dbg lost2 %d\n", nlost);
       nlost += 1;
       ptch[kd] = -rand_double();
       thet[kd] = M_PI;
@@ -1273,17 +1289,28 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   if(iE <= 0 || iE >= depo_ptr->pde_nbinE ||
        iPz <= 0 || iPz >= depo_ptr->pde_nbinPz ||
      iMu <= 0 || iMu >= depo_ptr->pde_nbinmu){
+    printf("DBG check_res_ptc bin bounds\n");
     pol[kd] =2. * pw;
     return;
   }
   /* else, valid bin - proceed */
   for(j=0; j < depo_ptr->pde_nbinDE; j++){
     for(k=0; k < depo_ptr->pde_nbinPz; k++){
-      /* (j,k,iE,iPz,iMu) */
       /* this loop looks pretty wrong, lets make them all the same yeah? */
+      /* in F code def, pde_pdedp(iDE,iDPz,iE,iPz,imu) */
+      /* here was                (j,  k,   iE,iPz,iMu) */
+      //printf("DBG check_res_ptc IN CRAYZAY LOOP\n");
+
+      /* xxxx */
+      /* still not sure this loop/check is correct, or was correct in orig.., */
+      /* iE, iPz, imu, iDE, iDPz */
+      //ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, j, k);
       ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, k, j);
       tmp = depo_ptr->pde_pdedp[ind];
-      ptot = ptot + tmp;
+      //printf("GGGGG %d %d %d %d %d %g\n", j,k,iE,iPz, iMu, tmp);
+      ptot += tmp;
+
+      /* update max val seen */
       if(pmax < tmp){
         pmax=tmp;
       }
@@ -1293,6 +1320,7 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   if(ptot <= pmax){
     /* throw away particle */
     pol[kd] = 2. * pw;
+    //    abort();
   }
 
   return;
