@@ -697,39 +697,78 @@ void ptrbak(Config_t* cfg_ptr, int k)
   return;
 }
 
-/* For do_particles, we'll define different code for cpu and gpu */
+/* For do_particles, we'll define different launch code for cpu and gpu,
+ but use the same exact kernel code */
 
 #ifdef __NVCC__
-__global__
-void do_particles(Config_t* cfg_ptr){
-
-  /* 1D grid of 1D blocks */
-  const int particle_id = blockIdx.x * blockDim.x + threadIdx.x;
-
+__host__ __device__
+#endif
+void do_particle_kernel(Config_t* cfg_ptr, int particle_id){
   int ktm;
-
   for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
     /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
     konestep(cfg_ptr, particle_id);
     kupdate(cfg_ptr, particle_id);
   }
 }
-#else
-void do_particles(Config_t* cfg_ptr){
+
+
+#ifdef __NVCC__
+__global__
+void do_particles_dev(Config_t* cfg_ptr){
+
+  /* 1D grid of 1D blocks */
+  const int particle_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+  /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
+  do_particle_kernel(cfg_ptr, particle_id);
+}
+#endif
+
+void do_particles_host(Config_t* cfg_ptr){
 
   int particle_id;
-  int ktm;
 
   for(particle_id=0; particle_id < cfg_ptr->ptcl_ptr->nprt; particle_id++){
-    for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
-      /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
-      konestep(cfg_ptr, particle_id);
-      kupdate(cfg_ptr, particle_id);
-    }
+    do_particle_kernel(cfg_ptr, particle_id);
   }
 }
 
+
+void do_particles(Config_t* cfg_ptr){
+#ifdef __NVCC__
+  /* compute a reasonable launch size */
+  int dimBlock=0;   /*  The launch configurator returned block size */
+  int minGridSize=0; /*  The minimum grid size needed to achieve
+                           the maximum occupancy for a full device launch */
+  int dimGrid=0;    /*  The actual grid size needed, based on input size */
+
+  int N = cfg_ptr->nprt;
+
+  HANDLE_ERROR(cudaOccupancyMaxPotentialBlockSize(
+      &minGridSize,
+      &dimBlock,
+      do_particles,  /* kernel we're qrying */
+      0,  /* smemsize, laffs, don't worry about it */
+      0)); /* ubound block, 0 none */
+  /* compute the grid size given recomended block */
+  dimGrid = (N + dimBlock - 1) / dimBlock;
+  printf("Launching do_particles as %d blocks of %d threads\n", dimGrid, dimBlock);
+
+  /* launch it */
+  do_particles_dev<<<(unsigned)dimGrid, (unsigned)dimBlock>>>(cfg_ptr);
+
+  /* peek */
+  HANDLE_ERROR(cudaPeekAtLastError());
+
+  /* you need this for UVM... */
+  HANDLE_ERROR(cudaDeviceSynchronize());
+
+#else
+  do_particles_host(cfg_ptr);
 #endif
+
+}
 
 
 #ifdef __NVCC__

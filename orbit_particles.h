@@ -162,11 +162,21 @@ __host__ __device__
 #endif
 void ptrb2k(Config_t*, int);
 
-/* launcher... */
+/* generic high level dispatch*/
+void do_particles(Config_t*);
+
+/* launches for host/device */
 #ifdef __NVCC__
 __global__
+void do_particles_dev(Config_t*);
 #endif
-void do_particles(Config_t* );
+void do_particles_host(Config_t*);
+
+/* per particle kernel */
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void do_particle_kernel(Config_t*, int);
 
 #ifdef __NVCC__
 __host__ __device__
