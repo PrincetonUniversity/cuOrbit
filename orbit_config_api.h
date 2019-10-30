@@ -17,6 +17,9 @@
 /* xxx, get rid of this static IDP business */
 extern const int IDP;
 
+/* alias to reduce likelyhood of name collision */
+typedef Config_t orbit_Config_t;
+
 struct Config {
   /* meta */
   char* name;
@@ -103,8 +106,8 @@ struct Config {
 };
 
 
-Config_t* Config_ctor();
-void initialize_Config(Config_t*);
+orbit_Config_t* orbit_Config_ctor();
+void orbit_initialize_Config(orbit_Config_t*);
 
 #ifdef __NVCC__
 __host__ __device__
@@ -180,6 +183,6 @@ __host__ __device__
 #endif
 double get_dt0(Config_t*);
 
-void main_loop(Config_t* cfg_ptr);
+void orbit_main_loop(orbit_Config_t* cfg_ptr);
 
 #endif

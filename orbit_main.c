@@ -19,7 +19,7 @@
 #include "orbit_main.h"
 #include "cuda_helpers.h"
 
-void main_loop(Config_t* cfg_ptr){
+void orbit_main_loop(orbit_Config_t* cfg_ptr){
   int irun_pdedp;
 
   Deposition_t* depo_ptr = cfg_ptr->depo_ptr;

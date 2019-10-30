@@ -14,7 +14,7 @@
 /* todo, fix this... config var? */
 const int IDP = 250;
 
-Config_t* Config_ctor(){
+orbit_Config_t* orbit_Config_ctor(){
   Config_t* Cfg = (Config_t*)umacalloc(1, sizeof(Config_t));
     /* Create the other model componenets */
   Cfg->eqlb_ptr = Equilib_ctor();
@@ -167,7 +167,7 @@ static int config_file_handler(char* config_fname, Config_t* config){
 }
 
 
-void initialize_Config(Config_t* cfg_ptr){
+void orbit_initialize_Config(orbit_Config_t* cfg_ptr){
 
   char config_file[] = "INPUT/config.ini";
   config_file_handler(config_file, cfg_ptr);
