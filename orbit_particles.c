@@ -705,10 +705,19 @@ __host__ __device__
 #endif
 void do_particle_kernel(Config_t* cfg_ptr, int particle_id){
   int ktm;
+  const int pde_tskip = get_pdedp_tskip(cfg_ptr->depo_ptr);
+
   for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
     /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
     konestep(cfg_ptr, particle_id);
     kupdate(cfg_ptr, particle_id);
+
+    if(compute_pdedp(cfg_ptr->depo_ptr) &&
+       ktm >= pde_tskip &&
+       ktm % pde_tskip == 0){
+      //printf("update res_arr variables to compute p(DE,DP)\n");
+      rcrd_vararr(cfg_ptr, particle_id, ktm/pde_tskip);
+    }
   }
 }
 
@@ -719,7 +728,9 @@ void do_particles_dev(Config_t* cfg_ptr){
 
   /* 1D grid of 1D blocks */
   const int particle_id = blockIdx.x * blockDim.x + threadIdx.x;
-
+  if(particle_id > cfg_ptr->nprt){
+    return;
+  }
   /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
   do_particle_kernel(cfg_ptr, particle_id);
 }
@@ -819,7 +830,7 @@ void konestep(Config_t* cfg_ptr, int k){
   double a_[4]= {0.};
   double bx_[4] = {0.};
   double h_;
-  double nt_;
+  int nt_;
   double c1_[4] = {0.};
 
   n1=4;
@@ -828,15 +839,22 @@ void konestep(Config_t* cfg_ptr, int k){
 
   nout[k] = .6 * (1. + copysign(1., pol[k]- pw) );
   nfin[k] =  .6 * (1. + copysign(1., time[k] - trun));
-  nt_ = .6 * (1.  + copysign(1., pol[k]-.05 *pw));
+  nt_ = ((int) .6 * (1.  + copysign(1., pol[k]-.05 *pw)));
   dt[k] = nt_ * dt[k] + (1 - nt_) * dt0;
 
   xdum = sqrt(pol[k])*cos(thet[k]);
   ydum = sqrt(pol[k])*sin(thet[k]);
 
-
   y_[0] = nt_ * pol[k] + (1-nt_)*xdum;
   y_[1] = nt_ * thet[k] + (1-nt_)*ydum;
+  if(isnan(y_[0]) || isnan(y_[1])){
+    printf("bug components begin nt_= %d \t y_[0]= %f \t y_[1]= %f\n",
+           nt_, y_[0], y_[1]);
+    printf("sqrt(pol[k])= %f\t    cos(thet[k] = %f\n", sqrt(pol[k]), cos(thet[k]));
+    printf("k = %d xdum = %f ydum = %f pol[k] %f thet[k] %f\n",k, xdum, ydum, pol[k], thet[k]);
+    abort();
+  }
+
   y_[2] = zet[k];
   y_[3] = rho[k];
 
@@ -847,7 +865,7 @@ void konestep(Config_t* cfg_ptr, int k){
   h_ = dt[k]/6.0 ;
 
   for(j=0; j < 4; j++){
-    kfield(cfg_ptr, 1);
+    kfield(cfg_ptr, 1);  /* xxx thinks this should be 0? */
 
     if(npert ==  0){
       //goto 61
@@ -917,10 +935,25 @@ void konestep(Config_t* cfg_ptr, int k){
         //}
       }
     }
+
     // 40
     ndum = .6 * (1 - copysign(1. , y_[0]));
+    /* OKAY XXXXXXX this is a real bug, lets see.. */
+    /* printf("pol[k] before sanity chk pol[%d] = %f\n", k, pol[k]); */
     pol[k] = nt_*y_[0] + (1-nt_)*(y_[0]*y_[0] + y_[1]*y_[1]);
+    if(isnan(pol[k])){
+      printf("tail bug components nt_= %d \t y_[0]= %f \t y_[1]= %f (1-nt_) %d\n",
+             nt_, y_[0], y_[1], 1-nt_);
+      printf("pol[k] after sanity chk pol[%d] = %f\n", k, pol[k]);
+      abort();
+    }
+
     thet[k] = nt_*y_[1] + (1-nt_)*(atan(y_[1]/y_[0]) + ndum * M_PI);
+    if(isnan(thet[k])){
+      printf("thet[k] sanity chk thet[%d] = %f\n", k, thet[k]);
+      abort();
+    }
+
     zet[k] = y_[2];
     rho[k] = y_[3];
     nout[k] = .6 * (1. + copysign(1., pol[k]-pw));

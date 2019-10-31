@@ -13,7 +13,11 @@ void initialize_Deposition(Deposition_t*, Config_t*);
 Deposition_t* Deposition_ctor();
 void initialize_pdedp(Deposition_t*);
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
 bool compute_pdedp(Deposition_t*);
+
 bool initial_update_pdedp(Deposition_t*);
 bool pdedp_optimize(Deposition_t*);
 
@@ -70,5 +74,11 @@ void pdedp_out(Deposition_t*);
 void pdedp_rcrd_resid(Config_t*, Deposition_t*);
 void rcrd_bfield(Config_t*, Deposition_t*);
 void check_res_ptc(Config_t*, int);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void rcrd_vararr(Config_t* cfg_ptr, int k, int step);
+
 
 #endif

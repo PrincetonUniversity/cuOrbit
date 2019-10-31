@@ -97,12 +97,12 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
     Depo_ptr->pdedp_optimize = 0;
     abort();  /* for now, abort */
   }
-  Depo_ptr->res_id_arr_j = 10000;
+  Depo_ptr->res_id_arr_j = 10000;  /* xxx should be nstep,,, not sure we know that yet in current implientation */
   Depo_ptr->res_id_arr_i = 4;
   Depo_ptr->res_id_arr = (double*)umacalloc((unsigned)(cfg_ptr->nprt *
-                                         Depo_ptr->res_id_arr_j *
-                                          Depo_ptr->res_id_arr_i),
-                                         sizeof(double));  /* hardcoded? ask mp*/
+                                                       Depo_ptr->res_id_arr_j *
+                                                       Depo_ptr->res_id_arr_i),
+                                            sizeof(double));
 
   /* this allocs at runtime, so has own init func */
   Depo_ptr->pdedp_initialized = false;
@@ -132,6 +132,10 @@ void initialize_pdedp(Deposition_t* Depo_ptr){
   Depo_ptr->pdedp_initialized = true;
 }
 
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 bool compute_pdedp(Deposition_t* Depo_ptr){
   return Depo_ptr->compute_pdedp;
 }
@@ -370,6 +374,7 @@ void pdedp_init(Deposition_t* Depo_ptr){
   int k;
   double stp;
 
+  /* xxx I suspect we will want to migrate towards config */
   Depo_ptr->pde_Emax = 110.;
   Depo_ptr->pde_Pzmin = -1.2;
   Depo_ptr->pde_Pzmax =  0.7;
@@ -423,8 +428,8 @@ void pdedp_init(Deposition_t* Depo_ptr){
     Depo_ptr->pde_varDPz[k] = Depo_ptr->pde_DPzmin + k * stp + stp/2.;
   }
 
-  /* malloc and initialize to 0 */
-  Depo_ptr->pde_pdedp = (double*)umacalloc(sizeof_pdedp(Depo_ptr), sizeof(double));
+  /* reset to 0 , should have been alloc'd in initialize_pdedp */
+  memset(Depo_ptr->pde_pdedp, 0, sizeof_pdedp(Depo_ptr)*sizeof(double));
 
   /*      -------------------------------------------------------
           Initialize variables to monitor the maximum
@@ -614,7 +619,7 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
         for(int iDE=0; iDE < Depo_ptr->pde_nbinDE; iDE++){
           for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
             ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
-            pde_pdedp[ind] *=cnt_aver/sum_p[iE][iPz][imu];
+            pde_pdedp[ind] *= cnt_aver/sum_p[iE][iPz][imu];
           }
         }
       }
@@ -805,12 +810,17 @@ void pdedp_out(Deposition_t* Depo_ptr){
   return;
 }
 
-static inline int get_res_id_ind(Config_t* cfg_ptr, int k, int j, int i){
+#ifdef __NVCC__
+__host__ __device__
+#endif
+static inline int get_res_id_ind(Config_t* cfg_ptr, int kptcl, int time, int i){
   /*  fname indices, sorry */
-  const int nj = cfg_ptr->depo_ptr->res_id_arr_j;
+  const int nprt = cfg_ptr->nprt;
+  const int ntime = cfg_ptr->depo_ptr->res_id_arr_j;
   const int ni = cfg_ptr->depo_ptr->res_id_arr_i;
+  /* we can/should play around with the array order here */
 
-  return nj*ni*k + ni*j + i;
+  return nprt*ni*time + ni*kptcl +i;
 }
 
 void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
@@ -832,6 +842,7 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
 
   printf("   ... computing p(DE,DPz) matrix ...\n");
   int nintv = (int)( Depo_ptr->pdedp_dtsamp / dtdum);
+  //printf("dtdum %f dtsam[ %f nintv %d\n", dtdum, Depo_ptr->pdedp_dtsamp, nintv);
   int Nav = imax(1, (int)( Depo_ptr->pdedp_dtav / dtdum));
 
   for(k=0; k < cfg_ptr->nprt; k++){
@@ -856,7 +867,13 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
 
       j2 = nintv;
       /* zero indices */
+      // gets here
+      //xxx printf("j %d j2 %d nsamples %d\n", j, j2, nsamples);
       ind = get_res_id_ind(cfg_ptr,k,j +j2 -j3,3);
+      //xxx
+      /* printf("j + j2 +1 < nsamples= %s\t res_id_arr[ind]=%f\n", */
+      /*        j + j2 +1 < nsamples ? "true" : "false", */
+      /*        res_id_arr[ind]); */
       if (j + j2 +1 < nsamples &&
           res_id_arr[ind] > 0 &&
           res_id_arr[ind] < 1)
@@ -872,14 +889,15 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
 
         iDE =  get_bin(dedum, Depo_ptr->pde_varDE, Depo_ptr->pde_nbinDE);
         iDPz =  get_bin(dedum, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
-
+        printf("k3\n");
+        /* if in range */
         if (newE > 0 &&
-            iE >= 1 &&
-            iE <= Depo_ptr->pde_nbinE  &&
-            iPz >= 1 &&
-            iPz <= Depo_ptr->pde_nbinPz &&
-            imu >= 1 &&
-            imu <= Depo_ptr->pde_nbinmu){
+            iE >= 0 &&
+            iE < Depo_ptr->pde_nbinE  &&
+            iPz >= 0 &&
+            iPz < Depo_ptr->pde_nbinPz &&
+            imu >= 0 &&
+            imu < Depo_ptr->pde_nbinmu){
 
           if (Depo_ptr->pdedp_optimize == 1){
             ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
@@ -894,6 +912,8 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
       }
     }  /* j */
   }    /* k */
+  printf("pde_maxDE %g\n", Depo_ptr->pde_maxDE);
+  printf("pde_maxDPz %g\n", Depo_ptr->pde_maxDPz);
   return;
 }
 
@@ -1057,7 +1077,7 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
     /* update flag */
     recompute = 1;
-    printf("DE,DPz grid was recomputed");
+    printf("DE,DPz grid was recomputed\n");
   }
   /* If range of Pz, mu, DE, or DPz has changed, */
   /* update pDEDP computation */
@@ -1111,7 +1131,7 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     thet[kd] = 0.;
     dt[kd] = dt0;
     pol[kd] =  .001 + .999 * rand_double();
-    pol[kd] = pol[kd]*pw;
+    pol[kd] *= pw;
     zet[kd] = rand_double() * 2. * M_PI;
     en[kd] = (einj1 + rand_double() * (einj2 - einj1))
         * engn / ekev;   /* kinetic energy */
@@ -1122,15 +1142,14 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     ptch[kd] = -rand_double();
     thet[kd] = M_PI;
     dt[kd] = dt0;
-    pol[kd] = .001 + .999*rand_double();
-    pol[kd] = pol[kd] * pw;
+    pol[kd] = .001 + .999 * rand_double();
+    pol[kd] *= pw;
     zet[kd] = rand_double() * 2.* M_PI;
     en[kd] = (einj1+rand_double()*(einj2-einj1))*engn/ekev; /* kinetic energy */
   }
 
   nprt = np2;  /* xxx not sure about this? */
   printf(" fulldepmp deposit\n");
-  /*!      call field(nprt) */
   for(k=0; k<nprt; k++){
     kfield(cfg_ptr, k);
     rho[k] = ptch[k]*sqrt(2. * en[k]) /b[k];
@@ -1178,7 +1197,6 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   nmaxs=5E3; /* max number of attemps to redeposit particle */
   /* -  Full deposition, */
   np2 = .5 * cfg_ptr->nprt;
-  /* np2 = cfg_ptr->nprt; */
 
   /* dont print this recursively */
   if(! depo_ptr->recursing){
@@ -1305,8 +1323,8 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
       /* xxxx */
       /* still not sure this loop/check is correct, or was correct in orig.., */
       /* iE, iPz, imu, iDE, iDPz */
-      //ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, j, k);
-      ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, k, j);
+      ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, j, k);
+      //ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, k, j);
       tmp = depo_ptr->pde_pdedp[ind];
       if(tmp>0){
         printf("GGGGG DBG %d %d %d %d %d %g\n", j,k,iE,iPz, iMu, tmp);
@@ -1378,3 +1396,33 @@ void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   return;
 }
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void rcrd_vararr(Config_t* cfg_ptr, int k, int step){
+  /* for particle k at step , stash some values in res_id_arr */
+  /* other variables saved in konestep*/
+  Particles_t* ptcl_ptr = cfg_ptr->ptcl_ptr;
+  Deposition_t* depo_ptr = cfg_ptr->depo_ptr;
+  double* pol = get_pol(ptcl_ptr);
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+  const double engn = get_engn(cfg_ptr);
+  double* en = get_en(ptcl_ptr);
+  double* rho = get_rho(ptcl_ptr);
+  double ekev = get_ekev(ptcl_ptr);
+  double* rmu = get_rmu(ptcl_ptr);
+  double* g = get_g(ptcl_ptr);
+  double* res_id_arr = depo_ptr->res_id_arr;
+
+  res_id_arr[get_res_id_ind(cfg_ptr, k, step, 0)] = en[k]*ekev/engn; /* E */
+  res_id_arr[get_res_id_ind(cfg_ptr, k, step, 1)] = (g[k]*rho[k] - pol[k])/pw; /* Pz */
+  res_id_arr[get_res_id_ind(cfg_ptr, k, step, 2)] = rmu[k]/en[k]; /* mu */
+  res_id_arr[get_res_id_ind(cfg_ptr, k, step, 3)] = pol[k]/pw;
+
+  /* printf("XXXXX k = %d, pol[k] = %f, pw = %f,\t  pol[k]/pw %f\n", */
+  /*        k, pol[k], pw, pol[k]/pw); */
+
+  return;
+}
+
