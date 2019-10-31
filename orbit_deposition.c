@@ -1057,6 +1057,7 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
     /* update flag */
     recompute = 1;
+    printf("DE,DPz grid was recomputed");
   }
   /* If range of Pz, mu, DE, or DPz has changed, */
   /* update pDEDP computation */
@@ -1287,7 +1288,7 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   const int iMu = get_bin(mudum, depo_ptr->pde_varmu, depo_ptr->pde_nbinmu);
 
   if(iE <= 0 || iE >= depo_ptr->pde_nbinE ||
-       iPz <= 0 || iPz >= depo_ptr->pde_nbinPz ||
+     iPz <= 0 || iPz >= depo_ptr->pde_nbinPz ||
      iMu <= 0 || iMu >= depo_ptr->pde_nbinmu){
     printf("DBG check_res_ptc bin bounds\n");
     pol[kd] =2. * pw;
@@ -1307,7 +1308,9 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
       //ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, j, k);
       ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, k, j);
       tmp = depo_ptr->pde_pdedp[ind];
-      //printf("GGGGG %d %d %d %d %d %g\n", j,k,iE,iPz, iMu, tmp);
+      if(tmp>0){
+        printf("GGGGG DBG %d %d %d %d %d %g\n", j,k,iE,iPz, iMu, tmp);
+      }
       ptot += tmp;
 
       /* update max val seen */
