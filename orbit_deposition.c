@@ -1125,6 +1125,7 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* Full deposition*/
   np2 = .5* cfg_ptr->nprt;
 
+  /* xxx check kd array bounds for ptch (Was 0 in F, might need -1) */
   /* outside-co moving */
   for(kd=0; kd < np2; kd++){
     ptch[kd] = rand_double();  /* rand */
@@ -1137,8 +1138,9 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
         * engn / ekev;   /* kinetic energy */
   }
 
+  /* second half, should start at np2 */
   /* -inside-counter moving */
-  for(kd=0; kd < np2; kd++){
+  for(kd=np2 ; kd < cfg_ptr->nprt; kd++){
     ptch[kd] = -rand_double();
     thet[kd] = M_PI;
     dt[kd] = dt0;

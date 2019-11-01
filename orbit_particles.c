@@ -847,12 +847,12 @@ void konestep(Config_t* cfg_ptr, int k){
 
   y_[0] = nt_ * pol[k] + (1-nt_)*xdum;
   y_[1] = nt_ * thet[k] + (1-nt_)*ydum;
-  if(isnan(y_[0]) || isnan(y_[1])){
+  if(isnan(y_[0]) || isnan(y_[1]) || k>1000){
     printf("bug components begin nt_= %d \t y_[0]= %f \t y_[1]= %f\n",
            nt_, y_[0], y_[1]);
     printf("sqrt(pol[k])= %f\t    cos(thet[k] = %f\n", sqrt(pol[k]), cos(thet[k]));
     printf("k = %d xdum = %f ydum = %f pol[k] %f thet[k] %f\n",k, xdum, ydum, pol[k], thet[k]);
-    abort();
+    //    abort();
   }
 
   y_[2] = zet[k];
@@ -910,31 +910,31 @@ void konestep(Config_t* cfg_ptr, int k){
     e_[3] = e_[3] * (1-nout[k])*(1-nfin[k]);
 
     //goto 62, like 42, the answere to the universe and everything in it,  but twenty years older.
-    for(i=0; i<n1; i++){
-      if(j==0){
-        //for(i=0; i<n1; i++){
-        a_[i] = h_ * e_[i];
-        y_[i] = d_[i] + 3 * a_[i];
-        //}
-      }
-      if(j==1){
-        // for(i=0; i<n1; i++){
-        bx_[i] = h_ * e_[i];
-        y_[i] = d_[i] + 3 * bx_[i];
-        //}
-      }
-      if(j==2){
-        //for(i=0; i<n1; i++){
-        c1_[i] = h_ * e_[i];
-        y_[i] = d_[i] + 6 * c1_[i];
-        //}
-      }
-      if(j==3){
-        //for(i=0; i<n1; i++){
-        y_[i] = d_[i] + a_[i] + 2 * bx_[i] + 2 * c1_[i] + h_ * e_[i];
-        //}
-      }
-    }
+    /* for(i=0; i<n1; i++){ */
+    /*   if(j==0){ */
+    /*     //for(i=0; i<n1; i++){ */
+    /*     a_[i] = h_ * e_[i]; */
+    /*     y_[i] = d_[i] + 3 * a_[i]; */
+    /*     //} */
+    /*   } */
+    /*   if(j==1){ */
+    /*     // for(i=0; i<n1; i++){ */
+    /*     bx_[i] = h_ * e_[i]; */
+    /*     y_[i] = d_[i] + 3 * bx_[i]; */
+    /*     //} */
+    /*   } */
+    /*   if(j==2){ */
+    /*     //for(i=0; i<n1; i++){ */
+    /*     c1_[i] = h_ * e_[i]; */
+    /*     y_[i] = d_[i] + 6 * c1_[i]; */
+    /*     //} */
+    /*   } */
+    /*   if(j==3){ */
+    /*     //for(i=0; i<n1; i++){ */
+    /*     y_[i] = d_[i] + a_[i] + 2 * bx_[i] + 2 * c1_[i] + h_ * e_[i]; */
+    /*     //} */
+    /*   } */
+    /* } */
 
     // 40
     ndum = .6 * (1 - copysign(1. , y_[0]));
