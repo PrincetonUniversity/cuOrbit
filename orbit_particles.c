@@ -195,7 +195,7 @@ double* get_rho(Particles_t* ptcl_ptr){
 __host__ __device__
 #endif
 double* get_rmu(Particles_t* ptcl_ptr){
-  return ptcl_ptr->rho;
+  return ptcl_ptr->rmu;
 }
 
 #ifdef __NVCC__
@@ -833,8 +833,6 @@ void konestep(Config_t* cfg_ptr, int k){
   int nt_;
   double c1_[4] = {0.};
 
-  n1=4;
-
   dt[k]=dt0;
 
   nout[k] = .6 * (1. + copysign(1., pol[k]- pw) );
@@ -847,12 +845,12 @@ void konestep(Config_t* cfg_ptr, int k){
 
   y_[0] = nt_ * pol[k] + (1-nt_)*xdum;
   y_[1] = nt_ * thet[k] + (1-nt_)*ydum;
-  if(isnan(y_[0]) || isnan(y_[1]) || k>1000){
+  if(isnan(y_[0]) || isnan(y_[1])){
     printf("bug components begin nt_= %d \t y_[0]= %f \t y_[1]= %f\n",
            nt_, y_[0], y_[1]);
     printf("sqrt(pol[k])= %f\t    cos(thet[k] = %f\n", sqrt(pol[k]), cos(thet[k]));
     printf("k = %d xdum = %f ydum = %f pol[k] %f thet[k] %f\n",k, xdum, ydum, pol[k], thet[k]);
-    //    abort();
+    abort();
   }
 
   y_[2] = zet[k];
@@ -865,7 +863,7 @@ void konestep(Config_t* cfg_ptr, int k){
   h_ = dt[k]/6.0 ;
 
   for(j=0; j < 4; j++){
-    kfield(cfg_ptr, 1);  /* xxx thinks this should be 0? */
+    kfield(cfg_ptr, k);
 
     if(npert ==  0){
       //goto 61
@@ -889,6 +887,25 @@ void konestep(Config_t* cfg_ptr, int k){
              - chrg*g[k]*dptdt[k]
              + chrg*ri[k]*dptdz[k]
              + chrg*ri[k]*dedb*dbdz[k]) * deni;
+    if(isnan(e_[0])){
+      printf("xxx 0e_\n");
+
+      printf("ri[k] = %g rbb = %g dadz[k] = %g "        \
+             "chrg = %g g[k]=%g dedb = %g dbdt[k] = %g "\
+             "dadt[k] = %g "\
+             "dptdt[k] = %g "\
+             "dptdz[k] = %g "\
+             "dbdz[k] = %g deni = %g\n",
+             ri[k], rbb, dadz[k],
+             chrg, g[k], dedb, dbdt[k],
+             dadt[k],
+             dptdt[k],
+             dptdz[k],
+             dbdz[k], deni);
+      //if(isnan(e_[0])){
+        abort();
+      }
+
     //   thet dot
     e_[1] = (chrg*dedb*dbdp[k]*g[k]+ rbb*fac1 + chrg*g[k]*dptdp[k])*deni;
     //   zet dot
@@ -910,34 +927,47 @@ void konestep(Config_t* cfg_ptr, int k){
     e_[3] = e_[3] * (1-nout[k])*(1-nfin[k]);
 
     //goto 62, like 42, the answere to the universe and everything in it,  but twenty years older.
-    /* for(i=0; i<n1; i++){ */
-    /*   if(j==0){ */
-    /*     //for(i=0; i<n1; i++){ */
-    /*     a_[i] = h_ * e_[i]; */
-    /*     y_[i] = d_[i] + 3 * a_[i]; */
-    /*     //} */
-    /*   } */
-    /*   if(j==1){ */
-    /*     // for(i=0; i<n1; i++){ */
-    /*     bx_[i] = h_ * e_[i]; */
-    /*     y_[i] = d_[i] + 3 * bx_[i]; */
-    /*     //} */
-    /*   } */
-    /*   if(j==2){ */
-    /*     //for(i=0; i<n1; i++){ */
-    /*     c1_[i] = h_ * e_[i]; */
-    /*     y_[i] = d_[i] + 6 * c1_[i]; */
-    /*     //} */
-    /*   } */
-    /*   if(j==3){ */
-    /*     //for(i=0; i<n1; i++){ */
-    /*     y_[i] = d_[i] + a_[i] + 2 * bx_[i] + 2 * c1_[i] + h_ * e_[i]; */
-    /*     //} */
-    /*   } */
-    /* } */
+    n1=4;
+    for(i=0; i<n1; i++){
+      if(j==0){
+        //for(i=0; i<n1; i++){
+        a_[i] = h_ * e_[i];
+        if(isnan(e_[i])){printf("0e_\n");abort();}
+        if(isnan(a_[i])){printf("0a_\n");abort();}
+        if(isnan(d_[i])){printf("0d_\n");abort();}
+        y_[i] = d_[i] + 3 * a_[i];
+        //}
+      }
+      if(j==1){
+        // for(i=0; i<n1; i++){
+        if(isnan(e_[i])){printf("1e_\n");abort();}
+        if(isnan(d_[i])){printf("1d_\n");abort();}
+        bx_[i] = h_ * e_[i];
+        y_[i] = d_[i] + 3 * bx_[i];
+        //}
+      }
+      if(j==2){
+        //for(i=0; i<n1; i++){
+        if(isnan(e_[i])){printf("2e_\n");abort();}
+        if(isnan(d_[i])){printf("2d_\n");abort();}
+
+        c1_[i] = h_ * e_[i];
+        y_[i] = d_[i] + 6 * c1_[i];
+        //}
+      }
+      if(j==3){
+        //for(i=0; i<n1; i++){
+        if(isnan(d_[i])){printf("3d_\n");abort();}
+        if(isnan(a_[i])){printf("3a_\n");abort();}
+        if(isnan(c1_[i])){printf("3c1_\n");abort();}
+        if(isnan(e_[i])){printf("3e_\n");abort();}
+        y_[i] = d_[i] + a_[i] + 2 * bx_[i] + 2 * c1_[i] + h_ * e_[i];
+        //}
+      }
+    }
 
     // 40
-    ndum = .6 * (1 - copysign(1. , y_[0]));
+    ndum = ((int) .6 * (1 - copysign(1. , y_[0])));
     /* OKAY XXXXXXX this is a real bug, lets see.. */
     /* printf("pol[k] before sanity chk pol[%d] = %f\n", k, pol[k]); */
     pol[k] = nt_*y_[0] + (1-nt_)*(y_[0]*y_[0] + y_[1]*y_[1]);
@@ -950,6 +980,8 @@ void konestep(Config_t* cfg_ptr, int k){
 
     thet[k] = nt_*y_[1] + (1-nt_)*(atan(y_[1]/y_[0]) + ndum * M_PI);
     if(isnan(thet[k])){
+      printf("tail bug components nt_= %d \t y_[0]= %f \t y_[1]= %f ndum %d atan(y_[1]/y_[0]) = %g\n",
+             nt_, y_[0], y_[1], ndum, atan(y_[1]/y_[0]));
       printf("thet[k] sanity chk thet[%d] = %f\n", k, thet[k]);
       abort();
     }

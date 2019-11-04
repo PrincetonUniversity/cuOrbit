@@ -5,18 +5,18 @@ INCLUDES =
 LIBRARIES = -L. -lm
 CFLAGS= -fPIC $(SILENCE) -Wall -Wextra -Wsign-conversion -g -O3
 CFLAGS += $(INCLUDES)
-LDFLAGS=
+LDFLAGS= -Wl,-rpath,.
 
 # if we are compiling towards CUDA or Host, we alter our flags accordingly
 ifeq ($(CC),nvcc)
 	# treat files as CU, treat files as device-code-relocatable (dc)
 	NVCCFLAGS += -x=cu -dc
 	CFLAGS := $(NVCCFLAGS) --compiler-options '$(CFLAGS) ' -g -O3 --use_fast_math
-	LDFLAGS := --compiler-options '-fPIC ' $(LDFLAGS)
+	LDFLAGS := --compiler-options '-fPIC ' -Xcompiler \"$(LDFLAGS)\"
 	INCLUDES += -I/usr/local/cuda/include
 else
 	CFLAGS += -std=gnu99 -pedantic
-	LDFLAGS +=$(CFLAGS)
+	LDFLAGS += $(CFLAGS)
 endif
 
 
