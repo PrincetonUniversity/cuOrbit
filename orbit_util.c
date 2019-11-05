@@ -51,9 +51,7 @@ bool atob(const char* a){
 
 double rand_double(){
   /* stupid simple c rng between 0 1  */
-  //XXXXXXXXXXX return rand()/((double)RAND_MAX + 1);
-  /* for dbg, no random */
-  return 0;
+  return rand()/((double)RAND_MAX + 1);
 }
 
 double rand_double_range(const double low, const double high){
