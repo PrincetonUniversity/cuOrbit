@@ -56,6 +56,8 @@ struct Config {
   char* displ_file;
   /* outputs */
   char* pdedp_file;
+  bool output_sparse;
+  char* pdedp_sparse_file;
   char* bfield_file;
 
   Equilib_t* eqlb_ptr;

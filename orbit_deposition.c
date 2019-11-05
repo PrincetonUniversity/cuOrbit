@@ -18,6 +18,8 @@ const size_t MAXFNAME=255;
 struct Deposition {
   /* pdedp */
   char* pdedp_file;
+  bool output_sparse;
+  char* pdedp_sparse_file;
   char* bfield_file;
   int nruns;
   bool compute_pdedp;
@@ -79,8 +81,21 @@ Deposition_t* Deposition_ctor(){
 }
 
 void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
-
+  size_t sparse_filename_sz;
   Depo_ptr->pdedp_file = strndup(cfg_ptr->pdedp_file, MAXFNAME);
+  Depo_ptr->output_sparse = cfg_ptr->output_sparse;
+  if(Depo_ptr->output_sparse){
+    if(! cfg_ptr->pdedp_sparse_file){
+      printf("Error: output_sparse is `true` but pdedp_sparse_file is unset." \
+             " Please set a pdedp_sparse_file name. Aborting\n");
+      exit(1);
+    } else {
+      sparse_filename_sz = strnlen(cfg_ptr->pdedp_sparse_file, MAXFNAME);
+      assert(sparse_filename_sz > 2);
+      assert(sparse_filename_sz != MAXFNAME);  /* actually null term'd */
+    }
+    Depo_ptr->pdedp_sparse_file = strndup(cfg_ptr->pdedp_sparse_file, MAXFNAME);
+  }
   Depo_ptr->bfield_file = strndup(cfg_ptr->bfield_file, MAXFNAME);
   Depo_ptr->nruns = cfg_ptr->nruns;
   Depo_ptr->compute_pdedp = cfg_ptr->compute_pdedp;
@@ -240,6 +255,36 @@ static inline int get_bin(double val, double* arr, const int dim){
   return indx;
 }
 
+static void write_grid(Deposition_t* Depo_ptr, FILE* fh){
+  int k;
+  /* variables DEbins,DPbins */
+  for(k=0; k < Depo_ptr->pde_nbinDE; k++){
+    fprintf(fh, "%f ", Depo_ptr->pde_varDE[k]);
+  }
+  fprintf(fh,"\n");
+
+  for(k=0; k < Depo_ptr->pde_nbinDPz; k++){
+    fprintf(fh, "%f ", Depo_ptr->pde_varDPz[k]);
+  }
+  fprintf(fh,"\n");
+
+  /* variables Ebins,Pbins,Mubins */
+  for(k=0; k < Depo_ptr->pde_nbinE; k++){
+    fprintf(fh, "%f ", Depo_ptr->pde_varE[k]);
+  }
+  fprintf(fh,"\n");
+
+  for(k=0; k < Depo_ptr->pde_nbinPz; k++){
+    fprintf(fh, "%f ", Depo_ptr->pde_varPz[k]);
+  }
+  fprintf(fh,"\n");
+
+  for(k=0; k < Depo_ptr->pde_nbinmu; k++){
+    fprintf(fh, "%f ", Depo_ptr->pde_varmu[k]);
+  }
+  fprintf(fh,"\n");
+  return;
+}
 
 void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   /* this reads the probability distribution data
@@ -623,14 +668,28 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
 
 void pdedp_out(Deposition_t* Depo_ptr){
   /* writes out the dist file */
-  int k;
-  FILE *ofp;
+  int ind;
+  double val;
+  FILE *ofp=NULL;
+  FILE *ofs=NULL;
+
+  printf("\nOutputting P(DE,DP) file %s\n",  Depo_ptr->pdedp_file);
   ofp = fopen(Depo_ptr->pdedp_file, "w");  /* add f status */
   if (ofp == NULL) {
     fprintf(stderr, "\nCan't open output file %s!\n", Depo_ptr->pdedp_file);
     exit(1);
   }
-  printf("\nOutputting P(DE,DP) file %s\n",  Depo_ptr->pdedp_file);
+
+  if(Depo_ptr->output_sparse){
+    printf("\nOutputting P(DE,DP) file in sparse format, %s\n",  Depo_ptr->pdedp_sparse_file);
+    ofs = fopen(Depo_ptr->pdedp_sparse_file, "w");  /* add f status */
+    if (ofs == NULL) {
+      fprintf(stderr, "\nCan't open output file %s!\n", Depo_ptr->pdedp_sparse_file);
+      exit(1);
+    }
+    fprintf(ofs, "# iE iPz imu iDE iDPz val\n");
+  }
+
 
   /* place holders, apparently this will come from transp sometime
      right now, just mimic old behavior. */
@@ -713,34 +772,13 @@ void pdedp_out(Deposition_t* Depo_ptr){
   Depo_ptr->pde_varDPz[iDPz0]=0.;
 
   /* Write grid vectors */
+  write_grid(Depo_ptr, ofp);
 
-  /* variables DEbins,DPbins */
-  for(k=0; k < Depo_ptr->pde_nbinDE; k++){
-    fprintf(ofp, "%f ", Depo_ptr->pde_varDE[k]);
+  /* if outputting sparse, write grid there too */
+    /* variables DEbins,DPbins */
+  if(Depo_ptr->output_sparse){
+    write_grid(Depo_ptr, ofs);
   }
-  fprintf(ofp,"\n");
-
-  for(k=0; k < Depo_ptr->pde_nbinDPz; k++){
-    fprintf(ofp, "%f ", Depo_ptr->pde_varDPz[k]);
-  }
-  fprintf(ofp,"\n");
-
-  /* variables Ebins,Pbins,Mubins */
-  for(k=0; k < Depo_ptr->pde_nbinE; k++){
-    fprintf(ofp, "%f ", Depo_ptr->pde_varE[k]);
-  }
-  fprintf(ofp,"\n");
-
-  for(k=0; k < Depo_ptr->pde_nbinPz; k++){
-    fprintf(ofp, "%f ", Depo_ptr->pde_varPz[k]);
-  }
-  fprintf(ofp,"\n");
-
-  for(k=0; k < Depo_ptr->pde_nbinmu; k++){
-    fprintf(ofp, "%f ", Depo_ptr->pde_varmu[k]);
-  }
-  fprintf(ofp,"\n");
-
 
       /*       -------------------------------------------------------
          Write  p(DE,DP|E,Pz,mu)=0 for each bin.
@@ -777,8 +815,12 @@ void pdedp_out(Deposition_t* Depo_ptr){
               !               enddo
               !            endif */
           for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
-            fprintf(ofp, "%f ", Depo_ptr->pde_pdedp[
-                get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz)]);
+            ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
+            val = Depo_ptr->pde_pdedp[ind];
+            fprintf(ofp, "%f ", val);
+            if(Depo_ptr->output_sparse && val != 0.){
+              fprintf(ofs, "%d %d %d %d %d %f\n", iE, iPz, imu, iDE, iDPz, val);
+            }
           }
           fprintf(ofp, "\n");
         }
@@ -794,6 +836,9 @@ void pdedp_out(Deposition_t* Depo_ptr){
   fprintf(ofp, "%s\n", com6);
 
   fclose(ofp);
+  if(Depo_ptr->output_sparse){
+    fclose(ofs);
+  }
 
   return;
 }
@@ -1408,4 +1453,3 @@ void rcrd_vararr(Config_t* cfg_ptr, int k, int step){
 
   return;
 }
-

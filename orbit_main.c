@@ -29,10 +29,10 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
       set_pdedp_focusdep(cfg_ptr->depo_ptr, true);
     }
 
-    if(irun_pdedp>0){
-      printf("DBG exit after initial batch\n");
-      exit(0);
-    }
+    /* if(irun_pdedp>0){ */
+    /*   printf("DBG exit after initial batch\n"); */
+    /*   exit(0); */
+    /* } */
 
     if(compute_pdedp(cfg_ptr->depo_ptr)){
       if(initial_update_pdedp(cfg_ptr->depo_ptr) && (irun_pdedp == 0)){

@@ -57,8 +57,11 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
     /* Output */
     else if (MATCH("output", "pdedp_file")) {
       pconfig->pdedp_file = strdup(value);
-    }
-    else if (MATCH("output", "bfield_file")) {
+    } else if (MATCH("output", "output_sparse")) {
+      pconfig->output_sparse = atob(value);
+    } else if (MATCH("output", "pdedp_sparse_file")) {
+      pconfig->pdedp_sparse_file = strdup(value);
+    } else if (MATCH("output", "bfield_file")) {
       pconfig->bfield_file = strdup(value);
     }
 
