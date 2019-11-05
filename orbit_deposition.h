@@ -59,6 +59,16 @@ void set_pdedp_focusdep(Deposition_t*, bool);
 #ifdef __NVCC__
 __host__ __device__
 #endif
+bool get_pdedp_do_focusdep(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void set_pdedp_do_focusdep(Deposition_t*, bool);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 size_t sizeof_pdedp(Deposition_t*);
 
 void pdedp_read(Deposition_t*, Config_t*);

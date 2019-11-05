@@ -25,8 +25,12 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
   Deposition_t* depo_ptr = cfg_ptr->depo_ptr;
 
   for(irun_pdedp=0; irun_pdedp < cfg_ptr->nruns; irun_pdedp++){
-    if(irun_pdedp>1 && irun_pdedp > cfg_ptr->nruns/2){
-      set_pdedp_focusdep(cfg_ptr->depo_ptr, true);
+    if(irun_pdedp>1 &&
+       irun_pdedp > cfg_ptr->nruns/2 &&
+       get_pdedp_focusdep(cfg_ptr->depo_ptr))
+    {
+      printf("Enabling pdedp_do_focusdep\n");
+      set_pdedp_do_focusdep(cfg_ptr->depo_ptr, true);
     }
 
     /* if(irun_pdedp>0){ */

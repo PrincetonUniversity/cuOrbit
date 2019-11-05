@@ -30,6 +30,7 @@ struct Deposition {
   int pdedp_tskip;
   double pdedp_otpup;
   bool pdedp_focusdep;
+  bool pdedp_do_focusdep;
   bool pdedp_optimize;
 
   bool pdedp_initialized;
@@ -106,6 +107,7 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->pdedp_tskip = cfg_ptr->pdedp_tskip;
   Depo_ptr->pdedp_otpup = cfg_ptr->pdedp_otpup;
   Depo_ptr->pdedp_focusdep = cfg_ptr->pdedp_focusdep;
+  Depo_ptr->pdedp_do_focusdep = false;
   Depo_ptr->pdedp_optimize = cfg_ptr->pdedp_optimize;
   if(Depo_ptr->initial_update_pdedp){
     printf("Warning, found initial pdedp_update TRUE, setting optimize FALSE\n");
@@ -212,6 +214,21 @@ __host__ __device__
 #endif
 void set_pdedp_focusdep(Deposition_t* Depo_ptr, bool val){
   Depo_ptr->pdedp_focusdep = val;
+  return;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+bool get_pdedp_do_focusdep(Deposition_t* Depo_ptr){
+  return Depo_ptr->pdedp_do_focusdep;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void set_pdedp_do_focusdep(Deposition_t* Depo_ptr, bool val){
+  Depo_ptr->pdedp_do_focusdep = val;
   return;
 }
 
@@ -477,8 +494,8 @@ void pdedp_init(Deposition_t* Depo_ptr){
           kicks in energy and Pz. These are used to optimize
           the (DE,DPz) range on-the-fly if the flag
           pde_optimize is set true*/
-  Depo_ptr->pde_maxDE = 0.;
-  Depo_ptr->pde_maxDPz = 0.;
+  /* Depo_ptr->pde_maxDE = 0.; */
+  /* Depo_ptr->pde_maxDPz = 0.; */
 
   return;
 }
@@ -878,6 +895,9 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
   int nintv = (int)( Depo_ptr->pdedp_dtsamp / dtdum);
   int Nav = imax(1, (int)( Depo_ptr->pdedp_dtav / dtdum));
 
+  Depo_ptr->pde_maxDE = 0.;
+  Depo_ptr->pde_maxDPz = 0.;
+
   for(k=0; k < cfg_ptr->nprt; k++){
     for(j=jstart; j < nsamples; j++){
       Eav = 0.;
@@ -945,8 +965,11 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
     }  /* j */
   }    /* k */
 
-  printf("pdedp_rcrd_resid::pde_maxDE %g\n", Depo_ptr->pde_maxDE);
-  printf("pdedp_rcrd_resid::pde_maxDPz %g\n", Depo_ptr->pde_maxDPz);
+  /* these are only non zero if the fmax lines above ran for pdedp_optimize */
+  if(Depo_ptr->pdedp_optimize == 1){
+    printf("pdedp_rcrd_resid::pde_maxDE %g\n", Depo_ptr->pde_maxDE);
+    printf("pdedp_rcrd_resid::pde_maxDPz %g\n", Depo_ptr->pde_maxDPz);
+  }
 
   return;
 }
@@ -1245,7 +1268,7 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   for(kd=0; kd < np2; kd++){
     imaxs=1;
 
-    if(depo_ptr->pdedp_focusdep && imaxs < nmaxs){
+    if(depo_ptr->pdedp_do_focusdep && imaxs < nmaxs){
       check_res_ptc(cfg_ptr, kd);
       imaxs += 1;
     }
@@ -1253,8 +1276,8 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     if(pol[kd] >= pw || otp[kd] == 2 ||
        otp[kd] == 4 || otp[kd] == 6){
       /* lost, replace it */
-      printf("dbg lost1 %d\n", nlost);
-      if(otp[kd] == 2 || otp[kd] == 4 || otp[kd] == 6) printf("otp %d\n", otp[kd]);
+      //printf("dbg lost1 %d\n", nlost);
+      //if(otp[kd] == 2 || otp[kd] == 4 || otp[kd] == 6) printf("otp %d\n", otp[kd]);
 
       nlost+=1;
       ptch[kd] = rand_double();
@@ -1276,14 +1299,14 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   {
     imaxs=1;
 
-    if(cfg_ptr->pdedp_focusdep && imaxs < nmaxs){
+    if(depo_ptr->pdedp_do_focusdep && imaxs < nmaxs){
       check_res_ptc(cfg_ptr, kd);
       imaxs += 1;
     }
     if(pol[kd] >= pw || otp[kd] == 2 ||
        otp[kd] == 4 || otp[kd] == 6){
       /* lost, replace it */
-      printf("dbg lost2 %d\n", nlost);
+      //printf("dbg lost2 %d\n", nlost);
       nlost += 1;
       ptch[kd] = -rand_double();
       thet[kd] = M_PI;
@@ -1338,11 +1361,14 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   const int iPz = get_bin(pzdum, depo_ptr->pde_varPz, depo_ptr->pde_nbinPz);
   const int iMu = get_bin(mudum, depo_ptr->pde_varmu, depo_ptr->pde_nbinmu);
 
-  if(iE <= 0 || iE >= depo_ptr->pde_nbinE ||
-     iPz <= 0 || iPz >= depo_ptr->pde_nbinPz ||
-     iMu <= 0 || iMu >= depo_ptr->pde_nbinmu){
-    printf("DBG check_res_ptc bin bounds\n");
-    pol[kd] =2. * pw;
+  if(iE < 0 || iE >= depo_ptr->pde_nbinE ||
+     iPz < 0 || iPz >= depo_ptr->pde_nbinPz ||
+     iMu < 0 || iMu >= depo_ptr->pde_nbinmu){
+    printf("DBG check_res_ptc bin bounds. %g iE=%d/%d %g iPz=%d/%d %g iMu=%d/%d\n",
+           edum, iE, depo_ptr->pde_nbinE,
+           pzdum, iPz, depo_ptr->pde_nbinPz,
+           mudum, iMu, depo_ptr->pde_nbinmu);
+    pol[kd] = 2. * pw;
     return;
   }
   /* else, valid bin - proceed */
@@ -1356,11 +1382,10 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
 
       /* get_pdedp_ind(iE, iPz, imu, iDE, iDPz) */
       ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, j, k);
-      //ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, k, j);
       tmp = depo_ptr->pde_pdedp[ind];
-      /* if(tmp != 0){ */
-      /*   printf("GGGGG DBG %d %d %d %d %d %g\n", j,k,iE,iPz, iMu, tmp); */
-      /* } */
+      if(tmp != 0 && depo_ptr->pdedp_do_focusdep){
+        printf("GGGGG DBG %d %d %d %d %d %g\n", j, k, iE, iPz, iMu, tmp);
+      }
       ptot += tmp;
 
       /* update max val seen */
@@ -1380,7 +1405,7 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
 
 void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /*    all confined orbits, broad energy range, co- only */
-  int k, kd, nprt0;
+  int k, kd;
 
   const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
   const double einj2 = depo_ptr->pde_Emax;
@@ -1411,9 +1436,7 @@ void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     en[kd] = (einj1 + rand_double()*(einj2-einj1)) * engn/ekev; /* kinetic energy */
   }
 
-  cfg_ptr->nprt = kd;
-  nprt0 = kd;
-  printf("%d fulldepmp_co deposit\n", nprt0);
+  printf("%d fulldepmp_co deposit\n", kd);
   for(k=0; k < cfg_ptr->nprt; k++){
     kfield(cfg_ptr, kd);
     rho[k] = ptch[k]*sqrt(2.*en[k])/b[k];
