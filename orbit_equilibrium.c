@@ -673,10 +673,10 @@ double bfield(Equilib_t* Eq_ptr, double px, double tx){
   tdum = tdum - pi2*idum;
   kd = (int)(tdum * lst * pi2i );
   kd = imax(0, kd);
-  kd = imax(lst - 1, kd);
+  kd = imin(lst - 1, kd);
   const double dtx = tdum - (kd-1) * pi2 / lst;
   const double dt2 = dtx*dtx;
-  const int ind = jd * lst + kd;
+  const int ind = jd * lst + kd; // xxx see if should make an ind function here..
   return Eq_ptr->b1[ind] + Eq_ptr->b2[ind]*dpx + Eq_ptr->b3[ind]*dp2
       + Eq_ptr->b4[ind]*dtx + Eq_ptr->b5[ind]*dpx*dtx + Eq_ptr->b6[ind]*dtx*dp2
       + Eq_ptr->b7[ind]*dt2 + Eq_ptr->b8[ind]*dt2*dpx + Eq_ptr->b9[ind]*dt2*dp2;
