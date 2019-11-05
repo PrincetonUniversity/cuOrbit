@@ -26,7 +26,6 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
 
   for(irun_pdedp=0; irun_pdedp < cfg_ptr->nruns; irun_pdedp++){
     if(irun_pdedp>1 && irun_pdedp > cfg_ptr->nruns/2){
-      //printf("XXX GGG WARNING disabling focusdep override\n");
       set_pdedp_focusdep(cfg_ptr->depo_ptr, true);
     }
 
@@ -77,7 +76,6 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
     /* end of main run*/
 
     if (compute_pdedp(depo_ptr)){
-      printf("k1\n");
       /* this code was in the loop, needto  investigate how to run all at once */
       /* apparently this needs triple testing */
       pdedp_rcrd_resid(cfg_ptr, depo_ptr);

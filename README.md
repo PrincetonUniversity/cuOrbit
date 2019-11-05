@@ -79,9 +79,8 @@ without recompiling any code. It is a simple INI format, `Key = Value`.
 
 Input data is suggestively located in `INPUT/` along with the config.ini.
 During inititialization the input data is read from there into the Config_t.
-Similarly, `OUTPUT/`.
 You can alter input file names in the configration file to point at different
-input decks, and also configure outputs to different filename as you wish.
+input decks, and also configure outputs to a different path as you wish.
 
 I have a note to add a feature that will optionally take a config by filename
 on the commandline for more convenience.

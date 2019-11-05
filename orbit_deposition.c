@@ -97,7 +97,7 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
     Depo_ptr->pdedp_optimize = 0;
     abort();  /* for now, abort */
   }
-  Depo_ptr->res_id_arr_j = 10000;  /* xxx should be nstep,,, not sure we know that yet in current implientation */
+  Depo_ptr->res_id_arr_j = 10000;  /* xxx should be computed not sure we know value yet in current implientation */
   Depo_ptr->res_id_arr_i = 4;
   Depo_ptr->res_id_arr = (double*)umacalloc((unsigned)(cfg_ptr->nprt *
                                                        Depo_ptr->res_id_arr_j *
@@ -352,13 +352,8 @@ void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
       for(jmu=0; jmu < Depo_ptr->pde_nbinmu; jmu++){
         for(jde=0; jde < Depo_ptr->pde_nbinDE; jde++){
           for(jdp=0; jdp < Depo_ptr->pde_nbinDPz; jdp++){
-            /* i = Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * jmu + */
-            /*     Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * jp + */
-            /*     Depo_ptr->pde_nbinDPz * Depo_ptr->pde_nbinDE * je + */
-            /*     Depo_ptr->pde_nbinDE * jdp + jde; */
             i = get_pdedp_ind(Depo_ptr, je, jp, jmu, jde, jdp);
             fscanf(ifp, "%lf ", &Depo_ptr->pde_pdedp[i]);
-            /* printf("DBG PDEDP READ\t%g\n", Depo_ptr->pde_pdedp[i]); */
           }
         }
       }
@@ -415,7 +410,6 @@ void pdedp_init(Deposition_t* Depo_ptr){
   stp = (Depo_ptr->pde_mumax - Depo_ptr->pde_mumin) / Depo_ptr->pde_nbinmu;
   for(int k=0; k < Depo_ptr->pde_nbinmu; k++){
     Depo_ptr->pde_varmu[k] = Depo_ptr->pde_mumin + k * stp + stp/2.;
-    printf("init varmu[%d] = %g\n", k,  Depo_ptr->pde_varmu[k]);
   }
 
   /* Delta-Energy */
@@ -454,8 +448,7 @@ void class_kdomain(Config_t* cfg_ptr, int k){
       otp=7, stagnation, otp = 8, conf potato, otp = 9, trap potato
   */
 
-  double mub,mube,pdum,edum,dum;
-  double Epot,elt2,evmin,evmax,ev0;
+  double pdum,edum,dum;
   double pzdum,elt,ert,eax,etp1,etp2,mu;
   double rhod;
   double E_ax,E_min_lcfs,E_max_lcfs;
@@ -475,17 +468,14 @@ void class_kdomain(Config_t* cfg_ptr, int k){
   const double bmin = get_bmin(cfg_ptr);
 
   mu = rmu[k]*ekev/engn;
-  mub = mu*bax;
   pdum = (g[k]*rho[k] - pol[k])/pw;     /* pz0[k] */
   edum = en[k]*ekev/engn;
   pzdum = pdum*pw;      /* pz0[k]*pw   Pz */
   rhod = (pzdum + pol[k])/g[k] ; /*  particle rho */
-  mube = rmu[k]*bax/en[k];   /*  mu*Bax/E */
   dum = pow(pzdum+pw,2) * ekev / (
       engn * 2 * pow(gfun(cfg_ptr->eqlb_ptr, pw),2));
 
   /* get potential energies */
-  Epot = pol2pot(cfg_ptr, pol[k]);
   E_ax = pol2pot(cfg_ptr, 0.);
   E_min_lcfs = pol2pot(cfg_ptr, pw);
   E_max_lcfs = pol2pot(cfg_ptr, -pzdum);
@@ -495,14 +485,10 @@ void class_kdomain(Config_t* cfg_ptr, int k){
   ert =  pow(dum*bmin, 2) + mu*bmin + E_min_lcfs;
   elt =  pow(dum*bmax, 2) + mu*bmax + E_max_lcfs;
   dum = pow(rhod, 2) * ekev/(2*engn);
-  elt2 =  pow(dum*bmax,2) + mu*bmax + E_max_lcfs;
   eax = pow(ekev*pzdum,2)* pow(bax,2)/(
       engn * 2 * pow(gfun(cfg_ptr->eqlb_ptr, 0.),2)) + mu*bax + E_ax;
   etp1 = mu*bfield(cfg_ptr->eqlb_ptr, -pzdum,0.) + E_th0;
   etp2 = mu*bfield(cfg_ptr->eqlb_ptr, -pzdum, M_PI) + E_thpi;
-  evmin = mu*bmin + E_min_lcfs;
-  evmax = mu*bmax + E_max_lcfs;
-  ev0 = mu*bax + E_ax;
 
   /* Right */
   if(pdum > 0.){
@@ -817,10 +803,10 @@ __host__ __device__
 #endif
 static inline int get_res_id_ind(Config_t* cfg_ptr, int kptcl, int time, int i){
   /*  fname indices, sorry */
-  const int nprt = cfg_ptr->nprt;
   const int ntime = cfg_ptr->depo_ptr->res_id_arr_j;
   const int ni = cfg_ptr->depo_ptr->res_id_arr_i;
   /* we can/should play around with the array order here */
+  //const int nprt = cfg_ptr->nprt;
 
   //return nprt*ni*time + ni*kptcl +i;
   return  kptcl * ntime*ni + time*ni + i;
@@ -845,18 +831,8 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
 
   printf("   ... pdedp_rcrd_resid computing p(DE,DPz) matrix ...\n");
   int nintv = (int)( Depo_ptr->pdedp_dtsamp / dtdum);
-  //printf("dtdum %f dtsam[ %f nintv %d\n", dtdum, Depo_ptr->pdedp_dtsamp, nintv);
   int Nav = imax(1, (int)( Depo_ptr->pdedp_dtav / dtdum));
 
-  /* dbg */
-  FILE* fh = fopen("DBG.dat","a");
-  fprintf(fh, "###\n");
-  if (fh == NULL) {
-    fprintf(stderr, "Can't open input file!\n");
-    exit(1);
-  }
-
-  double Emin, Emax, Pzmin, Pzmax, Mumax;
   for(k=0; k < cfg_ptr->nprt; k++){
     for(j=jstart; j < nsamples; j++){
       Eav = 0.;
@@ -872,8 +848,6 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
       Eav /= ((double)Nav);
       Pzav /= ((double)Nav);
       Muav /= ((double)Nav);
-      //this looks okay now, was missing pdeEmin var.
-      fprintf(fh, "DBG k=%d j=%d Eav = %g Pzav = %g Muav = %g\n", k, j, Eav, Pzav, Muav);
 
       iE =  get_bin(Eav, Depo_ptr->pde_varE, Depo_ptr->pde_nbinE);
       iPz =  get_bin(Pzav, Depo_ptr->pde_varPz, Depo_ptr->pde_nbinPz);
@@ -881,13 +855,7 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
 
       j2 = nintv;
       /* zero indices */
-      // gets here
-      //xxx printf("j %d j2 %d nsamples %d\n", j, j2, nsamples);
       ind = get_res_id_ind(cfg_ptr,k,j +j2 -j3,3);
-      //xxx
-      /* printf("j + j2 +1 < nsamples= %s\t res_id_arr[ind]=%f\n", */
-      /*        j + j2 +1 < nsamples ? "true" : "false", */
-      /*        res_id_arr[ind]); */
       if (j + j2 +1 < nsamples &&
           res_id_arr[ind] > 0 &&
           res_id_arr[ind] < 1)
@@ -903,8 +871,7 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
 
         iDE =  get_bin(dedum, Depo_ptr->pde_varDE, Depo_ptr->pde_nbinDE);
         iDPz =  get_bin(dedum, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
-        ///dbgprintf("k3\n");
-        /* if in range */
+        /* if all bins in range */
         if (newE > 0 &&
             iE >= 0 && iE < Depo_ptr->pde_nbinE  &&
             iDE >= 0 && iDE < Depo_ptr->pde_nbinDE  &&
@@ -915,6 +882,8 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
           Depo_ptr->pde_pdedp[ind] += 1;
         }
 
+        /* if we want to "optimize" and iE iPz imu bins in range
+              we will keep track of max values */
         if (Depo_ptr->pdedp_optimize == 1 &&
             newE > 0 &&
             iE >= 0 && iE < Depo_ptr->pde_nbinE  &&
@@ -926,21 +895,14 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
           Depo_ptr->pde_maxDPz = fmax(fabs(1.05 * dpzdum),
                                       Depo_ptr->pde_maxDPz);
         }
-        fprintf(fh, "newE = %g \t iE %d iPz %d imu %d\n", newE, iE, iPz, imu);
-        //printf("newE = %g \t iE %d iPz %d imu %d\n", newE, iE, iPz, imu);
-        //abort();
-      }
-        /* else{ */
-        /*   //printf("newE = %g \t iE %d iPz %d imu %d\n", newE, iE, iPz, imu); */
-        /*   fprintf(fh, "newE = %g \t iE %d iPz %d imu %d\n", newE, iE, iPz, imu); */
-        /* } */
-        //fprintf(fh, "newE = %g \t iE %d iPz %d imu %d\n", newE, iE, iPz, imu);
+      }  /* res_id 0,1 */
 
     }  /* j */
   }    /* k */
-  fclose(fh);
-  printf("pde_maxDE %g\n", Depo_ptr->pde_maxDE);
-  printf("pde_maxDPz %g\n", Depo_ptr->pde_maxDPz);
+
+  printf("pdedp_rcrd_resid::pde_maxDE %g\n", Depo_ptr->pde_maxDE);
+  printf("pdedp_rcrd_resid::pde_maxDPz %g\n", Depo_ptr->pde_maxDPz);
+
   return;
 }
 
@@ -975,7 +937,6 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   /*  */
   Equilib_t* eqlb_ptr = cfg_ptr->eqlb_ptr;
-  Particles_t* ptcl_ptr = cfg_ptr->ptcl_ptr;
   double** const GD = get_GD(eqlb_ptr);
   double** const B = get_B(eqlb_ptr);
   const double pw = get_pw(eqlb_ptr);
@@ -985,7 +946,7 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   const double dthres = 1.;
   int recompute;
   int k;
-  double mumax, Pzmin, Pzmax, pde_engn;
+  double mumax, Pzmin, Pzmax;
   double fctE, fctPz, fctMu;
   double stp;
 
@@ -996,10 +957,11 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   /* maximum energy, normalized units */
 
-  pde_engn = depo_ptr->pde_Emax * 10.533 *
-      get_prot(ptcl_ptr) * pow(GD[0][0],2) /
-      (get_rmaj(eqlb_ptr) * get_zprt(ptcl_ptr) * get_bkg(cfg_ptr) * pow(B[0][0],2));
-  /* cf. engn definition in initial.f */
+  /* XXX ask MP which engn he cares about here...  */
+  /* double pde_engn = depo_ptr->pde_Emax * 10.533 * */
+  /*     get_prot(cfg_ptr->ptcl_ptr) * pow(GD[0][0],2) / */
+  /*     (get_rmaj(eqlb_ptr) * get_zprt(cfg_ptr->ptcl_ptr) * get_bkg(cfg_ptr) * pow(B[0][0],2)); */
+  /* /\* cf. engn definition in initial.f *\/ */
 
   /* min/max B field */
   const double Bmn = bfield(eqlb_ptr, pw, 0.);
@@ -1007,7 +969,7 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   /* redefine range of mu
      add buffer to the actual range */
-  printf("DBG Bmn = %g Bmx = %g\n", Bmn, Bmx);
+  //printf("DBG Bmn = %g Bmx = %g\n", Bmn, Bmx);
   mumax = 1./Bmn * (depo_ptr->pde_nbinmu + 1.) / depo_ptr->pde_nbinmu;
 
   /* upper limit for Pz, add buffer */
@@ -1053,10 +1015,9 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
       /* mu Bo/E */
       stp=(depo_ptr->pde_mumax - depo_ptr->pde_mumin) / depo_ptr->pde_nbinmu;
-      printf("check boundary mumin = %g mumax =%g nbinmu = %d stp = %g\n ",  depo_ptr->pde_mumin,  depo_ptr->pde_mumax, depo_ptr->pde_nbinmu, stp);
       for(k=0; k < depo_ptr->pde_nbinmu; k++){
         depo_ptr->pde_varmu[k] = depo_ptr->pde_mumin +((double)k) * stp + stp/2.;
-        printf("check boundary varmu[%d] = %g \n ", k, depo_ptr->pde_varmu[k]);
+        /*DBG  printf("pdedp_checkbdry::varmu[%d] = %g \n ", k, depo_ptr->pde_varmu[k]); */
       }
 
       recompute = 1;
@@ -1132,7 +1093,6 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   int k, kd, np2;
   double nprt;
-  double mudum;
 
   const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
   const double einj2 = depo_ptr->pde_Emax;
@@ -1165,7 +1125,6 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     zet[kd] = rand_double() * 2. * M_PI;
     en[kd] = (einj1 + rand_double() * (einj2 - einj1))
         * engn / ekev;   /* kinetic energy */
-    ///DBG printf("outside co kd=%d en[kd] = ( %g + rand(0) * (%g - %g)) * %g / %g \n", kd, einj1, einj2, einj1, engn, ekev);
   }
 
   /* second half, should start at np2 */
@@ -1187,14 +1146,13 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     rho[k] = ptch[k]*sqrt(2. * en[k]) /b[k];
     rmu[k] = en[k] / b[k] -
         .5 * rho[k] * rho[k] * b[k];
-    /// DBG printf("fulldepmp k=%d rmu[k] = %g en[k] = %g rho[k]=%g b[k] = %g\n", k, rmu[k], en[k], rho[k], b[k]);
     en[k] += pot[k];
 
     /* DEBUG: */
     /* edum = en[k]; */    /* !*ekev/engn*/
     /* pzdum = (g[k]*rho[k] - pol[k]) / pw; */
     /* bdum = bfield(cfg_ptr->eqlb_ptr, pol[k], thet[k]); */
-    mudum = rmu[k];  /* /en[k] */
+    /* mudum = rmu[k];  /\* /en[k] *\/ */
     /*!       mudum=edum/bdum*(1.0-ptch[k]*ptch[k]) */
   }
 
@@ -1247,13 +1205,10 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
       imaxs += 1;
     }
 
-    /* printf("pol[%d] %f \t\t pw %f\n", kd, pol[kd], pw); */
-
     if(pol[kd] >= pw || otp[kd] == 2 ||
        otp[kd] == 4 || otp[kd] == 6){
       /* lost, replace it */
       printf("dbg lost1 %d\n", nlost);
-      /* if(pol[kd] >= pw) printf("if(pol[kd] >= pw\n"); */
       if(otp[kd] == 2 || otp[kd] == 4 || otp[kd] == 6) printf("otp %d\n", otp[kd]);
 
       nlost+=1;
@@ -1347,21 +1302,20 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   }
   /* else, valid bin - proceed */
   for(j=0; j < depo_ptr->pde_nbinDE; j++){
-    for(k=0; k < depo_ptr->pde_nbinPz; k++){
-      /* this loop looks pretty wrong, lets make them all the same yeah? */
-      /* in F code def, pde_pdedp(iDE,iDPz,iE,iPz,imu) */
-      /* here was                (j,  k,   iE,iPz,iMu) */
-      //printf("DBG check_res_ptc IN CRAYZAY LOOP\n");
+    for(k=0; k < depo_ptr->pde_nbinDPz; k++){
+      /* this loop looks pretty wierd,
+         lets make them all the same with get_pdedp_ind function */
 
-      /* xxxx */
-      /* still not sure this loop/check is correct, or was correct in orig.., */
-      /* iE, iPz, imu, iDE, iDPz */
+      /* in F code definition, pde_pdedp(iDE,iDPz,iE,iPz,imu) */
+      /* here was                (j,  k,   iE,iPz,iMu) */
+
+      /* get_pdedp_ind(iE, iPz, imu, iDE, iDPz) */
       ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, j, k);
       //ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, k, j);
       tmp = depo_ptr->pde_pdedp[ind];
-      if(tmp>0){
-        printf("GGGGG DBG %d %d %d %d %d %g\n", j,k,iE,iPz, iMu, tmp);
-      }
+      /* if(tmp != 0){ */
+      /*   printf("GGGGG DBG %d %d %d %d %d %g\n", j,k,iE,iPz, iMu, tmp); */
+      /* } */
       ptot += tmp;
 
       /* update max val seen */
@@ -1374,7 +1328,6 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   if(ptot <= pmax){
     /* throw away particle */
     pol[kd] = 2. * pw;
-    //    abort();
   }
 
   return;
@@ -1452,10 +1405,6 @@ void rcrd_vararr(Config_t* cfg_ptr, int k, int step){
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 1)] = (g[k]*rho[k] - pol[k])/pw; /* Pz */
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 2)] = rmu[k]/en[k]; /* mu */
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 3)] = pol[k]/pw;
-
-  /* printf("XXXXX k = %d, pol[k] = %f, pw = %f,\t  pol[k]/pw %f\n", */
-  /*        k, pol[k], pw, pol[k]/pw); */
-  //DBG printf("XXXX res_id k =%d, rmu[k] = %g en[k] = %g\n", k, rmu[k], en[k]);
 
   return;
 }
