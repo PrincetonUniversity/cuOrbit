@@ -1005,8 +1005,8 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   /*  */
   Equilib_t* eqlb_ptr = cfg_ptr->eqlb_ptr;
-  double** const GD = get_GD(eqlb_ptr);
-  double** const B = get_B(eqlb_ptr);
+  //  double** const GD = get_GD(eqlb_ptr);
+  //  double** const B = get_B(eqlb_ptr);
   const double pw = get_pw(eqlb_ptr);
   const double engn = get_engn(cfg_ptr);
 
