@@ -685,6 +685,7 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
 void pdedp_out(Deposition_t* Depo_ptr){
   /* writes out the dist file */
   int ind;
+  int item;
   double val;
   FILE *ofp=NULL;
   FILE *ofs=NULL;
@@ -717,16 +718,16 @@ void pdedp_out(Deposition_t* Depo_ptr){
   const int np = 0;     /* process code */
   const int ns = 1;    /*  # of scalars */
   const char *dev = "D3D";
-  const char *labelx = "DEstep                "; /* *20 */
-  const char *unitsx = "   kev    ";             /* *10 */
-  const char *labely = "DPsteps               "; /* *20 */
-  const char *unitsy = "          ";             /* *10 */
-  const char *labelu = "Evar                  "; /* *20 */
-  const char *unitsu = "   keV    ";             /* *10 */
-  const char *labelv = "Pvar                  "; /* *20 */
-  const char *unitsv = "          ";             /* *10 */
-  const char *labelw = "Muvar                ";  /* *20 */
-  const char *unitsw = "          ";             /* *10 */
+  const char *labelx = "DEstep"; /* *20 */
+  const char *unitsx = "kev";             /* *10 */
+  const char *labely = "DPsteps"; /* *20 */
+  const char *unitsy = "";             /* *10 */
+  const char *labelu = "Evar"; /* *20 */
+  const char *unitsu = "keV";             /* *10 */
+  const char *labelv = "Pvar"; /* *20 */
+  const char *unitsv = "";             /* *10 */
+  const char *labelw = "Muvar";  /* *20 */
+  const char *unitsw = "";             /* *10 */
   const char *com = ";----END-OF-DATA-----------------COMMENTS:-----------";
   const char *com2 = "UFILE WRITTEN BY ORBIT, see PDEDP_OUT";
   const char *com3 = "SMOOTHING FACTORS, DELAY FACTORS:";
@@ -737,42 +738,41 @@ void pdedp_out(Deposition_t* Depo_ptr){
   /* xxx, note I removed a lot of whitespace formatting,
      can add back in later*/
 
-  fprintf(ofp, "%d %s %d %d %d ;-SHOT #- F(X) DATA -PDEDP_OUT- \n",
-          lshot, dev, nd, nq, nr);
+  fprintf(ofp, " %-6d %-4s %2d %2d %2d ;-SHOT #- F(X) DATA -PDEDP_OUT-%s\n",
+          lshot, dev, nd, nq, nr, date);
 
-  fprintf(ofp, "%s ;-SHOT DATE-  UFILES ASCII FILE SYSTEM\n", date);
+  fprintf(ofp, " %10s          ;-SHOT DATE-  UFILES ASCII FILE SYSTEM\n", date);
 
-  fprintf(ofp, "%d ;-NUMBER OF ASSOCIATED SCALAR QUANTITIES-\n", ns);
+  fprintf(ofp, " %3d                    ;-NUMBER OF ASSOCIATED SCALAR QUANTITIES-\n", ns);
 
   fprintf(ofp,"1.0000E+00                   ;-SCALAR, LABEL FOLLOWS:\n");
 
-  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: X-\n", labelx, unitsx);
+  fprintf(ofp, " %-20s %-10s ;-INDEPENDENT VARIABLE LABEL: X-\n", labelx, unitsx);
 
-  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: Y-\n", labely, unitsy);
+  fprintf(ofp, " %-20s %-10s ;-INDEPENDENT VARIABLE LABEL: Y-\n", labely, unitsy);
 
-  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: U-\n",
-          labelu, unitsu);
+  fprintf(ofp, " %-20s %-10s ;-INDEPENDENT VARIABLE LABEL: U-\n", labelu, unitsu);
 
-  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: V-\n", labelv, unitsv);
+  fprintf(ofp, " %-20s %-10s ;-INDEPENDENT VARIABLE LABEL: V-\n", labelv, unitsv);
 
-  fprintf(ofp, "%s %s ;-INDEPENDENT VARIABLE LABEL: W-\n", labelw, unitsw);
+  fprintf(ofp, " %-20s %-10s ;-INDEPENDENT VARIABLE LABEL: W-\n", labelw, unitsw);
 
-  fprintf(ofp, "%f ; TSTEPSIM  - TIME STEP USED IN SIMULATION [ms]\n",
+  fprintf(ofp, " %13.6e          ; TSTEPSIM  - TIME STEP USED IN SIMULATION [ms]\n",
           Depo_ptr->pdedp_dtsamp);
 
   fprintf(ofp, " PROBABILITY DATA              ;-DEPENDENT VARIABLE LABEL-\n");
 
-  fprintf(ofp, "%d ;-PROC CODE- 0:RAW 1:AVG 2:SM 3:AVG+SM\n", np);
+  fprintf(ofp, " %-10d                   ;-PROC CODE- 0:RAW 1:AVG 2:SM 3:AVG+SM\n", np);
 
-  fprintf(ofp, "%d ;-# OF X PTS-\n", Depo_ptr->pde_nbinDE);
+  fprintf(ofp, " %-10d          ;-# OF X PTS-\n", Depo_ptr->pde_nbinDE);
 
-  fprintf(ofp, "%d ;-# OF Y PTS-\n", Depo_ptr->pde_nbinDPz);
+  fprintf(ofp, " %-10d          ;-# OF Y PTS-\n", Depo_ptr->pde_nbinDPz);
 
-  fprintf(ofp, "%d ;-# OF U PTS-\n", Depo_ptr->pde_nbinE);
+  fprintf(ofp, " %-10d          ;-# OF U PTS-\n", Depo_ptr->pde_nbinE);
 
-  fprintf(ofp, "%d ;-# OF V PTS-\n", Depo_ptr->pde_nbinPz);
+  fprintf(ofp, " %-10d          ;-# OF V PTS-\n", Depo_ptr->pde_nbinPz);
 
-  fprintf(ofp, "%d ;-# OF W PTS- X,Y,U,V,W,F(X,Y,U,V,W) DATA FOLLOW:\n",
+  fprintf(ofp, " %-10d          ;-# OF W PTS- X,Y,U,V,W,F(X,Y,U,V,W) DATA FOLLOW:\n",
           Depo_ptr->pde_nbinmu);
 
   /*       -------------------------------------------------------
@@ -830,21 +830,27 @@ void pdedp_out(Deposition_t* Depo_ptr){
               !     >             pde_Pdedp(iDE,iDPz,iE,iPz,imu)/pnorm
               !               enddo
               !            endif */
+          item = 0;
           for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
             ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
             val = Depo_ptr->pde_pdedp[ind];
-            fprintf(ofp, "%f ", val);
+            /* adhere to file format circa 1950s */
+            if(item>0 && (item % 6 == 0)) fprintf(ofp,"\n");
+            fprintf(ofp, "%14.6e", val);
+
+            /*optionally write out the sparse record  */
             if(Depo_ptr->output_sparse && val != 0.){
-              fprintf(ofs, "%d %d %d %d %d %f\n", iE, iPz, imu, iDE, iDPz, val);
+              fprintf(ofs, "%d %d %d %d %d %lf.17\n", iE, iPz, imu, iDE, iDPz, val);
             }
+            item++;
           }
-          fprintf(ofp, "\n");
+          fprintf(ofp,"\n");
         }
       }
     }
   }
 
-  fprintf(ofp, "\n%s\n", com);
+  fprintf(ofp, "%s\n", com);
   fprintf(ofp, "%s\n", com2);
   fprintf(ofp, "%s\n", com3);
   fprintf(ofp, "%s\n", com4);
