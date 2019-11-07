@@ -1380,9 +1380,6 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
       /* get_pdedp_ind(iE, iPz, imu, iDE, iDPz) */
       ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, j, k);
       tmp = depo_ptr->pde_pdedp[ind];
-      if(tmp != 0 && depo_ptr->pdedp_do_focusdep){
-        printf("GGGGG DBG %d %d %d %d %d %g\n", j, k, iE, iPz, iMu, tmp);
-      }
       ptot += tmp;
 
       /* update max val seen */
