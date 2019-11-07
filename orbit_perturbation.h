@@ -35,11 +35,6 @@ int get_nflr(Perturb_t*);
 #ifdef __NVCC__
 __host__ __device__
 #endif
-int get_npert(Perturb_t*);
-
-#ifdef __NVCC__
-__host__ __device__
-#endif
 int get_lpt(Perturb_t*);
 
 #ifdef __NVCC__

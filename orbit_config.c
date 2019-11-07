@@ -44,7 +44,10 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
         pconfig->pamp = atof(value);
     } else if (MATCH("model", "rprof")) {
         pconfig->rprof = atof(value);
+    } else if (MATCH("model", "npert")) {
+      pconfig->npert = atoi(value);
     }
+
     /* Inputs */
     else if (MATCH("input", "spdata_file")) {
       pconfig->spdata_file = strdup(value);
@@ -75,8 +78,6 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->alimit = atof(value);
     } else if (MATCH("perturbation", "global_scaling_factor")) {
       pconfig->global_scaling_factor = atof(value);
-    } else if (MATCH("perturbation", "npert")) {
-      pconfig->npert = atof(value);
     } else if (MATCH("perturbation", "freq_scaling_factor")) {
       pconfig->freq_scaling_factor = atof(value);
     }
@@ -218,22 +219,28 @@ void set1(Config_t* cfg_ptr){
   double xdum, zdum;
   double xl, xr, zb, zt, rmd;
 
-  dum = 0;
+  const double pw = get_pw(Eq);
+
+  psiwal = 0;
   for(k=1; k<=1000; k++){
-    pdum = 0.001 * k * get_pw(Eq);
-    dum = dum + qfun(Eq, pdum);
+    pdum = 0.001 * k * pw;
+    psiwal += qfun(Eq, pdum)* .001 * pw;
   }
-  psiwal = dum;
+
   printf("\t Toroidal psi wall %f\n", psiwal);
 
   set_omeg0(Ptrb, 9.58E6 * get_zprt(Ptcl) * cfg_ptr->bkg / get_prot(Ptcl));
+  printf("omeg0 %f\n", get_omeg0(Ptrb));
 
   set_xc(cfg_ptr, xproj(Eq, 0., 0.));
   set_eps(cfg_ptr, ( xproj(Eq, get_ped(Eq) , 0.) - xproj(Eq, 0., 0.)) / get_xc(cfg_ptr) );
 
-  cfg_ptr->bmin = bfield(Eq, get_pw(Eq), 0.);
-  cfg_ptr->bmax = bfield(Eq, get_pw(Eq), M_PI);
+  cfg_ptr->bmin = bfield(Eq, pw, 0.);
+  cfg_ptr->bmax = bfield(Eq, pw, M_PI);
   cfg_ptr->bax = bfield(Eq, 0., 0.);
+
+  printf("bmin %.18le bmax %.18le bax %.18le\n",
+         cfg_ptr->bmin, cfg_ptr->bmax, cfg_ptr->bax);
 
   dum = fabs(cfg_ptr->bax - 1.);
   /* Sanity check */
@@ -257,13 +264,12 @@ void set1(Config_t* cfg_ptr){
   pol[0] = 1E-10;
   thet[0] = 0;
 
-  /* xxx not sure why exactly we do this... */
   field(cfg_ptr, 1);
-  /* or this */
-  pol[0] = get_pw(Eq);
+
+  pol[0] = pw;
   field(cfg_ptr, 1);
   for(k=1; k<=200; k++){
-    pol[k] = 0.005 * k * get_pw(Eq);
+    pol[k] = 0.005 * k * pw;
     thet[k] = 0;
   }
   field(cfg_ptr, 200);
@@ -279,9 +285,6 @@ void set1(Config_t* cfg_ptr){
   cfg_ptr->tran = 6.28 * (GD[0][0] * QD[0][0] + RD[0][0])/denom;
   cfg_ptr->trun = cfg_ptr->ntor * cfg_ptr->tran;
   cfg_ptr->dt0 = cfg_ptr->tran/200;
-  cfg_ptr->nskip = cfg_ptr->trun/
-      (200 * cfg_ptr->dt0) + 1;   /* for diffusion and bootstrap */
-
   cfg_ptr->bsum = 0.;
   cfg_ptr->dsum = 0.;
   cfg_ptr->esum = 0.;
@@ -295,12 +298,12 @@ void set1(Config_t* cfg_ptr){
 
   /*   find plasma volume, pdum = pw for total
        units of numerical equilibrium  */
-  pdum = get_pw(Eq);
+  pdum = pw;
   cfg_ptr->pvol = 0.;
   const int nint0 = 100;
   for(k=1; k<=nint0; k++){
     for(j=1; j<=nint0; j++){
-      pz = get_pw(Eq) - (((double)j) - .5) * pdum/((double)nint0);
+      pz = pw - (((double)j) - .5) * pdum/((double)nint0);
       tz = ((double)k) * 2. * M_PI / ((double)nint0);
       dvol = pdum * 2. * M_PI * giac(Eq, pz, tz) / ((double)(nint0*nint0));
       cfg_ptr->pvol += dvol;
@@ -326,7 +329,7 @@ void set1(Config_t* cfg_ptr){
   xr = -1.E6;
   zb = 1.E6;
   zt = -1.E6;
-  pz = 0.99 * get_pw(Eq);
+  pz = 0.99 * pw;
   for(k=1; k<=200; k++){
     tdum = .0314 * k;
     xdum = xproj(Eq, pz, tdum) * get_rmaj(Eq) / get_xc(cfg_ptr);
@@ -468,4 +471,11 @@ __host__ __device__
 #endif
 double get_dt0(Config_t* cfg_ptr){
   return cfg_ptr->dt0;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_npert(Config_t* cfg_ptr){
+    return cfg_ptr->npert;
 }

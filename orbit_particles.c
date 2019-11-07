@@ -146,7 +146,6 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
   ptcl_ptr->padt = (double*)umacalloc(ptcl_ptr->idm, sizeof(double));
 
 
-
 }
 
 #ifdef __NVCC__
@@ -366,16 +365,17 @@ void kfield(Config_t* cfg_ptr, int k){
 
   idum = thet[k] * pi2i;
   tdum = thet[k] - pi2*(idum-1);
+
   idum = tdum *pi2i;
   tdum = tdum - pi2*idum;
 
   kd = tdum*lst*pi2i;
   kd = imax(0,kd);
   kd = imin(lst-1,kd);
-  const double dtx = tdum - (kd-1)*pi2/lst;
+  const double dtx = tdum - kd*pi2/lst;
   const double dt2 = dtx*dtx;
   const int ind = jd*lst + kd;
-  sdum = .5 - .5 * copysign(1. , jd - 1.5 ); //xxx this is wrong
+  sdum = .5 - .5 * copysign(1. , jd - 0.5 );
   dpx = (1. - sdum) * dpx + sdum * sqrt( fmax(1.E-20, dpx));
   dp2 = dpx*dpx;
 
@@ -400,7 +400,7 @@ void kfield(Config_t* cfg_ptr, int k){
 
     ptcl_ptr->b[k] = B[0][ind] + B[1][ind]*dpx + B[2][ind]*dp2
         + B[3][ind]*dtx + B[4][ind]*dpx*dtx + B[5][ind]*dtx*dp2
-        + B[4][ind]*dt2 + B[7][ind]*dt2*dpx + B[8][ind]*dt2*dp2
+        + B[6][ind]*dt2 + B[7][ind]*dt2*dpx + B[8][ind]*dt2*dp2
         + rpl[k] * sin(nrip * zet[k]);
 
     ptcl_ptr->dbdp[k] = B[1][ind] + 2*B[2][ind]*dpx + B[4][ind]*dtx
@@ -419,29 +419,23 @@ void kfield(Config_t* cfg_ptr, int k){
     /* krip is 0 */
     ptcl_ptr->b[k] = B[0][ind] + B[1][ind]*dpx + B[2][ind]*dp2
         + B[3][ind]*dtx + B[4][ind]*dpx*dtx + B[5][ind]*dtx*dp2
-        + B[4][ind]*dt2 + B[7][ind]*dt2*dpx + B[8][ind]*dt2*dp2;
+        + B[6][ind]*dt2 + B[7][ind]*dt2*dpx + B[8][ind]*dt2*dp2;
 
     ptcl_ptr->dbdp[k] = B[1][ind] + 2*B[2][ind]*dpx + B[4][ind]*dtx
         + 2*B[5][ind]*dtx*dpx + B[7][ind]*dt2 + 2*B[8][ind]*dpx*dt2;
-
-    ptcl_ptr->dbdp[k] = ptcl_ptr->dbdp[k]/(1. - sdum + 2 * sdum * dpx);
-
-    ptcl_ptr->dbdt[k] = B[3][ind] + B[4][ind]*dpx + B[5][ind]*dp2
-        + 2*B[6][ind]*dtx + 2*B[7][ind]*dtx*dpx + 2*B[8][ind] *dtx*dp2;
+    ptcl_ptr->dbdp[k] /= (1. - sdum + 2 * sdum * dpx);
 
     ptcl_ptr->dbdt[k] = B[3][ind] + B[4][ind]*dpx + B[5][ind]*dp2
-      + 2*B[6][ind]*dtx + 2*B[7][ind]*dtx*dpx + 2*B[8][ind]*dtx*dp2;
+        + 2*B[6][ind]*dtx + 2*B[7][ind]*dtx*dpx + 2*B[8][ind]*dtx*dp2;
 
     ptcl_ptr->dbdpp[k] = 2*B[2][ind] + 2*B[5][ind]*dtx + 2*B[8][ind]*dt2;
-
-    ptcl_ptr->dbdpp[k] = ptcl_ptr->dbdpp[k]/(1. - sdum + 2*sdum*dpx);
+    ptcl_ptr->dbdpp[k] /= (1. - sdum + 2*sdum*dpx);
 
     ptcl_ptr->dbdpt[k] = B[4][ind] + 2*B[5][ind]*dpx + 2*B[7][ind]*dtx + 4*B[8][ind]*dpx*dtx;
-
-    ptcl_ptr->dbdpt[k] = ptcl_ptr->dbdpt[k]/(1. - sdum + 2*sdum*dpx);
+    ptcl_ptr->dbdpt[k] /= (1. - sdum + 2*sdum*dpx);
   }
 
-  if( get_npert(cfg_ptr->ptrb_ptr) > 0) {
+  if( get_npert(cfg_ptr) > 0) {
     ptrbak(cfg_ptr, k);
     ptrb2k(cfg_ptr, k);
   }
@@ -456,7 +450,7 @@ __host__ __device__
 void kupdate(Config_t* cfg_ptr, int k){
    //locals
   int nesc;
-  int ntim,md;
+  int md;
   Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
   Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
   double* time = get_time(Ptcl);
@@ -484,26 +478,23 @@ void kupdate(Config_t* cfg_ptr, int k){
   kfield(cfg_ptr, k);
 
   nesc = 0;
-  ntim = 0;
 
   nout[k] = (int)(.6 *(1.  + copysign(1. , Ptcl->pol[k] - pw)));
   nfin[k] = (int)(.6 *(1.  + copysign(1. , time[k]-trun)));
 
-  time[k] = time[k] + dt[k]*(1 - nout[k])*(1-nfin[k]);
-  tim1[k] = tim1[k] + (1-nout[k])*dt[k]*(1-nfin[k]);
+  time[k] += dt[k]*(1 - nout[k])*(1-nfin[k]);
+  tim1[k] += (1-nout[k])*dt[k]*(1-nfin[k]);
 
   //  monitor the energy change
   //     and update the energy and pitch if not lost
-  w3[k] = pot[k] + .5 *pow((b[k]*rho[k]),2) + rmu[k]*b[k];
+
+  w3[k] = pot[k] + .5 *pow((b[k]*rho[k]),2) + rmu[k]*b[k];  /* def one of these */
   w1[k] = fabs((w3[k] - en[k])/e0[k]);
-  //printf("kupdate prior en[%d] = %g", k, en[k]);
   en[k] = w3[k]*(1 - nout[k]) + en[k]*nout[k];
-  //printf("\tpost en[%d] = %g\n", k, en[k]);
-  ptch[k] = ptch[k] * nout[k] + (1  - nout[k])*rho[k]*b[k]/sqrt(2. * en[k] - 2. * pot[k]);
-  nesc = nesc + nout[k];
-  ntim += nfin[k];
+  ptch[k] *= nout[k] + (1  - nout[k])*rho[k]*b[k]/sqrt(2. * en[k] - 2. * pot[k]);
+  nesc += nout[k];
   for(md=md1; md<md2; md++){// zero inds...
-    phaz[md*idm + k] = phaz[md*idm + k] + omegv[md]*dt[k];
+    phaz[md*idm + k] +=  omegv[md]*dt[k];
   }
 
   return;
@@ -525,7 +516,7 @@ void ptrb2k(Config_t* cfg_ptr, int k)
   double dum;
 
   dum = pamp*engn/ekev;
-  pot[k] =  pot[k] + dum*exp(-rprof*pol[k]/pw);
+  pot[k] += dum*exp(-rprof*pol[k]/pw);
   dptdp[k] = dptdp[k] - rprof/pw*dum*exp(-rprof*pol[k]/pw);
 
   return;
@@ -631,7 +622,6 @@ void ptrbak(Config_t* cfg_ptr, int k)
     // get DPsi
     dpsi_flr = fabs(psi_flr-pol[k]);
   }
-
   //do  312 md = md1,md2 ! loop over harmonics
   for(md=md1; md<md2; md++){
     nval = alfv[md];  /* xxx does this need to be saved in a struct ?*/
@@ -668,7 +658,6 @@ void ptrbak(Config_t* cfg_ptr, int k)
       xinm = amp[nval]*(xi1[ind] + xi2[ind]*dpx + xi3[ind]*dp2);
       xinmp = amp[nval]*( xi2[ind] + 2*xi3[ind]*dpx);
       agg = n*zet[k] - m*thet[k];
-      printf("DBG md %d , idm %d , k %d , phaz[md*idm + k]\n",md, idm, k);
       cnm = cos(agg - phaz[md*idm + k]);
       snm = sin(agg - phaz[md*idm + k]);
       alp[k] = alp[k] + alnm*snm/nflr0;
@@ -688,7 +677,7 @@ void ptrbak(Config_t* cfg_ptr, int k)
     gqip = gp[k]*q[k] + g[k]*qp[k] + rip[k];
     gmni = m*g[k] + n*ri[k];
     gmnip = m*gp[k] + n*rip[k];
-    pot[k]= pot[k] - xisnm*gqi*omegv[md]/gmni;
+    pot[k] -= xisnm*gqi*omegv[md]/gmni;
     dptdt[k] = dptdt[k] + m*xicnm*gqi*omegv[md]/gmni;
     dptdz[k] = dptdz[k] - n*xicnm*gqi*omegv[md]/gmni;
     dptdp[k] = dptdp[k] - xipsnm*gqi*omegv[md]/gmni
@@ -709,14 +698,14 @@ void do_particle_kernel(Config_t* cfg_ptr, int particle_id){
   int ktm;
   const int pde_tskip = get_pdedp_tskip(cfg_ptr->depo_ptr);
 
-  for(ktm=1; ktm < get_nstep_all(cfg_ptr); ktm++){
+  for(ktm=1; ktm <= get_nstep_all(cfg_ptr); ktm++){
     konestep(cfg_ptr, particle_id);
     kupdate(cfg_ptr, particle_id);
 
     if(compute_pdedp(cfg_ptr->depo_ptr) &&
        ktm >= pde_tskip &&
        ktm % pde_tskip == 0){
-      rcrd_vararr(cfg_ptr, particle_id, ktm/pde_tskip);
+      rcrd_vararr(cfg_ptr, particle_id, ktm/pde_tskip - 1);
     }
   }
 }
@@ -731,7 +720,7 @@ void do_particles_dev(Config_t* cfg_ptr){
   if(particle_id >= cfg_ptr->nprt){
     return;
   }
-  /* printf("DBG particle id %d ktm %d\n", particle_id, ktm); */
+
   do_particle_kernel(cfg_ptr, particle_id);
 }
 #endif
@@ -788,7 +777,6 @@ __host__ __device__
 void konestep(Config_t* cfg_ptr, int k){
 
   Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
-  Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
   int* nout = Ptcl->nout;
   int* nfin = Ptcl->nfin;
   double* dt = Ptcl->dt;
@@ -797,7 +785,7 @@ void konestep(Config_t* cfg_ptr, int k){
   const double pw = get_pw(cfg_ptr->eqlb_ptr);
   double* time = get_time(Ptcl);
   double trun = get_trun(cfg_ptr);
-  int npert = get_npert(Ptrb);
+  int npert = get_npert(cfg_ptr);
   double* b = Ptcl->b;
   double* g = Ptcl->g;
   double* gp = Ptcl->gp;
@@ -821,7 +809,7 @@ void konestep(Config_t* cfg_ptr, int k){
   const double chrg = Ptcl->chrg;
   const double dt0 = get_dt0(cfg_ptr);
 
-  int n1,j,i,ndum;
+  int n1,j,i,ndum,ei;
   double xdum,ydum,rbb,dedb,deni,fac1,fac2,pdum,xdot,ydot;
   /* local temps, note compiler is suspicuous of those I have init 0..check */
   double y_[4];
@@ -837,15 +825,14 @@ void konestep(Config_t* cfg_ptr, int k){
 
   nout[k] = (int)(.6 * (1. + copysign(1., pol[k]- pw) ));
   nfin[k] =  (int)(.6 * (1. + copysign(1., time[k] - trun)));
-  nt_ = ((int) .6 * (1.  + copysign(1., pol[k]-.05 *pw)));
+  nt_ = (int) (.6 * (1.  + copysign(1., pol[k]-.05 *pw)));
   dt[k] = nt_ * dt[k] + (1 - nt_) * dt0;
 
   xdum = sqrt(pol[k])*cos(thet[k]);
   ydum = sqrt(pol[k])*sin(thet[k]);
 
-  y_[0] = nt_ * pol[k] + (1-nt_)*xdum;
+  y_[0] = nt_ * pol[k] + (1-nt_)*xdum;  /* already wrong here */
   y_[1] = nt_ * thet[k] + (1-nt_)*ydum;
-
   y_[2] = zet[k];
   y_[3] = rho[k];
 
@@ -858,50 +845,77 @@ void konestep(Config_t* cfg_ptr, int k){
   for(j=0; j < 4; j++){
     kfield(cfg_ptr, k);
 
+    /* the arithmetic that follows here could use a lot of cleanup.
+     i think simplification herewould help the optimizer... and the devs... */
     if(npert ==  0){
       //goto 61
-      if(k == 0){
-        printf("FAILURE: integ without perturbations is not yet implimented\n");
+      rbb = y_[3] * b[k]*b[k];  /*  rbb is off, y_[3] seems okay, when did b change */
+      dedb = b[k] * y_[3]*y_[3] + rmu[k];
+      deni = 1. / ( g[k]*q[k] + ri[k] + chrg * y_[3] * (g[k]*rip[k] - ri[k]*gp[k]));
+
+      //   pol dot
+      e_[0] = - chrg*g[k]*dedb*dbdt[k] * deni +
+          chrg * ri[k] * dedb *dbdz[k] * deni;
+
+      //   thet dot
+      e_[1] = (chrg*dedb*dbdp[k]*g[k] +
+                 rbb*(1. - chrg * gp[k] * y_[3])) * deni;
+
+      //   zet dot
+      e_[2] = (-chrg*dedb*dbdp[k]*ri[k] +
+               rbb*(q[k] + chrg * y_[3] * rip[k]))*deni;
+
+      //   rho dot   - term in  dbdz*dadp given by Mynick
+      e_[3] = -dedb * (1. - chrg * y_[3] * gp[k] ) * dbdt[k] * deni -
+          dedb * dbdz[k] * (q[k] + chrg * y_[3] * rip[k]) * deni;
+
+      pdum = y_[0] * y_[0] + y_[1] * y_[1];
+      xdot = .5 * y_[0] * e_[0] / pdum - y_[1] * e_[1];
+      ydot = .5 *y_[1] * e_[0]/pdum + y_[0] *e_[1];
+      e_[0] = nt_*e_[0] + (1-nt_)*xdot;
+      e_[1] = nt_*e_[1] + (1-nt_)*ydot;
+
+      for(ei=0; ei<4; ei++){
+        e_[ei] *= (1-nout[k])*(1-nfin[k]);
       }
-      return;
+
+    } else{
+
+      rbb = y_[3] * b[k]*b[k];
+      dedb = b[k] * y_[3]*y_[3] + rmu[k];
+      deni = 1. / ( g[k]*q[k] + ri[k] + (chrg * y_[3]+alp[k]) * (g[k]*rip[k] - ri[k]*gp[k]));
+      fac1 = 1 - gp[k]*(chrg*y_[3] + alp[k]) - g[k]*dadp[k];
+      fac2 = q[k] + rip[k]*(chrg*y_[3] + alp[k]) + ri[k]*dadp[k];
+
+      //   pol dot
+      e_[0] = (-ri[k]*rbb*dadz[k]
+               - chrg*g[k]*dedb*dbdt[k]
+               + g[k]*rbb*dadt[k]
+               - chrg*g[k]*dptdt[k]
+               + chrg*ri[k]*dptdz[k]
+               + chrg*ri[k]*dedb*dbdz[k]) * deni;
+
+      //   thet dot
+      e_[1] = (chrg*dedb*dbdp[k]*g[k]+ rbb*fac1 + chrg*g[k]*dptdp[k])*deni;
+      //   zet dot
+      e_[2] = (-chrg*dedb*dbdp[k]*ri[k] + rbb*fac2 - chrg*ri[k]*dptdp[k])*deni;
+
+      //   rho dot   - term in  dbdz*dadp given by Mynick
+      e_[3] = ( -fac2 * (dedb*dbdz[k]+ dptdz[k])
+                - fac1* (dedb*dbdt[k] + dptdt[k])
+                + (dedb*dbdp[k]+dptdp[k])
+                * (ri[k]*dadz[k] - g[k]*dadt[k])) *deni - chrg*padt[k] ;
+      pdum = y_[0] * y_[0] + y_[1] * y_[1];
+      xdot = .5 * y_[0] * e_[0] / pdum - y_[1] * e_[1];
+      ydot = .5 *y_[1] * e_[0]/pdum + y_[0] *e_[1];
+      e_[0] = nt_*e_[0] + (1-nt_)*xdot;
+      e_[1] = nt_*e_[1] + (1-nt_)*ydot;
+      for(ei=0; ei<4; ei++){
+        e_[ei] *= (1-nout[k])*(1-nfin[k]);
+      }
     }
 
-    rbb = y_[3] * b[k]*b[k];
-    dedb = b[k] * y_[3]*y_[3] + rmu[k];
-    deni = 1. / ( g[k]*q[k] + ri[k] + (chrg * y_[3]+alp[k]) * (g[k]*rip[k] - ri[k]*gp[k]));
-    fac1 = 1 - gp[k]*(chrg*y_[3] + alp[k]) - g[k]*dadp[k];
-    fac2 = q[k] + rip[k]*(chrg*y_[3] + alp[k]) + ri[k]*dadp[k];
-    //   pol dot
-
-
-    e_[0] = (-ri[k]*rbb*dadz[k]
-             - chrg*g[k]*dedb*dbdt[k]
-             + g[k]*rbb*dadt[k]
-             - chrg*g[k]*dptdt[k]
-             + chrg*ri[k]*dptdz[k]
-             + chrg*ri[k]*dedb*dbdz[k]) * deni;
-
-    //   thet dot
-    e_[1] = (chrg*dedb*dbdp[k]*g[k]+ rbb*fac1 + chrg*g[k]*dptdp[k])*deni;
-    //   zet dot
-    e_[2] = (-chrg*dedb*dbdp[k]*ri[k] + rbb*fac2 - chrg*ri[k]*dptdp[k])*deni;
-
-    //   rho dot   - term in  dbdz*dadp given by Mynick
-    e_[3] = ( -fac2 * (dedb*dbdz[k]+ dptdz[k])
-              - fac1* (dedb*dbdt[k] + dptdt[k])
-              + (dedb*dbdp[k]+dptdp[k])
-              * (ri[k]*dadz[k] - g[k]*dadt[k])) *deni - chrg*padt[k] ;
-    pdum = y_[0] * y_[0] + y_[1] * y_[1];
-    xdot = .5 * y_[0] * e_[0] / pdum - y_[1] * e_[1];
-    ydot = .5 *y_[1] * e_[0]/pdum + y_[0] *e_[1];
-    e_[0] = nt_*e_[0] + (1-nt_)*xdot;
-    e_[1] = nt_*e_[1] + (1-nt_)*ydot;
-    e_[0] = e_[0] * (1-nout[k])*(1-nfin[k]);
-    e_[1] = e_[1] * (1-nout[k])*(1-nfin[k]);
-    e_[2] = e_[2] * (1-nout[k])*(1-nfin[k]);
-    e_[3] = e_[3] * (1-nout[k])*(1-nfin[k]);
-
-    //goto 62, like 42, the answere to the universe and everything in it,  but twenty years older.
+    //goto 62, like 42, the answer to the universe and everything in it,  but twenty years older.
     n1=4;
     for(i=0; i<n1; i++){
       if(j==0){
@@ -922,7 +936,7 @@ void konestep(Config_t* cfg_ptr, int k){
     }
 
     // 40
-    ndum = ((int) .6 * (1 - copysign(1. , y_[0])));
+    ndum = (int)( .6 * (1 - copysign(1. , y_[0])));
     pol[k] = nt_*y_[0] + (1-nt_)*(y_[0]*y_[0] + y_[1]*y_[1]);
     thet[k] = nt_*y_[1] + (1-nt_)*(atan(y_[1]/y_[0]) + ndum * M_PI);
     zet[k] = y_[2];

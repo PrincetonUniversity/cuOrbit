@@ -50,15 +50,11 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
       }
     }
 
-    /* /\* XXXXX, yeah something off here *\/ */
-    /* /\* for now we just  use the fulldepmp per mario *\/ */
-    /* if( irun_pdedp % 2  == 0){ */
-    /*   fulldepmp(cfg_ptr, depo_ptr); */
-    /* } else { */
-    /*   fulldepmp_co(cfg_ptr, depo_ptr); */
-    /* } */
-    fulldepmp(cfg_ptr, depo_ptr);
-
+    if( irun_pdedp % 2  == 0){
+      fulldepmp(cfg_ptr, depo_ptr);
+    } else {
+      fulldepmp_co(cfg_ptr, depo_ptr);
+    }
 
     double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
     const int nstep_all = round(10. * get_pdedp_dtsamp(depo_ptr) / dum) + 1;
@@ -71,9 +67,9 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
     printf("\t no. of particles \t: %d\n", cfg_ptr->nprt);
     printf("\t no. of time steps \t: %d\n", nstep_all);
     printf("\t sim. time [ms] \t:  %f\n", nstep_all*dum);
-    printf("\t time step [us] \t:  %f\n\n",
+    printf("\t time step [us] \t:  %f\n",
            1E6 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr));
-    ///XXXX time steps to skip
+    printf("\t time steps to skip \t:  %d\n\n", get_pdedp_tskip(depo_ptr));
 
     /* launch the stepping functions */
     do_particles(cfg_ptr);

@@ -92,22 +92,22 @@ double get_ped(Equilib_t*);
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double get_lsp(Equilib_t*);
+int get_lsp(Equilib_t*);
 
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double get_lst(Equilib_t*);
+int get_lst(Equilib_t*);
 
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double get_nrip(Equilib_t*);
+int get_nrip(Equilib_t*);
 
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double get_krip(Equilib_t*);
+int get_krip(Equilib_t*);
 
 
 /* utils */
