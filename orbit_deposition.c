@@ -23,7 +23,7 @@ struct Deposition {
   char* bfield_file;
   int nruns;
   bool compute_pdedp;
-  bool initial_update_pdedp;
+  bool initial_update_pdedp_from_file;
   double deposit_on_bins_after_fraction;
   double pdedp_dtsamp;
   double pdedp_dtav;
@@ -100,7 +100,7 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->bfield_file = strndup(cfg_ptr->bfield_file, MAXFNAME);
   Depo_ptr->nruns = cfg_ptr->nruns;
   Depo_ptr->compute_pdedp = cfg_ptr->compute_pdedp;
-  Depo_ptr->initial_update_pdedp = cfg_ptr->initial_update_pdedp;
+  Depo_ptr->initial_update_pdedp_from_file = cfg_ptr->initial_update_pdedp_from_file;
   Depo_ptr->deposit_on_bins_after_fraction = cfg_ptr->deposit_on_bins_after_fraction;
   Depo_ptr->pdedp_dtsamp = cfg_ptr->pdedp_dtsamp;
   Depo_ptr->pdedp_dtav = cfg_ptr->pdedp_dtav;
@@ -109,7 +109,7 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->pdedp_focusdep = cfg_ptr->pdedp_focusdep;
   Depo_ptr->pdedp_do_focusdep = false;
   Depo_ptr->pdedp_optimize = cfg_ptr->pdedp_optimize;
-  if(Depo_ptr->initial_update_pdedp){
+  if(Depo_ptr->initial_update_pdedp_from_file){
     printf("Warning, found initial pdedp_update TRUE, setting optimize FALSE\n");
     Depo_ptr->pdedp_optimize = 0;
     abort();  /* for now, abort */
@@ -157,9 +157,9 @@ bool compute_pdedp(Deposition_t* Depo_ptr){
   return Depo_ptr->compute_pdedp;
 }
 
-bool initial_update_pdedp(Deposition_t* Depo_ptr){
-  return Depo_ptr->initial_update_pdedp;
-}
+/* bool initial_update_pdedp_from_file(Deposition_t* Depo_ptr){ */
+/*   return Depo_ptr->initial_update_pdedp_from_file; */
+/* } */
 
 bool pdedp_optimize(Deposition_t* Depo_ptr){
   return Depo_ptr->pdedp_optimize;
@@ -190,15 +190,15 @@ void set_pdedp_tskip(Deposition_t* Depo_ptr, double pdedp_tskip){
 #ifdef __NVCC__
 __host__ __device__
 #endif
-bool get_initial_update_pdedp(Deposition_t* Depo_ptr){
-  return Depo_ptr->initial_update_pdedp;
+bool get_initial_update_pdedp_from_file(Deposition_t* Depo_ptr){
+  return Depo_ptr->initial_update_pdedp_from_file;
 }
 
 #ifdef __NVCC__
 __host__ __device__
 #endif
-void set_initial_update_pdedp(Deposition_t* Depo_ptr, bool val){
-  Depo_ptr->initial_update_pdedp = val;
+void set_initial_update_pdedp_from_file(Deposition_t* Depo_ptr, bool val){
+  Depo_ptr->initial_update_pdedp_from_file = val;
   return;
 }
 
@@ -494,8 +494,8 @@ void pdedp_init(Deposition_t* Depo_ptr){
           kicks in energy and Pz. These are used to optimize
           the (DE,DPz) range on-the-fly if the flag
           pde_optimize is set true*/
-  /* Depo_ptr->pde_maxDE = 0.; */
-  /* Depo_ptr->pde_maxDPz = 0.; */
+  Depo_ptr->pde_maxDE = 0.;
+  Depo_ptr->pde_maxDPz = 0.;
 
   return;
 }
@@ -895,9 +895,6 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
   int nintv = (int)( Depo_ptr->pdedp_dtsamp / dtdum);
   int Nav = imax(1, (int)( Depo_ptr->pdedp_dtav / dtdum));
 
-  Depo_ptr->pde_maxDE = 0.;
-  Depo_ptr->pde_maxDPz = 0.;
-
   for(k=0; k < cfg_ptr->nprt; k++){
     for(j=jstart; j < nsamples; j++){
       Eav = 0.;
@@ -1157,7 +1154,7 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 }
 
 void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
-  /* loops over k and k/2, can live on device one day */
+  /* loops over k, can live on device one day */
 
   int k, kd, np2;
   double nprt;

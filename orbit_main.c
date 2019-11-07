@@ -38,13 +38,14 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
     /*   exit(0); */
     /* } */
 
-    if(compute_pdedp(cfg_ptr->depo_ptr)){
-      if(initial_update_pdedp(cfg_ptr->depo_ptr) && (irun_pdedp == 0)){
+    /* if we are computing pDEDP and it is the first run */
+    if(compute_pdedp(cfg_ptr->depo_ptr) && irun_pdedp == 0){
+      if(get_initial_update_pdedp_from_file(cfg_ptr->depo_ptr)){
         printf(" ... reading pDEDP from ufile...\n");
         pdedp_read(cfg_ptr->depo_ptr, cfg_ptr);
         printf(" ... done.\n");
-      } else {
-        /* compute new p(DE,DP) */
+      } else{
+        /* compute new p(DE,DP), zero inits pdedp et al */
         pdedp_init(cfg_ptr->depo_ptr);
       }
     }

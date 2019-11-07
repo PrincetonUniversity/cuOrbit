@@ -96,7 +96,7 @@ struct Config {
   /* pdedp */
   int nruns;
   bool compute_pdedp;
-  bool initial_update_pdedp;
+  bool initial_update_pdedp_from_file;
   double deposit_on_bins_after_fraction;
   double pdedp_dtsamp;
   double pdedp_dtav;

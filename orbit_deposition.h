@@ -18,7 +18,6 @@ __host__ __device__
 #endif
 bool compute_pdedp(Deposition_t*);
 
-bool initial_update_pdedp(Deposition_t*);
 bool pdedp_optimize(Deposition_t*);
 
 #ifdef __NVCC__
@@ -39,12 +38,12 @@ void set_pdedp_tskip(Deposition_t*, double);
 #ifdef __NVCC__
 __host__ __device__
 #endif
-bool get_initial_update_pdedp(Deposition_t*);
+bool get_initial_update_pdedp_from_file(Deposition_t*);
 
 #ifdef __NVCC__
 __host__ __device__
 #endif
-void set_initial_update_pdedp(Deposition_t*, bool);
+void set_initial_update_pdedp_from_file(Deposition_t*, bool);
 
 #ifdef __NVCC__
 __host__ __device__

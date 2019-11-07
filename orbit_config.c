@@ -105,8 +105,8 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->nruns = atoi(value);
     }    else if (MATCH("pdedp", "compute_pdedp")){
       pconfig->compute_pdedp = atob(value);
-    }    else if (MATCH("pdedp", "initial_update_pdedp")){
-      pconfig->initial_update_pdedp = atob(value);
+    }    else if (MATCH("pdedp", "initial_update_pdedp_from_file")){
+      pconfig->initial_update_pdedp_from_file = atob(value);
     }    else if (MATCH("pdedp", "deposit_on_bins_after_fraction")){
       pconfig->deposit_on_bins_after_fraction = atof(value);
     }    else if (MATCH("pdedp", "pdedp_dtsamp")){
