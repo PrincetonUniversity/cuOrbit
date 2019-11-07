@@ -58,7 +58,6 @@ struct Deposition {
   double pde_DEmax;
   double pde_DPzmin;
   double pde_DPzmax;
-  /* xxx do we really need both? */
   double pde_maxDE;
   double pde_maxDPz;
   int res_id_arr_j;
@@ -704,7 +703,7 @@ void pdedp_out(Deposition_t* Depo_ptr){
       fprintf(stderr, "\nCan't open output file %s!\n", Depo_ptr->pdedp_sparse_file);
       exit(1);
     }
-    fprintf(ofs, "# iE iPz imu iDE iDPz val\n");
+    fprintf(ofs, "# iDE iDPz iE iPz imu val\n");
   }
 
 
@@ -1177,6 +1176,8 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   double* rmu = get_rmu(cfg_ptr->ptcl_ptr);
   double* b = get_b(cfg_ptr->ptcl_ptr);
 
+  printf("fulldepmp::Emin %g Emax %g\n", einj1, einj2);
+
   /* Full deposition*/
   np2 = .5* cfg_ptr->nprt;
 
@@ -1188,8 +1189,8 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     pol[kd] =  .001 + .999 * rand_double();
     pol[kd] *= pw;
     zet[kd] = rand_double() * 2. * M_PI;
-    en[kd] = (einj1 + rand_double() * (einj2 - einj1))
-        * engn / ekev;   /* kinetic energy */
+    /* kinetic energy */
+    en[kd] = (einj1 + rand_double() * (einj2 - einj1)) * engn / ekev;
   }
 
   /* second half, should start at np2 */
@@ -1201,7 +1202,8 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     pol[kd] = .001 + .999 * rand_double();
     pol[kd] *= pw;
     zet[kd] = rand_double() * 2.* M_PI;
-    en[kd] = (einj1+rand_double()*(einj2-einj1))*engn/ekev; /* kinetic energy */
+    /* kinetic energy */
+    en[kd] = (einj1 + rand_double() * (einj2 - einj1)) * engn / ekev;
   }
 
   nprt = np2;  /* xxx not sure about this? */
@@ -1213,12 +1215,6 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
         .5 * rho[k] * rho[k] * b[k];
     en[k] += pot[k];
 
-    /* DEBUG: */
-    /* edum = en[k]; */    /* !*ekev/engn*/
-    /* pzdum = (g[k]*rho[k] - pol[k]) / pw; */
-    /* bdum = bfield(cfg_ptr->eqlb_ptr, pol[k], thet[k]); */
-    /* mudum = rmu[k];  /\* /en[k] *\/ */
-    /*!       mudum=edum/bdum*(1.0-ptch[k]*ptch[k]) */
   }
 
   /* re-sample lost particles */
@@ -1283,11 +1279,11 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
       pol[kd] =  .002*pw + .997*pw*rand_double();
       zet[kd] = 2. * M_PI * rand_double();
       /* kinetic energy*/
-      en[kd] = (einj1 + rand_double() * (einj2-einj1)) * engn / ekev;
+      en[kd] = (einj1 + rand_double() * (einj2 - einj1)) * engn  /  ekev;
       kfield(cfg_ptr, kd);
       rho[kd] = ptch[kd]*sqrt(2.*en[kd])/b[kd];
       rmu[kd] = en[kd]/b[kd] - .5*rho[kd]*rho[kd]*b[kd];
-      en[kd] = en[kd] + pot[kd];
+      en[kd] += pot[kd];
     }
   }
 
@@ -1315,7 +1311,7 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
       kfield(cfg_ptr, kd);
       rho[kd] = ptch[kd]*sqrt(2.*en[kd])/b[kd];
       rmu[kd] = en[kd]/b[kd] - .5*rho[kd]*rho[kd]*b[kd];
-      en[kd] = en[kd] + pot[kd];
+      en[kd] += pot[kd];
     }
   }
   if (nlost > 0){
@@ -1427,7 +1423,8 @@ void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     dt[kd] = dt0;
     pol[kd] =  .002*pw + .996 * pw * rand_double();
     zet[kd]=2. * M_PI * rand_double();    /*  random toroidal */
-    en[kd] = (einj1 + rand_double()*(einj2-einj1)) * engn/ekev; /* kinetic energy */
+    /* kinetic energy */
+    en[kd] = (einj1 + rand_double() * (einj2 - einj1)) * engn / ekev;
   }
 
   printf("%d fulldepmp_co deposit\n", kd);
@@ -1435,7 +1432,7 @@ void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     kfield(cfg_ptr, kd);
     rho[k] = ptch[k]*sqrt(2.*en[k])/b[k];
     rmu[k] = en[k]/b[k] - .5*rho[k]*rho[k]*b[k];
-    en[k] = en[k] + pot[k];
+    en[k] += pot[k];
   }
 
   /* re-sample lost particles */
@@ -1464,6 +1461,8 @@ void rcrd_vararr(Config_t* cfg_ptr, int k, int step){
   double* res_id_arr = depo_ptr->res_id_arr;
 
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 0)] = en[k]*ekev/engn; /* E */
+  //printf("Assigning step %d E[%d] = %g\n",step, k, en[k]*ekev/engn);
+  //  if( fabs(en[k]*ekev/engn) > 200) abort();  /* xxxx trap  */
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 1)] = (g[k]*rho[k] - pol[k])/pw; /* Pz */
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 2)] = rmu[k]/en[k]; /* mu */
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 3)] = pol[k]/pw;

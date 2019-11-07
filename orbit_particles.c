@@ -58,8 +58,8 @@ struct Particles {
   double* tim1;
   double* wt;
   /* used during kupdate */
-  double* nout;
-  double* nfin;
+  int* nout;
+  int* nfin;
   double* e0;
   double* dptdp;
   double* dptdt;
@@ -133,8 +133,8 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
   ptcl_ptr->wt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
 
   /* used during kupdate (stepping) */
-  ptcl_ptr->nout=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
-  ptcl_ptr->nfin=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
+  ptcl_ptr->nout=(int*)umacalloc(ptcl_ptr->idm, sizeof(int));
+  ptcl_ptr->nfin=(int*)umacalloc(ptcl_ptr->idm, sizeof(int));
   ptcl_ptr->e0=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
   ptcl_ptr->dptdp=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
   ptcl_ptr->dptdt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
@@ -471,8 +471,8 @@ void kupdate(Config_t* cfg_ptr, int k){
   double* rho = Ptcl->rho;
   double* pot = Ptcl->pot;
   double* ptch = Ptcl->ptch;
-  double* nout = Ptcl->nout;
-  double* nfin = Ptcl->nfin;
+  int* nout = Ptcl->nout;
+  int* nfin = Ptcl->nfin;
   double* e0 = Ptcl->e0;
   double* phaz = get_phaz(Ptrb);
   double* omegv = get_omegv(Ptrb);
@@ -486,8 +486,8 @@ void kupdate(Config_t* cfg_ptr, int k){
   nesc = 0;
   ntim = 0;
 
-  nout[k] = .6 *(1.  + copysign(1. , Ptcl->pol[k] - pw));
-  nfin[k] =  .6 *(1.  + copysign(1. , time[k]-trun));
+  nout[k] = (int)(.6 *(1.  + copysign(1. , Ptcl->pol[k] - pw)));
+  nfin[k] = (int)(.6 *(1.  + copysign(1. , time[k]-trun)));
 
   time[k] = time[k] + dt[k]*(1 - nout[k])*(1-nfin[k]);
   tim1[k] = tim1[k] + (1-nout[k])*dt[k]*(1-nfin[k]);
@@ -496,10 +496,12 @@ void kupdate(Config_t* cfg_ptr, int k){
   //     and update the energy and pitch if not lost
   w3[k] = pot[k] + .5 *pow((b[k]*rho[k]),2) + rmu[k]*b[k];
   w1[k] = fabs((w3[k] - en[k])/e0[k]);
+  //printf("kupdate prior en[%d] = %g", k, en[k]);
   en[k] = w3[k]*(1 - nout[k]) + en[k]*nout[k];
+  //printf("\tpost en[%d] = %g\n", k, en[k]);
   ptch[k] = ptch[k] * nout[k] + (1  - nout[k])*rho[k]*b[k]/sqrt(2. * en[k] - 2. * pot[k]);
   nesc = nesc + nout[k];
-  ntim = ntim + nfin[k];
+  ntim += nfin[k];
   for(md=md1; md<md2; md++){// zero inds...
     phaz[md*idm + k] = phaz[md*idm + k] + omegv[md]*dt[k];
   }
@@ -787,8 +789,8 @@ void konestep(Config_t* cfg_ptr, int k){
 
   Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
   Perturb_t* Ptrb = cfg_ptr->ptrb_ptr;
-  double* nout = Ptcl->nout;
-  double* nfin = Ptcl->nfin;
+  int* nout = Ptcl->nout;
+  int* nfin = Ptcl->nfin;
   double* dt = Ptcl->dt;
   double* dptdp = cfg_ptr->ptcl_ptr->dptdp;
   double* pol = cfg_ptr->ptcl_ptr->pol;
@@ -833,8 +835,8 @@ void konestep(Config_t* cfg_ptr, int k){
 
   dt[k]=dt0;
 
-  nout[k] = .6 * (1. + copysign(1., pol[k]- pw) );
-  nfin[k] =  .6 * (1. + copysign(1., time[k] - trun));
+  nout[k] = (int)(.6 * (1. + copysign(1., pol[k]- pw) ));
+  nfin[k] =  (int)(.6 * (1. + copysign(1., time[k] - trun)));
   nt_ = ((int) .6 * (1.  + copysign(1., pol[k]-.05 *pw)));
   dt[k] = nt_ * dt[k] + (1 - nt_) * dt0;
 
