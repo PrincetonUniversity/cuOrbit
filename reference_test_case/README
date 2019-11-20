@@ -1,0 +1,17 @@
+#zipped files because they sparse.
+
+###################################
+here's a folder with a different test case - this one has a well-behaved equilibrium, which may help identifying the remaining source(s) of inconsistency between the different versions of ORBIT.
+
+Main folder: /p/kick_model/orbit/nstx/204202_jul19/
+here you can find the 'spdata' file for the equilibrium.
+Specific parameters for this run:
+bkg=5.72
+pamp=2.8
+rprof=3.765
+Perturbation file: /p/kick_model/orbit/nstx/204202_jul19/displ_4_5.dat
+Results from my previous run: /p/kick_model/orbit/nstx/204202_jul19/displ_4_5/pDEDP.AEP
+
+I'll run a test case with npert=0 as soon as portal cooperates again - I guess that'll be tomorrow morning, after maintenance.
+
+###################################
