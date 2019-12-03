@@ -13,7 +13,6 @@
 const int NAMP_ = 155;
 
 struct Perturb {
-  int npert;
   int nflr;
   int lpt;
   int md1;
@@ -60,12 +59,12 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
 
 
   /* first we set values expected from config */
+  ptrb_ptr->nflr = 1;  /* xxx, is this configurable? */
   ptrb_ptr->falf = config_ptr->falf;
   ptrb_ptr->ascale = config_ptr->ascale;
   ptrb_ptr->alimit = config_ptr->alimit;
   ptrb_ptr->global_scaling_factor = config_ptr->global_scaling_factor;
   ptrb_ptr->freq_scaling_factor = config_ptr->freq_scaling_factor;
-  ptrb_ptr->npert = config_ptr->npert;
   //ptrb_ptr->sng = config_ptr->sng;
 
   /* in set1 */
@@ -208,7 +207,7 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   /*  does this really need 1 based?, lets try without*/
   ptrb_ptr->md1 = 0;
   /* and do we need md2 at all? looks vestigile, lets try without*/
-  //ptrb_ptr->md2 = ptrb_ptr->modes;
+  ptrb_ptr->md2 = ptrb_ptr->modes;
 
   splna(ptrb_ptr, equilib_ptr, ptcl_ptr);
   splnx(ptrb_ptr, equilib_ptr, ptcl_ptr);
@@ -339,13 +338,6 @@ int get_nflr(Perturb_t* ptrb_ptr){
 #ifdef __NVCC__
 __host__ __device__
 #endif
-int get_npert(Perturb_t* ptrb_ptr){
-    return ptrb_ptr->npert;
-}
-
-#ifdef __NVCC__
-__host__ __device__
-#endif
 int get_lpt(Perturb_t* ptrb_ptr){
   return ptrb_ptr->lpt;
 }
@@ -404,7 +396,7 @@ double pol2pot(Config_t* cfg_ptr, double pdum){
   const double pw = get_pw(cfg_ptr->eqlb_ptr);
   const double pamp = get_pamp(cfg_ptr);
   const double rprof = get_rprof(cfg_ptr);
-  potout = pamp * exp(rprof * pdum / pw);
+  potout = pamp * exp(-rprof * pdum / pw);
   return potout;
 }
 

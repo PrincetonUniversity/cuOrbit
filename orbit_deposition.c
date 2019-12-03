@@ -236,7 +236,7 @@ __host__ __device__
 #endif
 size_t sizeof_pdedp(Deposition_t* Depo_ptr){
   return (size_t) (Depo_ptr->pde_nbinE * Depo_ptr->pde_nbinPz * Depo_ptr->pde_nbinmu *
-          Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz);
+                   Depo_ptr->pde_nbinDE * Depo_ptr->pde_nbinDPz);
 }
 
 #ifdef __NVCC__
@@ -304,7 +304,7 @@ static void write_grid(Deposition_t* Depo_ptr, FILE* fh){
 
 void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   /* this reads the probability distribution data
-    for P(DE,DP| E,P,mu) from a text file (UFILE)*/
+     for P(DE,DP| E,P,mu) from a text file (UFILE)*/
   int i;
   int je, jp, jmu, jde, jdp;
   FILE *ifp;
@@ -341,8 +341,8 @@ void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   printf("\nNumber of points for p(DE,DP|E,P,mu) function:\n");
   printf("\t E\t P\t  mu\t DE\t DP\n");
   printf("\t%d\t%d\t%d\t%d\t%d\n",
-        Depo_ptr->pde_nbinE, Depo_ptr->pde_nbinPz, Depo_ptr->pde_nbinmu,
-        Depo_ptr->pde_nbinDE, Depo_ptr->pde_nbinDPz);
+         Depo_ptr->pde_nbinE, Depo_ptr->pde_nbinPz, Depo_ptr->pde_nbinmu,
+         Depo_ptr->pde_nbinDE, Depo_ptr->pde_nbinDPz);
 
   /* malloc */
   if(! Depo_ptr->pdedp_initialized){
@@ -503,10 +503,10 @@ void class_kdomain(Config_t* cfg_ptr, int k){
 
 
   /*    -  Orbit classification
-      otp=1, co-passing confined, otp = 2, co-passing lost
-      otp=3, ctr-passing confined, otp = 4, ctr-passing lost
-      otp=5, trapped confined, otp = 6, trapped lost
-      otp=7, stagnation, otp = 8, conf potato, otp = 9, trap potato
+        otp=1, co-passing confined, otp = 2, co-passing lost
+        otp=3, ctr-passing confined, otp = 4, ctr-passing lost
+        otp=5, trapped confined, otp = 6, trapped lost
+        otp=7, stagnation, otp = 8, conf potato, otp = 9, trap potato
   */
 
   double pdum,edum,dum;
@@ -543,12 +543,12 @@ void class_kdomain(Config_t* cfg_ptr, int k){
   E_th0 = pol2pot(cfg_ptr, -pzdum);
   E_thpi = pol2pot(cfg_ptr, -pzdum);
 
-  ert =  pow(dum*bmin, 2) + mu*bmin + E_min_lcfs;
-  elt =  pow(dum*bmax, 2) + mu*bmax + E_max_lcfs;
+  ert =  dum*pow(bmin, 2) + mu*bmin + E_min_lcfs;
+  elt =  dum*pow(bmax, 2) + mu*bmax + E_max_lcfs;
   dum = pow(rhod, 2) * ekev/(2*engn);
-  eax = pow(ekev*pzdum,2)* pow(bax,2)/(
+  eax = ekev*pow(pzdum,2) * pow(bax,2)/(
       engn * 2 * pow(gfun(cfg_ptr->eqlb_ptr, 0.),2)) + mu*bax + E_ax;
-  etp1 = mu*bfield(cfg_ptr->eqlb_ptr, -pzdum,0.) + E_th0;
+  etp1 = mu*bfield(cfg_ptr->eqlb_ptr, -pzdum, 0.) + E_th0;
   etp2 = mu*bfield(cfg_ptr->eqlb_ptr, -pzdum, M_PI) + E_thpi;
 
   /* Right */
@@ -611,9 +611,9 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
   /* gets average numbers of counts/bin from non empty bins,
      fill in empty bins.
 
-    then nomalizes.
+     then nomalizes.
 
-  if pde_pdedp lives on card, this is trivial there*/
+     if pde_pdedp lives on card, this is trivial there*/
   int ind;
   double* const pde_pdedp = Depo_ptr->pde_pdedp;
   double sum_p[40][40][40];
@@ -735,9 +735,6 @@ void pdedp_out(Deposition_t* Depo_ptr){
   const char *com5 = "USER COMMENTS:";
   const char *com6 = "       TEST FILE";
 
-  /* xxx, note I removed a lot of whitespace formatting,
-     can add back in later*/
-
   fprintf(ofp, " %-6d %-4s %2d %2d %2d ;-SHOT #- F(X) DATA -PDEDP_OUT-%s\n",
           lshot, dev, nd, nq, nr, date);
 
@@ -776,14 +773,14 @@ void pdedp_out(Deposition_t* Depo_ptr){
           Depo_ptr->pde_nbinmu);
 
   /*       -------------------------------------------------------
-         Make sure center bin has exactly DE=0,DPz=0
+           Make sure center bin has exactly DE=0,DPz=0
 
-         Get indexes of (DE,DPz)=(0,0) bin */
+           Get indexes of (DE,DPz)=(0,0) bin */
   double valdum=0.;
   int iDE0 =  get_bin(valdum, Depo_ptr->pde_varDE, Depo_ptr->pde_nbinDE);
   int iDPz0 = get_bin(valdum, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
 
-   /* set to zero */
+  /* set to zero */
   Depo_ptr->pde_varDE[iDE0]=0.;
   Depo_ptr->pde_varDPz[iDPz0]=0.;
 
@@ -791,45 +788,50 @@ void pdedp_out(Deposition_t* Depo_ptr){
   write_grid(Depo_ptr, ofp);
 
   /* if outputting sparse, write grid there too */
-    /* variables DEbins,DPbins */
+  /* variables DEbins,DPbins */
   if(Depo_ptr->output_sparse){
     write_grid(Depo_ptr, ofs);
   }
 
-      /*       -------------------------------------------------------
-         Write  p(DE,DP|E,Pz,mu)=0 for each bin.
-         This is a big chunk of data with many
-         nested, horrible, unelegant and
-         inefficient 'for' loops.
+  /*       -------------------------------------------------------
+           Write  p(DE,DP|E,Pz,mu)=0 for each bin.
+           This is a big chunk of data with many
+           nested, horrible, unelegant and
+           inefficient 'for' loops.
 
-         NOTE: at this point, the p(DE,DP)'s are NOT
-               normalized. This is to make it easier
-               to update the distributions with multiple
-               (serial) calls with random distributions
-               that simply add together.  */
+           NOTE: at this point, the p(DE,DP)'s are NOT
+           normalized. This is to make it easier
+           to update the distributions with multiple
+           (serial) calls with random distributions
+           that simply add together.  */
 
   for(int iE=0; iE < Depo_ptr->pde_nbinE; iE++){
     for(int iPz=0; iPz < Depo_ptr->pde_nbinPz; iPz++){
       for(int imu=0; imu < Depo_ptr->pde_nbinmu; imu++){
 
-        /* compute normalization factor for this bin
-           !          pnorm=0.0
-           !          do iDE=1,pde_nbinDE
-           !            do iDPz=1,pde_nbinDPz
-           !              pnorm=pnorm+pde_Pdedp(iDE,iDPz,iE,iPz,imu)
-           !            enddo
-           !          enddo
-           !
-           !          ! write normalized p(DE,DPz|E,Pz,mu) */
+        /*
+          compute normalization factor for this bin
+          !          pnorm=0.0
+          !          do iDE=1,pde_nbinDE
+          !            do iDPz=1,pde_nbinDPz
+          !              pnorm=pnorm+pde_Pdedp(iDE,iDPz,iE,iPz,imu)
+          !            enddo
+          !          enddo
+          !
+          !          ! write normalized p(DE,DPz|E,Pz,mu)
+        */
 
         for(int iDE=0; iDE < Depo_ptr->pde_nbinDE; iDE++){
-          /*            ! normalize total probability to 1
-              !            if(pnorm.gt.0.) then
-              !              do iDPz=1,pde_nbinDPz
-              !                pde_Pdedp(iDE,iDPz,iE,iPz,imu)=
-              !     >             pde_Pdedp(iDE,iDPz,iE,iPz,imu)/pnorm
-              !               enddo
-              !            endif */
+          /*
+            ! normalize total probability to 1
+            !            if(pnorm.gt.0.) then
+            !              do iDPz=1,pde_nbinDPz
+            !                pde_Pdedp(iDE,iDPz,iE,iPz,imu)=
+            !     >             pde_Pdedp(iDE,iDPz,iE,iPz,imu)/pnorm
+            !               enddo
+            !            endif
+          */
+
           item = 0;
           for(int iDPz=0; iDPz < Depo_ptr->pde_nbinDPz; iDPz++){
             ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
@@ -870,46 +872,49 @@ __host__ __device__
 #endif
 static inline int get_res_id_ind(Config_t* cfg_ptr, int kptcl, int time, int i){
   /*  fname indices, sorry */
-  const int ntime = cfg_ptr->depo_ptr->res_id_arr_j;
+  const int nsamples = cfg_ptr->depo_ptr->res_id_arr_j;
   const int ni = cfg_ptr->depo_ptr->res_id_arr_i;
   /* we can/should play around with the array order here */
   //const int nprt = cfg_ptr->nprt;
 
   //return nprt*ni*time + ni*kptcl +i;
-  return  kptcl * ntime*ni + time*ni + i;
+  return  kptcl * (nsamples*ni) + time*ni + i;
 }
 
 void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
   /*      pde_tskip : reduce loops, skip time steps */
-  int j, j2, j3, k, ind;
+  int j, j2, j3, k, ind, step;
   double dtdum=Depo_ptr->pdedp_tskip *
       1.0E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr); /* [ms] */
-  int jstart = (int)(0.2 * Depo_ptr->pdedp_dtsamp / dtdum -1 );  /* zero ind */
-  /*  xxx, in original code, this was nstep,
-      but called at end of loop when it should have achieved nstep_all value,
-      I think, which is not "private" */
+  int jstart = round(0.2 * Depo_ptr->pdedp_dtsamp / dtdum);  /* one indexed! */
   int nsamples= cfg_ptr->nstep_all / Depo_ptr->pdedp_tskip;
   double newE, newPz;
   double Eav, Pzav, Muav;
   double dedum, dpzdum;
+  double thisE;
   int iE, iDE, iPz, iDPz, imu;
   double * const res_id_arr = Depo_ptr->res_id_arr;
 
 
   printf("   ... pdedp_rcrd_resid computing p(DE,DPz) matrix ...\n");
-  int nintv = (int)( Depo_ptr->pdedp_dtsamp / dtdum);
-  int Nav = imax(1, (int)( Depo_ptr->pdedp_dtav / dtdum));
+  int nintv = round( Depo_ptr->pdedp_dtsamp / dtdum);
+  int Nav = imax(1, round( Depo_ptr->pdedp_dtav / dtdum));  /* 17, matches */
 
   for(k=0; k < cfg_ptr->nprt; k++){
-    for(j=jstart; j < nsamples; j++){
+    for(j=jstart-1; j < nsamples; j++){
       Eav = 0.;
       Pzav = 0.;
       Muav = 0.;
-      for(j3=0; j3 <= Nav-1; j3++){
-        /* j is already zero indices, no adjust j3 */
-        Eav += res_id_arr[get_res_id_ind(cfg_ptr,k,j-j3,0)];  /* E */
-        Pzav += res_id_arr[get_res_id_ind(cfg_ptr,k,j-j3,1)];  /* Pz */
-        Muav += res_id_arr[get_res_id_ind(cfg_ptr,k,j-j3,2)];  /* mu */
+      for(j3=0; j3 <= (Nav-1); j3++){
+        step = j - j3;
+        thisE = res_id_arr[get_res_id_ind(cfg_ptr, k, step, 0)];
+        Eav  += thisE;  /* E */
+        if (thisE <0) {
+          printf("neg Energy! %.18lg\n", thisE);
+          abort();
+        }
+        Pzav += res_id_arr[get_res_id_ind(cfg_ptr, k, step, 1)];  /* Pz */
+        Muav += res_id_arr[get_res_id_ind(cfg_ptr, k, step, 2)];  /* mu */
       }
 
       Eav /= ((double)Nav);
@@ -921,36 +926,38 @@ void pdedp_rcrd_resid(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
       imu =  get_bin(Muav, Depo_ptr->pde_varmu, Depo_ptr->pde_nbinmu);
 
       j2 = nintv;
-      /* zero indices */
-      ind = get_res_id_ind(cfg_ptr,k,j +j2 -j3,3);
-      if (j + j2 +1 < nsamples &&
+      ind = get_res_id_ind(cfg_ptr, k, j, 3);  /* xxx check inds */
+      if (j + j2 < nsamples &&
           res_id_arr[ind] > 0 &&
           res_id_arr[ind] < 1)
       {
         newE = 0.;
         newPz = 0.;
-        for(j3=0; j3 < Nav-1; j3++){
-          newE  += res_id_arr[get_res_id_ind(cfg_ptr, k, j+j2-j3, 0)] / ((double)Nav);
-          newPz += res_id_arr[get_res_id_ind(cfg_ptr, k, j+j2-j3, 1)] / ((double)Nav);
+        for(j3=0; j3 <= (Nav-1); j3++){
+          step = j+j2-j3;
+          newE  += (res_id_arr[get_res_id_ind(cfg_ptr, k, step, 0)] / ((double)Nav));
+          newPz += (res_id_arr[get_res_id_ind(cfg_ptr, k, step, 1)] / ((double)Nav));
         }
         dedum = newE - Eav;
         dpzdum = newPz - Pzav;
 
         iDE =  get_bin(dedum, Depo_ptr->pde_varDE, Depo_ptr->pde_nbinDE);
-        iDPz =  get_bin(dedum, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
+        iDPz =  get_bin(dpzdum, Depo_ptr->pde_varDPz, Depo_ptr->pde_nbinDPz);
         /* if all bins in range */
         if (newE > 0 &&
             iE >= 0 && iE < Depo_ptr->pde_nbinE  &&
-            iDE >= 0 && iDE < Depo_ptr->pde_nbinDE  &&
             iPz >= 0 && iPz < Depo_ptr->pde_nbinPz  &&
-            imu >= 0 && imu < Depo_ptr->pde_nbinmu)
+            imu >= 0 && imu < Depo_ptr->pde_nbinmu  &&
+            iDE >= 0 && iDE < Depo_ptr->pde_nbinDE  &&
+            iDPz >= 0 && iDPz < Depo_ptr->pde_nbinDPz
+            )
         {
           ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
           Depo_ptr->pde_pdedp[ind] += 1;
         }
 
         /* if we want to "optimize" and iE iPz imu bins in range
-              we will keep track of max values */
+           we will keep track of max values */
         if (Depo_ptr->pdedp_optimize == 1 &&
             newE > 0 &&
             iE >= 0 && iE < Depo_ptr->pde_nbinE  &&
@@ -1002,7 +1009,7 @@ void rcrd_bfield(Config_t* cfg_ptr, Deposition_t* Depo_ptr){
 
 void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* Check the range used for compute p(DE,DP | E, Pz,mu)
-   and adjust the (DE,DPz) range on-the-fly to optimize sampling.
+     and adjust the (DE,DPz) range on-the-fly to optimize sampling.
   */
 
   /*  */
@@ -1033,13 +1040,12 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /*     (get_rmaj(eqlb_ptr) * get_zprt(cfg_ptr->ptcl_ptr) * get_bkg(cfg_ptr) * pow(B[0][0],2)); */
   /* /\* cf. engn definition in initial.f *\/ */
 
-  /* min/max B field */
+  /* min/max B field */ /*checked okay*/
   const double Bmn = bfield(eqlb_ptr, pw, 0.);
   const double Bmx = bfield(eqlb_ptr, pw, M_PI);
 
   /* redefine range of mu
      add buffer to the actual range */
-  //printf("DBG Bmn = %g Bmx = %g\n", Bmn, Bmx);
   mumax = 1./Bmn * (depo_ptr->pde_nbinmu + 1.) / depo_ptr->pde_nbinmu;
 
   /* upper limit for Pz, add buffer */
@@ -1055,45 +1061,44 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   fctMu = (depo_ptr->pde_mumax - mumax ) / depo_ptr->pde_mumax;
   fctPz = fmax(fabs((depo_ptr->pde_Pzmax - Pzmax) / depo_ptr->pde_Pzmax),
-              fabs((depo_ptr->pde_Pzmax - Pzmin) / depo_ptr->pde_Pzmin));
+               fabs((depo_ptr->pde_Pzmax - Pzmin) / depo_ptr->pde_Pzmin));
 
-    if(fctMu > dthres || fctPz > dthres ||
-       Pzmin < depo_ptr->pde_Pzmin || Pzmax > depo_ptr->pde_Pzmax ||
-       mumax > depo_ptr->pde_mumax) {
-      /* update */
+  if(fctMu > dthres || fctPz > dthres ||
+     Pzmin < depo_ptr->pde_Pzmin || Pzmax > depo_ptr->pde_Pzmax ||
+     mumax > depo_ptr->pde_mumax) {
+    /* update */
 
-      /* display info with updated grid */
-      printf("  -> New Pz,mu grid computed:\n");
-      printf("  original: Pz1= %f,    Pz2= %f,    mu=%f\n",
-             depo_ptr->pde_Pzmin,
-             depo_ptr->pde_Pzmax,
-             depo_ptr->pde_mumax);
-      printf("  updated: Pz1= %f,    Pz2= %f,    mu=%f\n",
-             Pzmin, Pzmax, mumax);
+    /* display info with updated grid */
+    printf("  -> New Pz,mu grid computed:\n");
+    printf("  original: Pz1= %f,    Pz2= %f,    mu=%f\n",
+           depo_ptr->pde_Pzmin,
+           depo_ptr->pde_Pzmax,
+           depo_ptr->pde_mumax);
+    printf("  updated: Pz1= %f,    Pz2= %f,    mu=%f\n",
+           Pzmin, Pzmax, mumax);
 
-      depo_ptr->pde_Pzmax = Pzmax;
-      depo_ptr->pde_Pzmin = Pzmin;
-      depo_ptr->pde_mumin = 0.;
-      depo_ptr->pde_mumax = mumax;
+    depo_ptr->pde_Pzmax = Pzmax;
+    depo_ptr->pde_Pzmin = Pzmin;
+    depo_ptr->pde_mumin = 0.;
+    depo_ptr->pde_mumax = mumax;
 
 
-      /* Pz */
-      stp=(depo_ptr->pde_Pzmax - depo_ptr->pde_Pzmin)/depo_ptr->pde_nbinPz;
-      for(k=0; k < depo_ptr->pde_nbinPz; k++){
-        depo_ptr->pde_varPz[k] = depo_ptr->pde_Pzmin + ((double)k)* stp + stp/2.;
-      }
-
-      /* mu Bo/E */
-      stp=(depo_ptr->pde_mumax - depo_ptr->pde_mumin) / depo_ptr->pde_nbinmu;
-      for(k=0; k < depo_ptr->pde_nbinmu; k++){
-        depo_ptr->pde_varmu[k] = depo_ptr->pde_mumin +((double)k) * stp + stp/2.;
-        /*DBG  printf("pdedp_checkbdry::varmu[%d] = %g \n ", k, depo_ptr->pde_varmu[k]); */
-      }
-
-      recompute = 1;
-    } else {
-      printf(" -> Pz,mu grid looks OK - \n\n");
+    /* Pz */
+    stp=(depo_ptr->pde_Pzmax - depo_ptr->pde_Pzmin)/depo_ptr->pde_nbinPz;
+    for(k=0; k < depo_ptr->pde_nbinPz; k++){
+      depo_ptr->pde_varPz[k] = depo_ptr->pde_Pzmin + ((double)k)* stp + stp/2.;
     }
+
+    /* mu Bo/E */
+    stp=(depo_ptr->pde_mumax - depo_ptr->pde_mumin) / depo_ptr->pde_nbinmu;
+    for(k=0; k < depo_ptr->pde_nbinmu; k++){
+      depo_ptr->pde_varmu[k] = depo_ptr->pde_mumin +((double)k) * stp + stp/2.;
+    }
+
+    recompute = 1;
+  } else {
+    printf(" -> Pz,mu grid looks OK - \n\n");
+  }
 
   /* Check wheter the DE,DPz range needs to be
      adjusted. */
@@ -1104,16 +1109,11 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
      fctE <= 1  && fctPz <= 1){
     printf("  -> DE,DPz grid looks OK - \n\n");
   } else {
-    /* update range */
-    /* keep copy  */
-    /* double demax_old = depo_ptr->pde_DEmax; */
-    /* double dPzmax_old = depo_ptr->pde_DPzmax; */
-
+    printf("updating DE,DPz range \n");
 
     /* new values */
     depo_ptr->pde_DEmax = (1. + fctE) * depo_ptr->pde_DEmax;
     depo_ptr->pde_DPzmax = (1. + fctPz) * depo_ptr->pde_DPzmax;
-
 
     /* round off [doesn't need to preserve precision] */
     depo_ptr->pde_DEmax = 1E-2 * (ceil(1E2 * depo_ptr->pde_DEmax));
@@ -1162,7 +1162,6 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* loops over k, can live on device one day */
 
   int k, kd, np2;
-  double nprt;
 
   const double einj1 = depo_ptr->pde_Emin;  /* [keV] */
   const double einj2 = depo_ptr->pde_Emax;
@@ -1192,7 +1191,7 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     ptch[kd] = rand_double();  /* rand */
     thet[kd] = 0.;
     dt[kd] = dt0;
-    pol[kd] =  .001 + .999 * rand_double();
+    pol[kd] = .001 + .999 * rand_double();
     pol[kd] *= pw;
     zet[kd] = rand_double() * 2. * M_PI;
     /* kinetic energy */
@@ -1212,15 +1211,13 @@ void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     en[kd] = (einj1 + rand_double() * (einj2 - einj1)) * engn / ekev;
   }
 
-  nprt = np2;  /* xxx not sure about this? */
   printf(" fulldepmp deposit\n");
-  for(k=0; k<nprt; k++){
+  for(k=0; k<cfg_ptr->nprt; k++){
     kfield(cfg_ptr, k);
     rho[k] = ptch[k]*sqrt(2. * en[k]) /b[k];
     rmu[k] = en[k] / b[k] -
         .5 * rho[k] * rho[k] * b[k];
     en[k] += pot[k];
-
   }
 
   /* re-sample lost particles */
@@ -1275,8 +1272,8 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     if(pol[kd] >= pw || otp[kd] == 2 ||
        otp[kd] == 4 || otp[kd] == 6){
       /* lost, replace it */
-      //printf("dbg lost1 %d\n", nlost);
-      //if(otp[kd] == 2 || otp[kd] == 4 || otp[kd] == 6) printf("otp %d\n", otp[kd]);
+      /* printf("dbg lost1 %d\n", nlost); */
+      /* if(otp[kd] == 2 || otp[kd] == 4 || otp[kd] == 6) printf("otp %d\n", otp[kd]); */
 
       nlost+=1;
       ptch[kd] = rand_double();
@@ -1305,7 +1302,13 @@ void fullredepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
     if(pol[kd] >= pw || otp[kd] == 2 ||
        otp[kd] == 4 || otp[kd] == 6){
       /* lost, replace it */
-      //printf("dbg lost2 %d\n", nlost);
+      /* printf("dbg lost2 %d\n", nlost);  */
+      /* if(otp[kd] == 2 || otp[kd] == 4 || otp[kd] == 6){ */
+      /*   printf("otp %d\n", otp[kd]); */
+      /* }else{ */
+      /*   printf("pol %g >= pw %g\n", pol[kd], pw); */
+      /* } */
+
       nlost += 1;
       ptch[kd] = -rand_double();
       thet[kd] = M_PI;
@@ -1373,13 +1376,6 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   /* else, valid bin - proceed */
   for(j=0; j < depo_ptr->pde_nbinDE; j++){
     for(k=0; k < depo_ptr->pde_nbinDPz; k++){
-      /* this loop looks pretty wierd,
-         lets make them all the same with get_pdedp_ind function */
-
-      /* in F code definition, pde_pdedp(iDE,iDPz,iE,iPz,imu) */
-      /* here was                (j,  k,   iE,iPz,iMu) */
-
-      /* get_pdedp_ind(iE, iPz, imu, iDE, iDPz) */
       ind = get_pdedp_ind(depo_ptr, iE, iPz, iMu, j, k);
       tmp = depo_ptr->pde_pdedp[ind];
       ptot += tmp;
@@ -1461,14 +1457,12 @@ void rcrd_vararr(Config_t* cfg_ptr, int k, int step){
   const double engn = get_engn(cfg_ptr);
   double* en = get_en(ptcl_ptr);
   double* rho = get_rho(ptcl_ptr);
-  double ekev = get_ekev(ptcl_ptr);
+  const double ekev = get_ekev(ptcl_ptr);
   double* rmu = get_rmu(ptcl_ptr);
   double* g = get_g(ptcl_ptr);
   double* res_id_arr = depo_ptr->res_id_arr;
 
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 0)] = en[k]*ekev/engn; /* E */
-  //printf("Assigning step %d E[%d] = %g\n",step, k, en[k]*ekev/engn);
-  //  if( fabs(en[k]*ekev/engn) > 200) abort();  /* xxxx trap  */
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 1)] = (g[k]*rho[k] - pol[k])/pw; /* Pz */
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 2)] = rmu[k]/en[k]; /* mu */
   res_id_arr[get_res_id_ind(cfg_ptr, k, step, 3)] = pol[k]/pw;

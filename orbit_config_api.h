@@ -25,12 +25,12 @@ struct Config {
   char* name;
 
   /* model */
+  int npert;  /* selects mode of pertubation codes */
   int nmds;  /* probably dont need this */
   int nrmds;  /* dont remember this */
   int seed;   /* used by the RNG */
   int ntor;
   int nstep_all;
-  int nskip;   //xxx i suspect this will go to another struct...
   double bsum; //xxx i suspect this will go to another struct...
   double dsum; //xxx i suspect this will go to another struct...
   double esum; //xxx i suspect this will go to another struct...
@@ -64,7 +64,6 @@ struct Config {
 
   /* Pertubation */
   Perturb_t* ptrb_ptr;
-  int npert;
   double falf;
   double ascale;
   double alimit;
@@ -186,5 +185,10 @@ __host__ __device__
 double get_dt0(Config_t*);
 
 void orbit_main_loop(orbit_Config_t* cfg_ptr);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_npert(Config_t*);
 
 #endif

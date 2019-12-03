@@ -229,7 +229,7 @@ void initialize_Equilib(Equilib_t* Equilib_ptr, Config_t* cfg_ptr){
   fscanf(ifp, "%lf %lf ",  /* read doubles as "long float", ugh */
          &(Equilib_ptr->pw),
          &(Equilib_ptr->ped));
-  printf("pw: %f\nped %f\n",
+  printf("read pw: %.17f\nped %f\n",
          Equilib_ptr->pw, Equilib_ptr->ped);
 
   /* /\*  we unfortunately need to surmise values from the middle of the file *\/ */
@@ -668,13 +668,13 @@ double bfield(Equilib_t* Eq_ptr, double px, double tx){
   dpx = (1. - sdum) * dpx + sdum * sqrt( fmax(1E-20, dpx));
   const double dp2 = dpx*dpx;
   idum = (int)(tx * pi2i);
-  tdum = (int)(tx - pi2 * (idum - 1));
+  tdum = tx - pi2 * (idum - 1);
   idum = (int)(tdum * pi2i);
   tdum = tdum - pi2*idum;
   kd = (int)(tdum * lst * pi2i );
   kd = imax(0, kd);
   kd = imin(lst - 1, kd);
-  const double dtx = tdum - (kd-1) * pi2 / lst;
+  const double dtx = tdum - kd * pi2 / lst;  /* kd is zero ind */
   const double dt2 = dtx*dtx;
   const int ind = jd * lst + kd; // xxx see if should make an ind function here..
   return Eq_ptr->b1[ind] + Eq_ptr->b2[ind]*dpx + Eq_ptr->b3[ind]*dp2
@@ -692,28 +692,28 @@ double get_ped(Equilib_t* Eq_ptr){
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double get_lsp(Equilib_t* Eq_ptr){
+int get_lsp(Equilib_t* Eq_ptr){
   return Eq_ptr->lsp;
 }
 
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double get_lst(Equilib_t* Eq_ptr){
+int get_lst(Equilib_t* Eq_ptr){
   return Eq_ptr->lst;
 }
 
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double get_nrip(Equilib_t* Eq_ptr){
+int get_nrip(Equilib_t* Eq_ptr){
   return Eq_ptr->nrip;
 }
 
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double get_krip(Equilib_t* Eq_ptr){
+int get_krip(Equilib_t* Eq_ptr){
   return Eq_ptr->krip;
 }
 
@@ -772,7 +772,7 @@ double rpol(Equilib_t* Eq_ptr, double pdum){
   int jd;
   const int lspm1 = Eq_ptr->lsp - 1;
   const double pw = Eq_ptr->pw;
-  jd = ((int) pdum * lspm1 / pw) + 1;
+  jd = (int) (pdum * lspm1 / pw) + 1;  /* check int cast */
   jd = imin(jd, lspm1);
   jd = imax(jd, 1);
   const double dpx = pdum - (jd -1) * pw / (lspm1);
