@@ -171,9 +171,8 @@ static int config_file_handler(char* config_fname, Config_t* config){
 }
 
 
-void orbit_initialize_Config(orbit_Config_t* cfg_ptr){
+void orbit_initialize_Config(orbit_Config_t* cfg_ptr, char* config_file){
 
-  char config_file[] = "INPUT/config.ini";
   config_file_handler(config_file, cfg_ptr);
   printf("From config %s:  nprt %d seed %d\n",
          config_file, cfg_ptr->nprt, cfg_ptr->seed);

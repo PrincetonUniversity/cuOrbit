@@ -108,7 +108,7 @@ struct Config {
 
 
 orbit_Config_t* orbit_Config_ctor();
-void orbit_initialize_Config(orbit_Config_t*);
+void orbit_initialize_Config(orbit_Config_t*, char*);
 
 #ifdef __NVCC__
 __host__ __device__
