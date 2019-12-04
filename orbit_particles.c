@@ -366,7 +366,7 @@ void kfield(Config_t* cfg_ptr, int k){
   idum = thet[k] * pi2i;
   tdum = thet[k] - pi2*(idum-1);
 
-  idum = tdum *pi2i;
+  idum = tdum * pi2i;
   tdum = tdum - pi2*idum;
 
   kd = tdum*lst*pi2i;
@@ -384,19 +384,19 @@ void kfield(Config_t* cfg_ptr, int k){
         + R[3][ind]*dtx + R[4][ind]*dpx*dtx + R[5][ind]*dtx*dp2
         + R[6][ind]*dt2 + R[7][ind]*dt2*dpx + R[8][ind]*dt2*dp2;
 
-    rpl[k] *= .5 *(1. + copysign(1., pw- ptcl_ptr->pol[k]));
+    rpl[k] *= .5 *(1. + copysign(1., pw - ptcl_ptr->pol[k]));
 
     rpl[k] = exp(rpl[k]);
 
     rplp[k] = R[1][ind] + 2*R[2][ind]*dpx + R[4][ind]*dtx
         + 2*R[5][ind]*dtx*dpx + R[7][ind]*dt2 + 2*R[8][ind]*dpx*dt2;
 
-    rplp[k] = rplp[k]*rpl[k];
+    rplp[k] *= rpl[k];
 
     rplt[k] = R[3][ind] + R[4][ind]*dpx + R[5][ind]*dp2
         + 2*R[6][ind]*dtx + 2*R[7][ind]*dtx*dpx + 2*R[8][ind]*dtx*dp2;
 
-    rplt[k] = rplt[k]*rpl[k];
+    rplt[k] *= rpl[k];
 
     ptcl_ptr->b[k] = B[0][ind] + B[1][ind]*dpx + B[2][ind]*dp2
         + B[3][ind]*dtx + B[4][ind]*dpx*dtx + B[5][ind]*dtx*dp2
@@ -406,7 +406,7 @@ void kfield(Config_t* cfg_ptr, int k){
     ptcl_ptr->dbdp[k] = B[1][ind] + 2*B[2][ind]*dpx + B[4][ind]*dtx
         + 2*B[5][ind]*dtx*dpx + B[7][ind]*dt2 + 2*B[8][ind]*dpx*dt2;
 
-    ptcl_ptr->dbdp[k] = ptcl_ptr->dbdp[k]/(1. - sdum + 2 * sdum * dpx);
+    ptcl_ptr->dbdp[k] /= (1. - sdum + 2 * sdum * dpx);
 
     ptcl_ptr->dbdt[k] = B[3][ind] + B[4][ind]*dpx + B[5][ind]*dp2
         + 2*B[6][ind]*dtx + 2*B[7][ind]*dtx*dpx + 2*B[8][ind] *dtx*dp2
@@ -517,7 +517,7 @@ void ptrb2k(Config_t* cfg_ptr, int k)
 
   dum = pamp*engn/ekev;
   pot[k] += dum*exp(-rprof*pol[k]/pw);
-  dptdp[k] = dptdp[k] - rprof/pw*dum*exp(-rprof*pol[k]/pw);
+  dptdp[k] -= rprof/pw*dum*exp(-rprof*pol[k]/pw);
 
   return;
 }
@@ -611,7 +611,7 @@ void ptrbak(Config_t* cfg_ptr, int k)
 
   // compute GC particle position, Larmor radius
   if(nflr0 > 1){
-    x0p=rpol(Eqlb, pol[k]); // gives rminor [m] from Psi_pol
+    x0p = rpol(Eqlb, pol[k]); // gives rminor [m] from Psi_pol
     dph_flr = M_PI / nflr;
     rhol=1.02 * sqrt(prot) / zprt * (1.-ptch[k] * ptch[k]) *
       sqrt(1.E3 * en[k] * ekev / engn) / (1.E3 * bkg * b[k]); // [m] from NRL Plasma Formulary
@@ -622,6 +622,7 @@ void ptrbak(Config_t* cfg_ptr, int k)
     // get DPsi
     dpsi_flr = fabs(psi_flr-pol[k]);
   }
+
   //do  312 md = md1,md2 ! loop over harmonics
   for(md=md1; md<md2; md++){
     nval = alfv[md];  /* xxx does this need to be saved in a struct ?*/
@@ -635,24 +636,24 @@ void ptrbak(Config_t* cfg_ptr, int k)
     xipsnm = 0.;
 
     //do kf=1,nflr0 ! loop over gyro-orbit, average perturbation
-    for(kf=1; kf<=nflr0; kf++){
+    for(kf=0; kf<nflr0; kf++){
       if(nflr0 == 1){
         pdum = pol[k];
       }
       if(nflr0 > 1) {
-        ph_flr=(kf-1.)*dph_flr;
-        pdum=pol[k]+dpsi_flr*cos(ph_flr);
+        ph_flr= kf * dph_flr;
+        pdum = pol[k] + dpsi_flr * cos(ph_flr);
       }
 
-      lptm1 = (lpt) - 1;
-      jd = pdum*(lptm1)/pw + 1;
+      lptm1 = lpt - 1;
+      jd = pdum * lptm1 / pw;
       jd = imin(jd,lptm1);
-      jd = imax(jd,1);
-      dpx = pdum - (jd-1)*pw/(lptm1);
+      jd = imax(jd,0);
+      dpx = pdum - jd *pw / lptm1;
       dp2 = dpx*dpx;
-      // zero inds
-      jd--;
-      ind = md*910 + jd;
+
+      ind = md*lpt + jd;
+
       alnm = amp[nval]*(a1[ind] + a2[ind]*dpx + a3[ind]*dp2);
       alnmp = amp[nval]*( a2[ind] + 2*a3[ind]*dpx);
       xinm = amp[nval]*(xi1[ind] + xi2[ind]*dpx + xi3[ind]*dp2);
@@ -660,15 +661,15 @@ void ptrbak(Config_t* cfg_ptr, int k)
       agg = n*zet[k] - m*thet[k];
       cnm = cos(agg - phaz[md*idm + k]);
       snm = sin(agg - phaz[md*idm + k]);
-      alp[k] = alp[k] + alnm*snm/nflr0;
-      dadp[k] = dadp[k] + alnmp*snm/nflr0;
-      dadt[k] = dadt[k] - m*alnm*cnm/nflr0;
-      dadz[k] = dadz[k] + alnm*n*cnm/nflr0;
-      padt[k] = padt[k] - omegv[md]*alnm*cnm/nflr0;
+      alp[k] += alnm*snm/nflr0;
+      dadp[k] += alnmp*snm/nflr0;
+      dadt[k] -= m*alnm*cnm/nflr0;
+      dadz[k] += alnm*n*cnm/nflr0;
+      padt[k] -= omegv[md]*alnm*cnm/nflr0;
 
-      xisnm = xisnm + xinm*snm/nflr0;
-      xicnm = xicnm + xinm*cnm/nflr0;
-      xipsnm = xipsnm + xinmp*snm/nflr0;
+      xisnm += xinm*snm/nflr0;
+      xicnm += xinm*cnm/nflr0;
+      xipsnm += xinmp*snm/nflr0;
 
     }  //end loop - mock-up FLR effects
 
@@ -678,12 +679,13 @@ void ptrbak(Config_t* cfg_ptr, int k)
     gmni = m*g[k] + n*ri[k];
     gmnip = m*gp[k] + n*rip[k];
     pot[k] -= xisnm*gqi*omegv[md]/gmni;
-    dptdt[k] = dptdt[k] + m*xicnm*gqi*omegv[md]/gmni;
-    dptdz[k] = dptdz[k] - n*xicnm*gqi*omegv[md]/gmni;
+    dptdt[k] += m*xicnm*gqi*omegv[md]/gmni;
+    dptdz[k] -= n*xicnm*gqi*omegv[md]/gmni;
     dptdp[k] = dptdp[k] - xipsnm*gqi*omegv[md]/gmni
       - xisnm*gqip*omegv[md]/gmni
       + xisnm*gqi*omegv[md]*gmnip/(gmni*gmni);
   } // loop over harmonics
+
 
   return;
 }
