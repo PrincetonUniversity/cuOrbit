@@ -11,7 +11,7 @@ build:centos7:
     when: always
     paths:
     - cuOrbit.x
-    - libcuOrbit.so
+    - libcuorbit.so
     expire_in: 2 week
 
 build:centos7_cuda:
@@ -23,7 +23,7 @@ build:centos7_cuda:
     when: always
     paths:
     - cuOrbit.x
-    - libcuOrbit.so
+    - libcuorbit.so
     expire_in: 2 week
 
 build:ubuntu18.04_cuda:
@@ -35,7 +35,7 @@ build:ubuntu18.04_cuda:
     when: always
     paths:
     - cuOrbit.x
-    - libcuOrbit.so
+    - libcuorbit.so
     expire_in: 2 week
 
 # Clang 7 is closest to Apple-Clang-10 used on OSX
@@ -50,7 +50,7 @@ build:clang7:
    when: always
    paths:
    - cuOrbit.x
-   - libcuOrbit.so
+   - libcuorbit.so
    expire_in: 2 week
 
 BasicRun:
