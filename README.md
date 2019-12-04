@@ -68,10 +68,6 @@ The executable runs using only that library with an associated `orbit_config_api
 ./cuOrbit.x
 ```
 
-On some machines the local directory is not searched for libraries,
-in which case you can simply `export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH`
-or equivalent.
-
 ### Configuration
 
 You can use the configuration file `INPUT/config.ini` to change many parameters
