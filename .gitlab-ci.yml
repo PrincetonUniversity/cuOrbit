@@ -16,7 +16,7 @@ build:centos7:
 
 build:centos7_cuda:
   stage: build
-  image: nvidia/cuda/10.2-devel-centos7
+  image: nvidia/cuda:10.2-devel-centos7
   script:
   - make gpu
   artifacts:
@@ -28,7 +28,7 @@ build:centos7_cuda:
 
 build:ubuntu18.04_cuda:
   stage: build
-  image: nvidia/cuda/10.2-devel-ubuntu18.04
+  image: nvidia/cuda:10.2-devel-ubuntu18.04
   script:
   - make gpu
   artifacts:
