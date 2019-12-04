@@ -16,9 +16,9 @@ build:centos7:
 
 build:centos7_cuda:
   stage: build
-  image: nvidia/cuda:10.2-devel-centos7
+  image: garrettwrong/centos7_cuda10:latest
   script:
-  - make gpu
+  - make -j gpu
   artifacts:
     when: always
     paths:
@@ -37,7 +37,7 @@ build:ubuntu18.04_cuda:
     - cuOrbit.x
     - libcuOrbit.so
     expire_in: 2 week
-    
+
 ## Todo Clang it
 # # Clang 7 is closest to Apple-Clang-10 used on OSX
 # #  This should give reasonable coverage for OSX devel,
