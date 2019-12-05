@@ -1431,7 +1431,7 @@ void fulldepmp_co(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 
   printf("%d fulldepmp_co deposit\n", kd);
   for(k=0; k < cfg_ptr->nprt; k++){
-    kfield(cfg_ptr, kd);
+    kfield(cfg_ptr, k);
     rho[k] = ptch[k]*sqrt(2.*en[k])/b[k];
     rmu[k] = en[k]/b[k] - .5*rho[k]*rho[k]*b[k];
     en[k] += pot[k];
