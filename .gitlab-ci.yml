@@ -1,0 +1,70 @@
+stages:
+  - build
+  - test
+
+build:centos7:
+  stage: build
+  image: garrettwrong/cuorbit_centos-7:latest
+  script:
+  - make
+  artifacts:
+    when: always
+    paths:
+    - cuOrbit.x
+    - libcuorbit.so
+    expire_in: 2 week
+
+build:centos7_cuda:
+  stage: build
+  image: garrettwrong/centos7_cuda10:latest
+  script:
+  - make -j gpu
+  artifacts:
+    when: always
+    paths:
+    - cuOrbit.x
+    - libcuorbit.so
+    expire_in: 2 week
+
+build:ubuntu18.04_cuda:
+  stage: build
+  image: nvidia/cuda:10.2-devel-ubuntu18.04
+  script:
+  - make gpu
+  artifacts:
+    when: always
+    paths:
+    - cuOrbit.x
+    - libcuorbit.so
+    expire_in: 2 week
+
+# Clang 7 is closest to Apple-Clang-10 used on OSX
+#  This should give reasonable coverage for OSX devel,
+#  at least catching fatal errors in clang usage.
+build:clang7:
+ stage: build
+ image: garrettwrong/llvm710:latest
+ script:
+ - make
+ artifacts:
+   when: always
+   paths:
+   - cuOrbit.x
+   - libcuorbit.so
+   expire_in: 2 week
+
+# BasicRun:
+#   stage: test
+#   image: garrettwrong/cuorbit_centos-7:latest
+#   script:
+#     - gunzip reference_test_case/spdata.gz
+#     - gunzip reference_test_case/displ_4_5.dat.gz
+#     - ./cuOrbit.x reference_test_case/config_short_repro.ini
+#     - gzip pDEDP.AEP
+#   artifacts:
+#     when: always
+#     paths:
+#     - pDEDP.AEP.gz
+#     expire_in: 2 week
+#   dependencies:
+#   - build:centos7

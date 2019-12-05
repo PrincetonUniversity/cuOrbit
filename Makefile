@@ -45,7 +45,7 @@ libcuorbit.so: inih/ini.o \
 	$(CC) -shared $(LDFLAGS) $^ -o $@
 
 cuOrbit.x: cuOrbit.o libcuorbit.so
-	$(CC) $(LDFLAGS) $< -o $@ $(LIBRARIES) -lcuorbit
+	$(CC) $(LDFLAGS) $< -o $@ -lcuorbit $(LIBRARIES)
 
 clean:
 	-rm -f inih/*.o
