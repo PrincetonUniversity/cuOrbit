@@ -64,7 +64,7 @@ BasicRun:
   artifacts:
     when: always
     paths:
-    - pdEDP.AEP.gz
+    - pDEDP.AEP.gz
     expire_in: 2 week
   dependencies:
   - build:centos7
