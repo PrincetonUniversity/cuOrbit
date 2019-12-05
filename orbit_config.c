@@ -267,11 +267,11 @@ void set1(Config_t* cfg_ptr){
 
   pol[0] = pw;
   field(cfg_ptr, 1);
-  for(k=1; k<=200; k++){
-    pol[k] = 0.005 * k * pw;
+  for(k=1; k<nprt; k++){
+    pol[k] = (1./nprt) * k * pw;
     thet[k] = 0;
   }
-  field(cfg_ptr, 200);
+  field(cfg_ptr, nprt);
 
   cfg_ptr->engn = 10.533 * get_prot(Ptcl) * get_ekev(Ptcl) * pow(GD[0][0], 2) /
       pow( get_rmaj(Eq) * get_zprt(Ptcl) * cfg_ptr->bkg * B[0][0], 2);
@@ -355,10 +355,14 @@ void set1(Config_t* cfg_ptr){
     rdum = sqrt(dum) / bdum;
     ddum = gdum * qdum + ridum + rdum * (gdum*ridump - ridum*gdump);
     if(ddum < 0){
+      printf("D neg, invalid 1.\n:");
+      abort();
       invalid=true;
     };
     ddum = gdum*qdum + ridum - rdum * (gdum*ridump - ridum*gdump);
     if(ddum < 0){
+      printf("D neg, invalid 2.\n:");
+      abort();
       invalid=true;
     };
   }
