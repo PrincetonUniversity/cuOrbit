@@ -59,7 +59,7 @@ BasicRun:
   script:
     - gunzip reference_test_case/spdata.gz
     - gunzip reference_test_case/displ_4_5.dat.gz
-    - ./cuOrbit.x reference_test_case/config.ini
+    - ./cuOrbit.x reference_test_case/config_short_repro.ini
     - gzip pDEDP.AEP
   artifacts:
     when: always
