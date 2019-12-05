@@ -53,18 +53,18 @@ build:clang7:
    - libcuorbit.so
    expire_in: 2 week
 
-BasicRun:
-  stage: test
-  image: garrettwrong/cuorbit_centos-7:latest
-  script:
-    - gunzip reference_test_case/spdata.gz
-    - gunzip reference_test_case/displ_4_5.dat.gz
-    - ./cuOrbit.x reference_test_case/config_short_repro.ini
-    - gzip pDEDP.AEP
-  artifacts:
-    when: always
-    paths:
-    - pDEDP.AEP.gz
-    expire_in: 2 week
-  dependencies:
-  - build:centos7
+# BasicRun:
+#   stage: test
+#   image: garrettwrong/cuorbit_centos-7:latest
+#   script:
+#     - gunzip reference_test_case/spdata.gz
+#     - gunzip reference_test_case/displ_4_5.dat.gz
+#     - ./cuOrbit.x reference_test_case/config_short_repro.ini
+#     - gzip pDEDP.AEP
+#   artifacts:
+#     when: always
+#     paths:
+#     - pDEDP.AEP.gz
+#     expire_in: 2 week
+#   dependencies:
+#   - build:centos7
