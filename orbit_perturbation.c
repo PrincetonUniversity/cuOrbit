@@ -245,7 +245,7 @@ void splna(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
     for(j=1; j<lptm; j++){
       jm = j-1;
       jp = j+1;
-      jpp = imin(j+2, lpt);
+      jpp = imin(j+2, lptm);
 
       ptrb_ptr->a2[ind + j] =
           -1. * ptrb_ptr->a2[ind + jm] +
@@ -296,7 +296,7 @@ void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
     for(j=1; j<lptm; j++){
       jm = j-1;
       jp = j+1;
-      jpp = imin(j+2, lpt);
+      jpp = imin(j+2, lptm);
 
       ptrb_ptr->xi2[ind + j] =
           -1. * ptrb_ptr->xi2[ind + jm] +
