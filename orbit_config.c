@@ -363,7 +363,7 @@ void set1(Config_t* cfg_ptr){
     };
   }
   if(invalid){
-    fprintf(stderr, "D vanishes for this energy, some uses of code invalid");
+    fprintf(stderr, "D vanishes for this energy, some uses of code invalid\n");
     exit(1);
   }
 
