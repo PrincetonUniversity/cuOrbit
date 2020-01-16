@@ -37,6 +37,7 @@ If your systems use modules, you can probably load what you need that way...
 For example, at PPPL, you could probably do something like the following:
 
 ```
+#ssh gpusrv02
 module load gcc/8.1.0
 module load cuda/10.1.243
 ```
@@ -46,13 +47,13 @@ module load cuda/10.1.243
 For the host version:
 
 ```
-make
+make -j
 ```
 
 For the gpu version:
 
 ```
-make gpu
+make gpu -j
 ```
 
 The makefile is pretty simple, and a lot of commonly edited attributes are
@@ -101,7 +102,8 @@ As that use case is explored, supporting methods can be implemented.
 
 ## License
 
-GPLv3 is in discussion with R White.
+GPLv3 was discussed with R White and was chosen to be consistent with his open
+source sharing of the code.
 
 ## Financial Support
 
