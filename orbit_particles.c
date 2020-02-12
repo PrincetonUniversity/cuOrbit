@@ -716,16 +716,16 @@ __host__ __device__
 #endif
 void do_particle_kernel(Config_t* cfg_ptr, int particle_id){
   int ktm;
-  const int pde_tskip = get_pdedp_tskip(cfg_ptr->depo_ptr);
+  const int pdedp_tskip = get_pdedp_tskip(cfg_ptr->depo_ptr);
 
   for(ktm=1; ktm <= get_nstep_all(cfg_ptr); ktm++){
     konestep(cfg_ptr, particle_id);
     kupdate(cfg_ptr, particle_id);
 
     if(compute_pdedp(cfg_ptr->depo_ptr) &&
-       ktm >= pde_tskip &&
-       ktm % pde_tskip == 0){
-      rcrd_vararr(cfg_ptr, particle_id, ktm/pde_tskip - 1);
+       ktm >= pdedp_tskip &&
+       ktm % pdedp_tskip == 0){
+      rcrd_vararr(cfg_ptr, particle_id, ktm/pdedp_tskip - 1);
     }
   }
 }
