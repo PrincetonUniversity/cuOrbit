@@ -632,9 +632,6 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
      then nomalizes.
 
      if pdedp_pdedp lives on card, this is trivial there*/
-  int ind;
-  double* const pdedp_pdedp = Depo_ptr->pdedp_pdedp;
-  double sum_p[40][40][40];
 
   printf("-> Finalize pDEDP computation ...\n");
   /* Get indexes of (DE,DPz)=(0,0) bin */
@@ -646,54 +643,122 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
   Depo_ptr->pdedp_varDE[iDE0]=0.;
   Depo_ptr->pdedp_varDPz[iDPz0]=0.;
 
+  int total_nbins = 0;
+  double total_cnt_aver = 0.;
+
+  /*  */
+#ifdef __NVCC__
+  /* cuda stuff */
+  /* in this particular case we know the dimensions we care about */
+  dim3 dimBlock(Depo_ptr->pdedp_nbinE,
+           Depo_ptr->pdedp_nbinPz,
+           Depo_ptr->pdedp_nbinmu);
+  dim3 dimGrid(1,1);
+
+  pdedp_finalize_dev<<<dimGrid, dimBlock>>>(Depo_ptr, iDE0, iDPz0,
+                      &total_nbins, &total_cnt_aver);
+  HANDLE_ERROR(cudaPeekAtLastError());
+  /* you might need this for UVM... */
+  HANDLE_ERROR(cudaDeviceSynchronize());
+
+#else
+  pdedp_finalize_host(Depo_ptr, iDE0, iDPz0,
+                      &total_nbins, &total_cnt_aver);
+#endif
+}
+
+void pdedp_finalize_host(Deposition_t* Depo_ptr,
+                         int iDE0, int iDPz0,
+                         int* total_nbins, double* total_cnt_aver){
+
+  for(int iE=0; iE < Depo_ptr->pdedp_nbinE; iE++){
+    for(int iPz=0; iPz < Depo_ptr->pdedp_nbinPz; iPz++){
+      for(int imu=0; imu < Depo_ptr->pdedp_nbinmu; imu++){
+        pdedp_finalize_kernel(Depo_ptr, iE, iPz, imu, iDE0, iDPz0,
+                              total_nbins, total_cnt_aver);
+      }
+    }
+  }
+}
+
+#ifdef __NVCC__
+__global__
+void pdedp_finalize_dev(Deposition_t* Depo_ptr,
+                         int iDE0, int iDPz0,
+                         int* total_nbins, double* total_cnt_aver){
+  /* one element in grid,  3D blocks */
+  const int iE = blockIdx.x * blockDim.x + threadIdx.x;
+  if(iE >= Depo_ptr->pdedp_nbinE) return;  /* check bounds */
+  const int iPz = blockIdx.y * blockDim.y + threadIdx.y;
+  if(iPz >= Depo_ptr->pdedp_nbinPz) return; /* check bounds */
+  const int imu = blockIdx.z * blockDim.z + threadIdx.z;
+  if(imu >= Depo_ptr->pdedp_nbinmu) return; /* check bounds */
+
+  pdedp_finalize_kernel(Depo_ptr, iE, iPz, imu, iDE0, iDPz0,
+                        total_nbins, total_cnt_aver);
+
+}
+#endif
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void pdedp_finalize_kernel(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
+                           int iDE0, int iDPz0,
+                           int* total_nbins, double* total_cnt_aver){
+  /* gets average numbers of counts/bin from non empty bins,
+     fill in empty bins.
+
+     then nomalizes.
+
+     if pdedp_pdedp lives on card, this is trivial there*/
+  int ind;
+  double* const pdedp_pdedp = Depo_ptr->pdedp_pdedp;
+  double sum_p;
+
   /*       Get average number of counts/bin from non-empty bins
            and fill in empty bins */
   double  cnt_aver=0.;
   int cnt_;
   int nbins=0;
-  for(int iE=0; iE < Depo_ptr->pdedp_nbinE; iE++){
-    for(int iPz=0; iPz < Depo_ptr->pdedp_nbinPz; iPz++){
-      for(int imu=0; imu < Depo_ptr->pdedp_nbinmu; imu++){
-        cnt_=0.;
-        sum_p[iE][iPz][imu]=0.;
-        for(int iDE=0; iDE < Depo_ptr->pdedp_nbinDE; iDE++){
-          for(int iDPz=0; iDPz < Depo_ptr->pdedp_nbinDPz; iDPz++){
-            ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
-            cnt_ += pdedp_pdedp[ind];
-          }
-        }
-        if(cnt_ > 0) {
-          /* update*/
-          cnt_aver += cnt_;
-          sum_p[iE][iPz][imu]=cnt_;
-          nbins += 1;
-        } else {
-          /* fill with 1 count at (DE,DPz)=(0,0)*/
-          ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE0, iDPz0);
-          pdedp_pdedp[ind] = 1.;
-          sum_p[iE][iPz][imu]=1.;
-        }
-      }
+
+  cnt_=0.;
+  sum_p=0.;
+  for(int iDE=0; iDE < Depo_ptr->pdedp_nbinDE; iDE++){
+    for(int iDPz=0; iDPz < Depo_ptr->pdedp_nbinDPz; iDPz++){
+      ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
+      cnt_ += pdedp_pdedp[ind];
     }
   }
+  if(cnt_ > 0) {
+    /* update*/
+    cnt_aver += cnt_;
+    sum_p=cnt_;
+    nbins += 1;
+  } else {
+    /* fill with 1 count at (DE,DPz)=(0,0)*/
+    ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE0, iDPz0);
+    pdedp_pdedp[ind] = 1.;
+    sum_p=1.;
+  }
 
-  if(nbins > 0) cnt_aver /= nbins;
+  /* gather nbins, will use atomicAdd  */
+#ifdef __NVCC__
+  atomicAdd(total_nbins, nbins);
+  atomicAdd(total_cnt_aver, cnt_aver);
+#else
+  *total_nbins += nbins;
+  *total_cnt_aver += cnt_aver;
+#endif
+  if(*total_nbins > 0) *total_cnt_aver /= *total_nbins;
 
   /* Normalize */
-  for(int iE=0; iE < Depo_ptr->pdedp_nbinE; iE++){
-    for(int iPz=0; iPz < Depo_ptr->pdedp_nbinPz; iPz++){
-      for(int imu=0; imu < Depo_ptr->pdedp_nbinmu; imu++){
-        for(int iDE=0; iDE < Depo_ptr->pdedp_nbinDE; iDE++){
-          for(int iDPz=0; iDPz < Depo_ptr->pdedp_nbinDPz; iDPz++){
-            ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
-            pdedp_pdedp[ind] *= cnt_aver/sum_p[iE][iPz][imu];
-          }
-        }
-      }
+  for(int iDE=0; iDE < Depo_ptr->pdedp_nbinDE; iDE++){
+    for(int iDPz=0; iDPz < Depo_ptr->pdedp_nbinDPz; iDPz++){
+      ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
+      pdedp_pdedp[ind] *= *total_cnt_aver/sum_p;
     }
   }
-  printf("\n-> p(DE,DPz|E,Pz,mu) matrices normalized\n");
-  printf("   - Average number of counts: %f\n\n", cnt_aver);
 
   return;
 }

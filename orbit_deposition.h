@@ -97,6 +97,21 @@ void class_kdomain(Config_t*, int);
 void class_domain(Config_t*);
 void pdedp_checkbdry(Config_t*, Deposition_t*);
 void pdedp_finalize(Deposition_t*);
+#ifdef __NVCC__
+__global__
+void pdedp_finalize_dev(Deposition_t* Depo_ptr,
+                         int iDE0, int iDPz0,
+                        int* total_nbins, double* total_cnt_aver);
+#endif
+void pdedp_finalize_host(Deposition_t* Depo_ptr,
+                         int iDE0, int iDPz0,
+                         int* total_nbins, double* total_cnt_aver);
+void pdedp_finalize_kernel(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
+                           int iDE0, int iDPz0,
+                           int* total_nbins, double* total_cnt_aver);
+
+
+
 void pdedp_out(Deposition_t*);
 void pdedp_rcrd_resid(Config_t*, Deposition_t*);
 void rcrd_bfield(Config_t*, Deposition_t*);
