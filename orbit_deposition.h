@@ -99,16 +99,34 @@ void pdedp_checkbdry(Config_t*, Deposition_t*);
 void pdedp_finalize(Deposition_t*);
 #ifdef __NVCC__
 __global__
-void pdedp_finalize_dev(Deposition_t* Depo_ptr,
-                         int iDE0, int iDPz0,
-                        int* total_nbins, double* total_cnt_aver);
+void pdedp_finalize_agg_dev(Deposition_t* Depo_ptr,
+                        int iDE0, int iDPz0,
+                        int* agg_nbins, double* agg_cnt);
 #endif
-void pdedp_finalize_host(Deposition_t* Depo_ptr,
+void pdedp_finalize_agg_host(Deposition_t* Depo_ptr,
                          int iDE0, int iDPz0,
-                         int* total_nbins, double* total_cnt_aver);
-void pdedp_finalize_kernel(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
-                           int iDE0, int iDPz0,
-                           int* total_nbins, double* total_cnt_aver);
+                         int* agg_nbins, double* agg_cnt);
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void pdedp_finalize_kernel_agg(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
+                               int iDE0, int iDPz0,
+                               int* agg_nbins, double* agg_cnt);
+
+#ifdef __NVCC__
+__global__
+#endif
+void pdedp_finalize_norm_dev(Deposition_t* Depo_ptr,
+                                int total_nbins, double total_cnt, double* agg_cnt);
+void pdedp_finalize_norm_host(Deposition_t* Depo_ptr,
+                                int total_nbins, double total_cnt, double* agg_cnt);
+
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void pdedp_finalize_kernel_norm(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
+                                int total_nbins, double total_cnt, double* agg_cnt);
 
 
 

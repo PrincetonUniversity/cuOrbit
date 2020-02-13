@@ -102,8 +102,8 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
         pdedp_checkbdry(cfg_ptr, depo_ptr);
       }
 
-      pdedp_out(depo_ptr);
-      printf("- p(DE,DP) calculations: done\n");
+      // debug out
+      //pdedp_out(depo_ptr);
     }
     printf("- p(DE,DP) calculations: done %d / %d \n", irun_pdedp+1, cfg_ptr->nruns);
 

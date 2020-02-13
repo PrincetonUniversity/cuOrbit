@@ -271,6 +271,15 @@ static inline int get_pdedp_ind(Deposition_t* Depo_ptr, int iE, int iPz, int imu
 #ifdef __NVCC__
 __host__ __device__
 #endif
+static inline int get_epmu_ind(Deposition_t* Depo_ptr, int iE, int iPz, int imu){
+  const int ind = Depo_ptr->pdedp_nbinPz * Depo_ptr->pdedp_nbinmu * iE +
+      Depo_ptr->pdedp_nbinmu * iPz + imu;
+  return ind;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 static inline int get_bin(double val, double* arr, const int dim){
   int k;
   int indx = -1;
@@ -635,47 +644,69 @@ void pdedp_finalize(Deposition_t* Depo_ptr){
 
   printf("-> Finalize pDEDP computation ...\n");
   /* Get indexes of (DE,DPz)=(0,0) bin */
-  int iDE0 = get_bin(0., Depo_ptr->pdedp_varDE, Depo_ptr->pdedp_nbinDE);
-  int iDPz0 = get_bin(0., Depo_ptr->pdedp_varDPz, Depo_ptr->pdedp_nbinDPz);
+  const int iDE0 = get_bin(0., Depo_ptr->pdedp_varDE, Depo_ptr->pdedp_nbinDE);
+  const int iDPz0 = get_bin(0., Depo_ptr->pdedp_varDPz, Depo_ptr->pdedp_nbinDPz);
 
   /* make sure center bin has exactly DE=0,DPz=0 */
   /* set to zero */
   Depo_ptr->pdedp_varDE[iDE0]=0.;
   Depo_ptr->pdedp_varDPz[iDPz0]=0.;
 
-  int total_nbins = 0;
-  double total_cnt_aver = 0.;
+  const size_t num_nbins = (size_t)Depo_ptr->pdedp_nbinE
+      * (size_t)Depo_ptr->pdedp_nbinPz
+      * (size_t)Depo_ptr->pdedp_nbinmu;
+  int* agg_nbins = (int*)umacalloc(num_nbins, sizeof(int));
+  double* agg_cnt = (double*)umacalloc(num_nbins, sizeof(double));
 
   /*  */
 #ifdef __NVCC__
   /* cuda stuff */
   /* in this particular case we know the dimensions we care about */
-  dim3 dimBlock(Depo_ptr->pdedp_nbinE,
-           Depo_ptr->pdedp_nbinPz,
-           Depo_ptr->pdedp_nbinmu);
-  dim3 dimGrid(1,1);
+  dim3 dimBlock(1,
+                (unsigned)Depo_ptr->pdedp_nbinPz,
+                (unsigned)Depo_ptr->pdedp_nbinE);
 
-  pdedp_finalize_dev<<<dimGrid, dimBlock>>>(Depo_ptr, iDE0, iDPz0,
-                      &total_nbins, &total_cnt_aver);
+  dim3 dimGrid((unsigned)Depo_ptr->pdedp_nbinmu,1);
+
+  pdedp_finalize_agg_dev<<<dimGrid, dimBlock>>>(Depo_ptr, iDE0, iDPz0, agg_nbins, agg_cnt);
   HANDLE_ERROR(cudaPeekAtLastError());
   /* you might need this for UVM... */
   HANDLE_ERROR(cudaDeviceSynchronize());
 
 #else
-  pdedp_finalize_host(Depo_ptr, iDE0, iDPz0,
-                      &total_nbins, &total_cnt_aver);
+  pdedp_finalize_agg_host(Depo_ptr, iDE0, iDPz0, agg_nbins, agg_cnt);
 #endif
+
+  /* SYNC here across all blocks, before normalize */
+
+  int total_nbins = 0;
+  double total_cnt = 0;
+  for(size_t ind=0; ind < num_nbins; ind++){
+    total_nbins += agg_nbins[ind];
+    total_cnt += agg_cnt[ind];
+  }
+
+  /* launch our norm kern */
+#ifdef __NVCC__
+  pdedp_finalize_norm_dev<<<dimGrid, dimBlock>>>(Depo_ptr, total_nbins, total_cnt, agg_cnt);
+  HANDLE_ERROR(cudaPeekAtLastError());
+  /* you might need this for UVM... */
+  HANDLE_ERROR(cudaDeviceSynchronize());
+#else
+  pdedp_finalize_norm_host(Depo_ptr, total_nbins, total_cnt, agg_cnt);
+#endif
+
 }
 
-void pdedp_finalize_host(Deposition_t* Depo_ptr,
+void pdedp_finalize_agg_host(Deposition_t* Depo_ptr,
                          int iDE0, int iDPz0,
-                         int* total_nbins, double* total_cnt_aver){
+                         int* agg_nbins, double* agg_cnt){
 
   for(int iE=0; iE < Depo_ptr->pdedp_nbinE; iE++){
     for(int iPz=0; iPz < Depo_ptr->pdedp_nbinPz; iPz++){
       for(int imu=0; imu < Depo_ptr->pdedp_nbinmu; imu++){
-        pdedp_finalize_kernel(Depo_ptr, iE, iPz, imu, iDE0, iDPz0,
-                              total_nbins, total_cnt_aver);
+        pdedp_finalize_kernel_agg(Depo_ptr, iE, iPz, imu, iDE0, iDPz0,
+                                  agg_nbins, agg_cnt);
       }
     }
   }
@@ -683,19 +714,20 @@ void pdedp_finalize_host(Deposition_t* Depo_ptr,
 
 #ifdef __NVCC__
 __global__
-void pdedp_finalize_dev(Deposition_t* Depo_ptr,
-                         int iDE0, int iDPz0,
-                         int* total_nbins, double* total_cnt_aver){
+void pdedp_finalize_agg_dev(Deposition_t* Depo_ptr,
+                        int iDE0, int iDPz0,
+                        int* agg_nbins, double* agg_cnt){
   /* one element in grid,  3D blocks */
-  const int iE = blockIdx.x * blockDim.x + threadIdx.x;
+  const int iE = blockIdx.z * blockDim.z + threadIdx.z;
   if(iE >= Depo_ptr->pdedp_nbinE) return;  /* check bounds */
   const int iPz = blockIdx.y * blockDim.y + threadIdx.y;
   if(iPz >= Depo_ptr->pdedp_nbinPz) return; /* check bounds */
-  const int imu = blockIdx.z * blockDim.z + threadIdx.z;
+  const int imu = blockIdx.x * blockDim.x + threadIdx.x;
   if(imu >= Depo_ptr->pdedp_nbinmu) return; /* check bounds */
 
-  pdedp_finalize_kernel(Depo_ptr, iE, iPz, imu, iDE0, iDPz0,
-                        total_nbins, total_cnt_aver);
+  pdedp_finalize_kernel_agg(Depo_ptr, iE, iPz, imu, iDE0, iDPz0,
+      agg_nbins, agg_cnt);
+
 
 }
 #endif
@@ -703,9 +735,9 @@ void pdedp_finalize_dev(Deposition_t* Depo_ptr,
 #ifdef __NVCC__
 __host__ __device__
 #endif
-void pdedp_finalize_kernel(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
-                           int iDE0, int iDPz0,
-                           int* total_nbins, double* total_cnt_aver){
+void pdedp_finalize_kernel_agg(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
+                               int iDE0, int iDPz0,
+                               int* agg_nbins, double* agg_cnt){
   /* gets average numbers of counts/bin from non empty bins,
      fill in empty bins.
 
@@ -714,49 +746,86 @@ void pdedp_finalize_kernel(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
      if pdedp_pdedp lives on card, this is trivial there*/
   int ind;
   double* const pdedp_pdedp = Depo_ptr->pdedp_pdedp;
-  double sum_p;
 
   /*       Get average number of counts/bin from non-empty bins
            and fill in empty bins */
-  double  cnt_aver=0.;
   int cnt_;
   int nbins=0;
 
   cnt_=0.;
-  sum_p=0.;
   for(int iDE=0; iDE < Depo_ptr->pdedp_nbinDE; iDE++){
     for(int iDPz=0; iDPz < Depo_ptr->pdedp_nbinDPz; iDPz++){
       ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
       cnt_ += pdedp_pdedp[ind];
     }
   }
+
+
   if(cnt_ > 0) {
     /* update*/
-    cnt_aver += cnt_;
-    sum_p=cnt_;
     nbins += 1;
   } else {
-    /* fill with 1 count at (DE,DPz)=(0,0)*/
     ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE0, iDPz0);
     pdedp_pdedp[ind] = 1.;
-    sum_p=1.;
   }
 
-  /* gather nbins, will use atomicAdd  */
+
+  /* scatter results*/
+  agg_nbins[get_epmu_ind(Depo_ptr, iE, iPz, imu)] = nbins;
+  agg_cnt[get_epmu_ind(Depo_ptr, iE, iPz, imu)] = cnt_;
+
+  return;
+}
+
+void pdedp_finalize_norm_host(Deposition_t* Depo_ptr,
+                              int total_nbins, double total_cnt, double* agg_cnt){
+  for(int iE=0; iE < Depo_ptr->pdedp_nbinE; iE++){
+    for(int iPz=0; iPz < Depo_ptr->pdedp_nbinPz; iPz++){
+      for(int imu=0; imu < Depo_ptr->pdedp_nbinmu; imu++){
+        pdedp_finalize_kernel_norm(Depo_ptr, iE, iPz, imu,
+                                   total_nbins, total_cnt, agg_cnt);
+      }
+    }
+  }
+}
+
 #ifdef __NVCC__
-  atomicAdd(total_nbins, nbins);
-  atomicAdd(total_cnt_aver, cnt_aver);
-#else
-  *total_nbins += nbins;
-  *total_cnt_aver += cnt_aver;
+__global__
+void pdedp_finalize_norm_dev(Deposition_t* Depo_ptr,
+                             int total_nbins, double total_cnt, double* agg_cnt){
+
+  /* one element in grid,  3D blocks */
+  const int iE = blockIdx.z * blockDim.z + threadIdx.z;
+  if(iE >= Depo_ptr->pdedp_nbinE) return;  /* check bounds */
+  const int iPz = blockIdx.y * blockDim.y + threadIdx.y;
+  if(iPz >= Depo_ptr->pdedp_nbinPz) return; /* check bounds */
+  const int imu = blockIdx.x * blockDim.x + threadIdx.x;
+  if(imu >= Depo_ptr->pdedp_nbinmu) return; /* check bounds */
+
+  pdedp_finalize_kernel_norm(Depo_ptr, iE, iPz, imu,
+                             total_nbins, total_cnt, agg_cnt);
+}
 #endif
-  if(*total_nbins > 0) *total_cnt_aver /= *total_nbins;
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void pdedp_finalize_kernel_norm(Deposition_t* Depo_ptr, int iE, int iPz, int imu,
+                                int total_nbins, double total_cnt, double* agg_cnt){
+  /* then nomalizes. */
+
+  int ind;
+  double* const pdedp_pdedp = Depo_ptr->pdedp_pdedp;
+  double sum_p;
+
+  if(total_nbins > 0) total_cnt /= total_nbins;
 
   /* Normalize */
+  sum_p = fmax(1., agg_cnt[get_epmu_ind(Depo_ptr, iE, iPz, imu)]);
   for(int iDE=0; iDE < Depo_ptr->pdedp_nbinDE; iDE++){
     for(int iDPz=0; iDPz < Depo_ptr->pdedp_nbinDPz; iDPz++){
       ind = get_pdedp_ind(Depo_ptr, iE, iPz, imu, iDE, iDPz);
-      pdedp_pdedp[ind] *= *total_cnt_aver/sum_p;
+      pdedp_pdedp[ind] *= total_cnt/sum_p;
     }
   }
 
