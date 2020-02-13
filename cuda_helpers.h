@@ -34,6 +34,7 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }
 #endif
 
+
 void* umacalloc(size_t num, size_t size);
 
 #endif
