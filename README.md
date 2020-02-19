@@ -78,6 +78,9 @@ Input data is suggestively located in `INPUT/` along with the config.ini.
 During inititialization the input data is read from there into the Config_t.
 You can alter input file names in the configration file to point at different
 input decks, and also configure outputs to a different path as you wish.
+Note this input is just an example used to help code development; that config is 
+known to not be scientifically relevant.  You might try the
+`reference_test_case` instead...
 
 You can optionally supply a path to a config file as an optional argument.
 Example:
