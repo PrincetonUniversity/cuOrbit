@@ -568,7 +568,6 @@ void ptrbak(Config_t* cfg_ptr, int k)
   const int md2 = get_md2(Ptrb);
   double* ptch = Ptcl->ptch;
   double prot = Ptcl->prot;
-  double* alfv = get_alfv(Ptrb);
   double* amp = get_amp(Ptrb);
   double* a1 = get_a1(Ptrb);
   double* a2 = get_a2(Ptrb);
@@ -605,7 +604,7 @@ void ptrbak(Config_t* cfg_ptr, int k)
   double psi_flr,dpsi_flr,ph_flr,dph_flr;
   int ind;
   int lptm1;
-  int nval;
+
   /* to appease compiler */
   dpsi_flr = 0.;
   dph_flr = 0.;
@@ -643,8 +642,6 @@ void ptrbak(Config_t* cfg_ptr, int k)
 
   //do  312 md = md1,md2 ! loop over harmonics
   for(md=md1; md<md2; md++){
-    nval = alfv[md];  /* xxx does this need to be saved in a struct ?*/
-
     n = nmod[md];
     m = mmod[md];
 
@@ -672,10 +669,10 @@ void ptrbak(Config_t* cfg_ptr, int k)
 
       ind = md*lpt + jd;
 
-      alnm = amp[nval]*(a1[ind] + a2[ind]*dpx + a3[ind]*dp2);
-      alnmp = amp[nval]*( a2[ind] + 2*a3[ind]*dpx);
-      xinm = amp[nval]*(xi1[ind] + xi2[ind]*dpx + xi3[ind]*dp2);
-      xinmp = amp[nval]*( xi2[ind] + 2*xi3[ind]*dpx);
+      alnm = amp[md]*(a1[ind] + a2[ind]*dpx + a3[ind]*dp2);
+      alnmp = amp[md]*( a2[ind] + 2*a3[ind]*dpx);
+      xinm = amp[md]*(xi1[ind] + xi2[ind]*dpx + xi3[ind]*dp2);
+      xinmp = amp[md]*( xi2[ind] + 2*xi3[ind]*dpx);
       agg = n*zet[k] - m*thet[k];
       cnm = cos(agg - phaz[md*idm + k]);
       snm = sin(agg - phaz[md*idm + k]);

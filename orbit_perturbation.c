@@ -54,7 +54,6 @@ struct Perturb {
   double *harm;
   double *xx;
   //unused? double *yy;
-  double *alfv;
   /* derivatives */
   /// maybe these belong elsewhere, like field, which is more paticles
   /* double *dbdt; */
@@ -144,7 +143,6 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
 
   ptrb_ptr->xx = (double*)umacalloc((unsigned)ptrb_ptr->lpt, sizeof(double));
 
-  ptrb_ptr->alfv = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
   ptrb_ptr->amp = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
   ptrb_ptr->damp = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
   ptrb_ptr->harm = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
@@ -175,7 +173,6 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
 
   for(md=0; md < ptrb_ptr->modes; md++){
     ptrb_ptr->harm[md] = 1;
-    ptrb_ptr->alfv[md] = md;
     ptrb_ptr->omegv[md] = 2E3 * M_PI * fkhz / ptrb_ptr->omeg0;
     ptrb_ptr->nmod[md] = nmd;
   }
@@ -195,7 +192,10 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
     xxmax = darray_max(ptrb_ptr->xx, (unsigned)ptrb_ptr->lpt);
     ptrb_ptr->damp[k] = xxmax;
 
-    if (ptrb_ptr->damp[k] < ptrb_ptr->alimit) continue;
+    if (ptrb_ptr->damp[k] < ptrb_ptr->alimit){
+
+      continue;
+    }
     if (ptrb_ptr->mmod[k] == 0) continue;
 
     md++;
@@ -205,7 +205,6 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
     ptrb_ptr->nmod[md] = ptrb_ptr->nmod[k];
     m = ptrb_ptr->mmod[md];
     n = ptrb_ptr->nmod[md];
-
     for(j=0; j < ptrb_ptr->lpt; j++){
       ind = ptrb_ptr->lpt * md + j;
       /*  normalize, careful inds */
@@ -418,12 +417,6 @@ double pol2pot(Config_t* cfg_ptr, double pdum){
   return potout;
 }
 
-#ifdef __NVCC__
-__host__ __device__
-#endif
-double* get_alfv(Perturb_t* ptrb_ptr){
-  return ptrb_ptr->alfv;
-}
 
 #ifdef __NVCC__
 __host__ __device__

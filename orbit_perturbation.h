@@ -78,11 +78,6 @@ double* get_omegv(Perturb_t*);
 #ifdef __NVCC__
 __host__ __device__
 #endif
-double* get_alfv(Perturb_t*);
-
-#ifdef __NVCC__
-__host__ __device__
-#endif
 double* get_amp(Perturb_t*);
 
 #ifdef __NVCC__
