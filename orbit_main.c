@@ -74,21 +74,31 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
       fulldepmp_co(cfg_ptr, depo_ptr);
     }
 
-    double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
-    const int nstep_all = round(10. * get_pdedp_dtsamp(depo_ptr) / dum) + 1;
+    
+    /* MP: I moved the following definitions to orbit_deposition.c */
+    /* double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
+    const int nstep_all = round(get_pdedp_dtrun(depo_ptr) / dum);
     cfg_ptr->nstep_all = nstep_all;
     set_pdedp_tskip(depo_ptr,
-                    imax(round(nstep_all / 1E4) + 1,
-                         5));    /* stay in array bounds */
-
+                    imax(round(nstep_all / 2E4) + 1,
+                         1));  */  /* stay in array bounds */  
+    
     printf("\n\n --- Start main run --- \n" );
     printf("\t no. of particles \t: %d\n", cfg_ptr->nprt);
-    printf("\t no. of time steps \t: %d\n", nstep_all);
-    printf("\t sim. time [ms] \t:  %f\n", nstep_all*dum);
+    printf("\t no. of time steps \t: %d\n", cfg_ptr->nstep_all);
+    printf("\t sim. time [ms] \t:  %f\n", cfg_ptr->pdedp_dtrun);
     printf("\t time step [us] \t:  %f\n",
            1E6 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr));
     printf("\t time steps to skip \t:  %d\n\n", get_pdedp_tskip(depo_ptr));
 
+    /* Check Run parameters, exit if issues are detected */
+    if( cfg_ptr->nstep_all <= 1){
+      printf("Error: number of simulation steps is %i," \
+             " Please set pdedp_dtrun in config.ini. Aborting\n", \
+	     cfg_ptr->nstep_all);
+      exit(1);
+    }
+    
     /* launch the stepping functions */
     do_particles(cfg_ptr);
 
@@ -106,7 +116,7 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
       //pdedp_out(depo_ptr);
     }
     printf("- p(DE,DP) calculations: done %d / %d \n", irun_pdedp+1, cfg_ptr->nruns);
-
+    printf("\n ------------------------------ \n\n")
   }  /* irun_pdedp */
 
   /* this was out of loop */

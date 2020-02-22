@@ -47,7 +47,6 @@ struct Config {
   int nmds;  /* probably dont need this */
   int nrmds;  /* dont remember this */
   int seed;   /* used by the RNG */
-  int ntor;
   int nstep_all;
   double bsum; //xxx i suspect this will go to another struct...
   double dsum; //xxx i suspect this will go to another struct...
@@ -112,9 +111,17 @@ struct Config {
   int nstochp;
   /* pdedp */
   int nruns;
+  int pdedp_nbinE;
+  int pdedp_nbinPz;
+  int pdedp_nbinmu;
+  int pdedp_nbinDE;
+  int pdedp_nbinDPz;
+  double pdedp_Emin;
+  double pdedp_Emax;
   bool compute_pdedp;
   bool initial_update_pdedp_from_file;
   double deposit_on_bins_after_fraction;
+  double pdedp_dtrun;
   double pdedp_dtsamp;
   double pdedp_dtav;
   int pdedp_tskip;
@@ -186,11 +193,6 @@ double get_pamp(Config_t*);
 __host__ __device__
 #endif
 double get_rprof(Config_t*);
-
-#ifdef __NVCC__
-__host__ __device__
-#endif
-double get_trun(Config_t*);
 
 #ifdef __NVCC__
 __host__ __device__

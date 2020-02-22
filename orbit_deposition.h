@@ -41,6 +41,11 @@ bool pdedp_optimize(Deposition_t*);
 #ifdef __NVCC__
 __host__ __device__
 #endif
+double get_pdedp_dtrun(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_pdedp_dtsamp(Deposition_t*);
 
 #ifdef __NVCC__
@@ -51,7 +56,7 @@ int get_pdedp_tskip(Deposition_t*);
 #ifdef __NVCC__
 __host__ __device__
 #endif
-void set_pdedp_tskip(Deposition_t*, double);
+void set_pdedp_tskip(Deposition_t*, int);
 
 #ifdef __NVCC__
 __host__ __device__
@@ -82,6 +87,42 @@ bool get_pdedp_do_focusdep(Deposition_t*);
 __host__ __device__
 #endif
 void set_pdedp_do_focusdep(Deposition_t*, bool);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+double get_pdedp_Emin(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+double get_pdedp_Emax(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_pdedp_nbinE(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_pdedp_nbinPz(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_pdedp_nbinmu(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_pdedp_nbinDE(Deposition_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_pdedp_nbinDPz(Deposition_t*);
+
 
 #ifdef __NVCC__
 __host__ __device__
