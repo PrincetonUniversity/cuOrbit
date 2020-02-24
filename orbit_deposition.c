@@ -1250,7 +1250,7 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   mumax = 1.05*mumax;  /* add buffer region*/
   
   /* upper limit for Pz, add buffer */
-  Pzmax = 1.*gfun(eqlb_ptr, 0)/pw*sqrt(2. * engn) *
+  Pzmax = gfun(eqlb_ptr, 0)/pw*sqrt(2. * engn) *
       (depo_ptr->pdedp_nbinPz + 1.) / depo_ptr->pdedp_nbinPz;
   Pzmax = 1.05*Pzmax;  /* add buffer region*/
 

@@ -116,7 +116,7 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
       //pdedp_out(depo_ptr);
     }
     printf("- p(DE,DP) calculations: done %d / %d \n", irun_pdedp+1, cfg_ptr->nruns);
-    printf("\n ------------------------------ \n\n")
+    printf("\n ------------------------------ \n\n");
   }  /* irun_pdedp */
 
   /* this was out of loop */
