@@ -49,7 +49,8 @@ cuOrbit.x: cuOrbit.o libcuorbit.so
 
 GZREFERENCES = reference_test_case/displ_4_5.dat \
 		reference_test_case/pDEDP.AEP \
-		reference_test_case/spdata
+		reference_test_case/spdata \
+		INPUT/spdata
 
 unpack: $(GZREFERENCES)
 
