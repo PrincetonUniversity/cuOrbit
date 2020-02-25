@@ -195,6 +195,13 @@ double* get_en(Particles_t* ptcl_ptr){
 #ifdef __NVCC__
 __host__ __device__
 #endif
+double* get_ri(Particles_t* ptcl_ptr){
+  return ptcl_ptr->ri;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_pol(Particles_t* ptcl_ptr){
   return ptcl_ptr->pol;
 }
@@ -714,6 +721,11 @@ void do_particle_kernel(Config_t* cfg_ptr, int particle_id){
     konestep(cfg_ptr, particle_id);
     kupdate(cfg_ptr, particle_id);
 
+    /* XXX should this go before onstep and update?... */
+    if(cfg_ptr->do_modestep && particle_id !=0){
+      modestep(cfg_ptr);
+    }
+
     if(compute_pdedp(cfg_ptr->depo_ptr) &&
        ktm >= pdedp_tskip &&
        ktm % pdedp_tskip == 0){
@@ -953,4 +965,11 @@ void konestep(Config_t* cfg_ptr, int k){
 
   } //j
   return;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_idm(Particles_t* ptcl_ptr){
+  return ptcl_ptr->idm;
 }

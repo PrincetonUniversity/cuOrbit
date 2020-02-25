@@ -87,6 +87,7 @@ struct Config {
   double global_scaling_factor;
   double freq_scaling_factor;
   double sng;
+  bool do_modestep;
 
   /* particle */
   Particles_t* ptcl_ptr;

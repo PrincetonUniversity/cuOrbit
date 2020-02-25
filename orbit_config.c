@@ -96,7 +96,10 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->global_scaling_factor = atof(value);
     } else if (MATCH("perturbation", "freq_scaling_factor")) {
       pconfig->freq_scaling_factor = atof(value);
+    } else if (MATCH("perturbation", "do_modestep")) {
+      pconfig->do_modestep = atob(value);
     }
+
     /* Particles Config Vars*/
     else if (MATCH("particle", "nprt")) {
         pconfig->nprt = atoi(value);

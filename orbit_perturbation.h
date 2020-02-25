@@ -121,4 +121,10 @@ __host__ __device__
 double* get_a3(Perturb_t*);
 
 double pol2pot(Config_t*, double);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void modestep(Config_t* cfg_ptr);
+
 #endif
