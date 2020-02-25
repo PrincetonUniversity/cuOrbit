@@ -20,7 +20,7 @@ else
 endif
 
 
-all: cuOrbit.x
+all: unpack cuOrbit.x
 
 # alternatively you can yourself just invoke: make CC=nvcc
 gpu:
@@ -47,12 +47,23 @@ libcuorbit.so: inih/ini.o \
 cuOrbit.x: cuOrbit.o libcuorbit.so
 	$(CC) $(LDFLAGS) $< -o $@ -lcuorbit $(LIBRARIES)
 
+GZREFERENCES = reference_test_case/displ_4_5.dat \
+		reference_test_case/pDEDP.AEP \
+		reference_test_case/spdata
+
+unpack: $(GZREFERENCES)
+
+%: %.gz
+	gunzip -c $< > $@
+
 clean:
 	-rm -f inih/*.o
 	-rm -f *.o
 	-rm -f libcuorbit.so
 	-rm -f cuOrbit.x
 	-rm -rf cuOrbit.x.dSYM
+	-rm -f $(GZREFERENCES)
 
 .PHONY: all
 .PHONY: clean
+.PHONY: unpack
