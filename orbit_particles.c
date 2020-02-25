@@ -794,7 +794,6 @@ void konestep(Config_t* cfg_ptr, int k){
   double* dptdp = cfg_ptr->ptcl_ptr->dptdp;
   double* pol = cfg_ptr->ptcl_ptr->pol;
   const double pw = get_pw(cfg_ptr->eqlb_ptr);
-  double* time = get_time(Ptcl);
   int npert = get_npert(cfg_ptr);
   double* b = Ptcl->b;
   double* g = Ptcl->g;
