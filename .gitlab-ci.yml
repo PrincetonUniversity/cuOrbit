@@ -57,8 +57,7 @@ BasicRun:
   stage: test
   image: garrettwrong/cuorbit_centos-7:latest
   script:
-    - gunzip reference_test_case/spdata.gz
-    - gunzip reference_test_case/displ_4_5.dat.gz
+    - make unpack
     - ./cuOrbit.x reference_test_case/config_short_repro.ini
     - echo "Checking reference result sparse file"
     - diff pdedp.nz reference_test_case/pdedp_short_repro.nz
