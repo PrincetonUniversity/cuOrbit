@@ -135,9 +135,9 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
     }    else if (MATCH("pdedp", "pdedp_tskip")){
       pconfig->pdedp_tskip = atoi(value);
     }    else if (MATCH("pdedp", "pdedp_Emin")){
-      pconfig->pdedp_Emin = atoi(value);
+      pconfig->pdedp_Emin = atof(value);
     }    else if (MATCH("pdedp", "pdedp_Emax")){
-      pconfig->pdedp_Emax = atoi(value);
+      pconfig->pdedp_Emax = atof(value);
     }    else if (MATCH("pdedp", "pdedp_nbinE")){
       pconfig->pdedp_nbinE = atoi(value);
     }    else if (MATCH("pdedp", "pdedp_nbinPz")){
