@@ -533,8 +533,6 @@ void modestep(Config_t* cfg_ptr){
   double cnm;
   double snm;
 
-  printf("entered modestep\n");
-  
   /* falf set from config */
 
   /* zero arrays */
