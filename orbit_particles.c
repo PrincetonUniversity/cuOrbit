@@ -77,7 +77,6 @@ struct Particles {
   double* wt;
   /* used during kupdate */
   int* nout;
-  int* nfin;
   double* e0;
   double* dptdp;
   double* dptdt;
@@ -152,7 +151,6 @@ void initialize_Particles(Particles_t* ptcl_ptr, Config_t* cfg_ptr){
 
   /* used during kupdate (stepping) */
   ptcl_ptr->nout=(int*)umacalloc(ptcl_ptr->idm, sizeof(int));
-  ptcl_ptr->nfin=(int*)umacalloc(ptcl_ptr->idm, sizeof(int));
   ptcl_ptr->e0=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
   ptcl_ptr->dptdp=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
   ptcl_ptr->dptdt=(double*)umacalloc(ptcl_ptr->idm, sizeof(double));
@@ -484,24 +482,21 @@ void kupdate(Config_t* cfg_ptr, int k){
   double* pot = Ptcl->pot;
   double* ptch = Ptcl->ptch;
   int* nout = Ptcl->nout;
-  int* nfin = Ptcl->nfin;
   double* e0 = Ptcl->e0;
   double* phaz = get_phaz(Ptrb);
   double* omegv = get_omegv(Ptrb);
   const int md1 = get_md1(Ptrb);
   const int md2 = get_md2(Ptrb);
   const int idm = Ptcl->idm;
-  double trun = get_trun(cfg_ptr);
-
+  
   kfield(cfg_ptr, k);
 
   nesc = 0;
 
   nout[k] = (int)(.6 *(1.  + copysign(1. , Ptcl->pol[k] - pw)));
-  nfin[k] = (int)(.6 *(1.  + copysign(1. , time[k]-trun)));
-
-  time[k] += dt[k]*(1 - nout[k])*(1-nfin[k]);
-  tim1[k] += (1-nout[k])*dt[k]*(1-nfin[k]);
+  
+  time[k] += dt[k]*(1 - nout[k]);
+  tim1[k] += (1-nout[k])*dt[k];
 
   //  monitor the energy change
   //     and update the energy and pitch if not lost
@@ -795,13 +790,10 @@ void konestep(Config_t* cfg_ptr, int k){
 
   Particles_t* Ptcl = cfg_ptr->ptcl_ptr;
   int* nout = Ptcl->nout;
-  int* nfin = Ptcl->nfin;
   double* dt = Ptcl->dt;
   double* dptdp = cfg_ptr->ptcl_ptr->dptdp;
   double* pol = cfg_ptr->ptcl_ptr->pol;
   const double pw = get_pw(cfg_ptr->eqlb_ptr);
-  double* time = get_time(Ptcl);
-  double trun = get_trun(cfg_ptr);
   int npert = get_npert(cfg_ptr);
   double* b = Ptcl->b;
   double* g = Ptcl->g;
@@ -841,7 +833,6 @@ void konestep(Config_t* cfg_ptr, int k){
   dt[k]=dt0;
 
   nout[k] = (int)(.6 * (1. + copysign(1., pol[k]- pw) ));
-  nfin[k] =  (int)(.6 * (1. + copysign(1., time[k] - trun)));
   nt_ = (int) (.6 * (1.  + copysign(1., pol[k]-.05 *pw)));
   dt[k] = nt_ * dt[k] + (1 - nt_) * dt0;
 
@@ -893,7 +884,7 @@ void konestep(Config_t* cfg_ptr, int k){
       e_[1] = nt_*e_[1] + (1-nt_)*ydot;
 
       for(ei=0; ei<4; ei++){
-        e_[ei] *= (1-nout[k])*(1-nfin[k]);
+        e_[ei] *= (1-nout[k]);
       }
 
     } else{
@@ -928,7 +919,7 @@ void konestep(Config_t* cfg_ptr, int k){
       e_[0] = nt_*e_[0] + (1-nt_)*xdot;
       e_[1] = nt_*e_[1] + (1-nt_)*ydot;
       for(ei=0; ei<4; ei++){
-        e_[ei] *= (1-nout[k])*(1-nfin[k]);
+        e_[ei] *= (1-nout[k]);
       }
     }
 

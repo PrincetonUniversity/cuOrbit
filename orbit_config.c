@@ -54,8 +54,6 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->name = strdup(value);
     } else if (MATCH("model", "rng_seed")) {
         pconfig->seed = atoi(value);
-    } else if (MATCH("model", "ntor")) {
-        pconfig->ntor = atof(value);
     } else if (MATCH("model", "bkg")) {
         pconfig->bkg = atof(value);
     } else if (MATCH("model", "pamp")) {
@@ -128,12 +126,28 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->initial_update_pdedp_from_file = atob(value);
     }    else if (MATCH("pdedp", "deposit_on_bins_after_fraction")){
       pconfig->deposit_on_bins_after_fraction = atof(value);
+    }    else if (MATCH("pdedp", "pdedp_dtrun")){
+      pconfig->pdedp_dtrun = atof(value); 
     }    else if (MATCH("pdedp", "pdedp_dtsamp")){
       pconfig->pdedp_dtsamp = atof(value);
     }    else if (MATCH("pdedp", "pdedp_dtav")){
       pconfig->pdedp_dtav = atof(value);
     }    else if (MATCH("pdedp", "pdedp_tskip")){
       pconfig->pdedp_tskip = atoi(value);
+    }    else if (MATCH("pdedp", "pdedp_Emin")){
+      pconfig->pdedp_Emin = atof(value);
+    }    else if (MATCH("pdedp", "pdedp_Emax")){
+      pconfig->pdedp_Emax = atof(value);
+    }    else if (MATCH("pdedp", "pdedp_nbinE")){
+      pconfig->pdedp_nbinE = atoi(value);
+    }    else if (MATCH("pdedp", "pdedp_nbinPz")){
+      pconfig->pdedp_nbinPz = atoi(value);
+    }    else if (MATCH("pdedp", "pdedp_nbinmu")){
+      pconfig->pdedp_nbinmu = atoi(value);
+    }    else if (MATCH("pdedp", "pdedp_nbinDE")){
+      pconfig->pdedp_nbinDE = atoi(value);
+    }    else if (MATCH("pdedp", "pdedp_nbinDPz")){
+      pconfig->pdedp_nbinDPz = atoi(value);
     }    else if (MATCH("pdedp", "pdedp_otpup")){
       pconfig->pdedp_otpup = atof(value);
     }    else if (MATCH("pdedp", "pdedp_focusdep")){
@@ -251,8 +265,20 @@ void set1(Config_t* cfg_ptr){
 
   set_xc(cfg_ptr, xproj(Eq, 0., 0.));
   set_eps(cfg_ptr, ( xproj(Eq, get_ped(Eq) , 0.) - xproj(Eq, 0., 0.)) / get_xc(cfg_ptr) );
-
-  cfg_ptr->bmin = bfield(Eq, pw, 0.);
+  
+  /* Compute min and max Bfield at theta=0	*/
+  /* Here we loop over Psi to get Bmin, since 	*/
+  /* there can be cases (low B, high Ip) for 	*/
+  /* which a magnetic well exists on the LFS	*/
+  /* for 0 < Psi < Psi_wall			*/
+  cfg_ptr->bmin = 1e12;
+  for(k=1; k<=100; k++){
+    pdum = 0.01 * k * pw;
+    dum = bfield(Eq, pdum, 0.);
+    if(dum < cfg_ptr->bmin){
+        cfg_ptr->bmin = dum;
+    }
+  }
   cfg_ptr->bmax = bfield(Eq, pw, M_PI);
   cfg_ptr->bax = bfield(Eq, 0., 0.);
 
@@ -300,7 +326,6 @@ void set1(Config_t* cfg_ptr){
 
   denom = B[0][0] * sqrt(2. * cfg_ptr->engn) * QD[0][0];
   cfg_ptr->tran = 6.28 * (GD[0][0] * QD[0][0] + RD[0][0])/denom;
-  cfg_ptr->trun = cfg_ptr->ntor * cfg_ptr->tran;
   cfg_ptr->dt0 = cfg_ptr->tran/200;
   cfg_ptr->bsum = 0.;
   cfg_ptr->dsum = 0.;
@@ -473,12 +498,6 @@ double get_rprof(Config_t* cfg_ptr){
   return cfg_ptr->rprof;
 }
 
-#ifdef __NVCC__
-__host__ __device__
-#endif
-double get_trun(Config_t* cfg_ptr){
-  return cfg_ptr->trun;
-}
 
 #ifdef __NVCC__
 __host__ __device__

@@ -43,6 +43,7 @@ struct Deposition {
   bool compute_pdedp;
   bool initial_update_pdedp_from_file;
   double deposit_on_bins_after_fraction;
+  double pdedp_dtrun;
   double pdedp_dtsamp;
   double pdedp_dtav;
   int pdedp_tskip;
@@ -119,9 +120,10 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
   Depo_ptr->compute_pdedp = cfg_ptr->compute_pdedp;
   Depo_ptr->initial_update_pdedp_from_file = cfg_ptr->initial_update_pdedp_from_file;
   Depo_ptr->deposit_on_bins_after_fraction = cfg_ptr->deposit_on_bins_after_fraction;
+  Depo_ptr->pdedp_dtrun = cfg_ptr->pdedp_dtrun;
   Depo_ptr->pdedp_dtsamp = cfg_ptr->pdedp_dtsamp;
   Depo_ptr->pdedp_dtav = cfg_ptr->pdedp_dtav;
-  Depo_ptr->pdedp_tskip = cfg_ptr->pdedp_tskip;
+  /*Depo_ptr->pdedp_tskip = cfg_ptr->pdedp_tskip;*/
   Depo_ptr->pdedp_otpup = cfg_ptr->pdedp_otpup;
   Depo_ptr->pdedp_focusdep = cfg_ptr->pdedp_focusdep;
   Depo_ptr->pdedp_do_focusdep = false;
@@ -131,13 +133,34 @@ void initialize_Deposition(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
     Depo_ptr->pdedp_optimize = 0;
     abort();  /* for now, abort */
   }
-  Depo_ptr->res_id_arr_j = 10000;  /* xxx should be computed not sure we know value yet in current implientation */
+  
+  /* Energy range and grid points */
+  Depo_ptr->pdedp_Emin = cfg_ptr->pdedp_Emin;
+  Depo_ptr->pdedp_Emax = cfg_ptr->pdedp_Emax;
+  Depo_ptr->pdedp_nbinE = cfg_ptr->pdedp_nbinE;
+  Depo_ptr->pdedp_nbinPz = cfg_ptr->pdedp_nbinPz;
+  Depo_ptr->pdedp_nbinmu = cfg_ptr->pdedp_nbinmu;
+  Depo_ptr->pdedp_nbinDE = cfg_ptr->pdedp_nbinDE;
+  Depo_ptr->pdedp_nbinDPz = cfg_ptr->pdedp_nbinDPz;
+  
+  
+  /* Allocate array with particles' variables vs time */
+  
+  /* Depo_ptr->res_id_arr_j = 10000;  xxx should be computed not sure we know value yet in current implientation */
+  /* const int nstep_all = round(get_pdedp_dtrun(depo_ptr) / dum); */
+  double dum = 1E3 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr);
+  const int nstep_all = round(get_pdedp_dtrun(Depo_ptr) / dum);
+  cfg_ptr->nstep_all = nstep_all;
+  set_pdedp_tskip(Depo_ptr,imax(ceil(nstep_all / 2E4),1));    /* stay in array bounds */
+  cfg_ptr->pdedp_tskip = Depo_ptr->pdedp_tskip;
+  Depo_ptr->res_id_arr_j = ceil(cfg_ptr->nstep_all / cfg_ptr->pdedp_tskip); /* MP: get size based on run time */
   Depo_ptr->res_id_arr_i = 4;
   Depo_ptr->res_id_arr = (double*)umacalloc((unsigned)(cfg_ptr->nprt *
                                                        Depo_ptr->res_id_arr_j *
                                                        Depo_ptr->res_id_arr_i),
                                             sizeof(double));
-
+  
+  
   /* this allocs at runtime, so has own init func */
   Depo_ptr->pdedp_initialized = false;
 
@@ -185,6 +208,13 @@ bool pdedp_optimize(Deposition_t* Depo_ptr){
 #ifdef __NVCC__
 __host__ __device__
 #endif
+double get_pdedp_dtrun(Deposition_t* Depo_ptr){
+  return Depo_ptr->pdedp_dtrun;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double get_pdedp_dtsamp(Deposition_t* Depo_ptr){
   return Depo_ptr->pdedp_dtsamp;
 }
@@ -199,7 +229,7 @@ int get_pdedp_tskip(Deposition_t* Depo_ptr){
 #ifdef __NVCC__
 __host__ __device__
 #endif
-void set_pdedp_tskip(Deposition_t* Depo_ptr, double pdedp_tskip){
+void set_pdedp_tskip(Deposition_t* Depo_ptr, int pdedp_tskip){
   Depo_ptr->pdedp_tskip = pdedp_tskip;
   return;
 }
@@ -353,6 +383,7 @@ void pdedp_read(Deposition_t* Depo_ptr, Config_t* cfg_ptr){
 
   /* read in the time step */
   fscanf(ifp, "%lf %*[^\n]\n", &Depo_ptr->pdedp_dtsamp);
+  Depo_ptr->pdedp_dtrun = Depo_ptr->pdedp_dtsamp*10.; /* default run duration when reading from pDEDP file */
   Depo_ptr->pdedp_dtav = Depo_ptr->pdedp_dtsamp/50.;
 
   /* continue skipping header */
@@ -458,24 +489,38 @@ void pdedp_init(Deposition_t* Depo_ptr){
   double stp;
 
   /* xxx I suspect we will want to migrate towards config */
-  Depo_ptr->pdedp_Emin = 1.;
-  Depo_ptr->pdedp_Emax = 110.;
+  if(Depo_ptr->pdedp_Emin == 0){
+     Depo_ptr->pdedp_Emin = 1.;
+  }
+  if(Depo_ptr->pdedp_Emax == 0){
+     Depo_ptr->pdedp_Emax = 110.;
+  }
   Depo_ptr->pdedp_Pzmin = -1.2;
   Depo_ptr->pdedp_Pzmax =  0.7;
   Depo_ptr->pdedp_mumin = 0.;  /* muB0/E */
   Depo_ptr->pdedp_mumax = 1.4;
-  Depo_ptr->pdedp_DEmin = -0.100000;
-  Depo_ptr->pdedp_DEmax = 0.100000;
-  Depo_ptr->pdedp_DPzmin = -0.00100000;
-  Depo_ptr->pdedp_DPzmax = 0.00100000;
-  Depo_ptr->pdedp_nbinE = 12;  /* number of bins */
-  Depo_ptr->pdedp_nbinPz=40;
-  Depo_ptr->pdedp_nbinmu = 16;
-  Depo_ptr->pdedp_nbinDE=29;   /* this must be an ODD number */
-  assert(Depo_ptr->pdedp_nbinDE % 2 == 1);
-  Depo_ptr->pdedp_nbinDPz = 29;  /* this must be an ODD number; */
-  assert(Depo_ptr->pdedp_nbinDE % 2 == 1);
-
+  Depo_ptr->pdedp_DEmin = -0.01;
+  Depo_ptr->pdedp_DEmax =  0.01;
+  Depo_ptr->pdedp_DPzmin = -0.0001;
+  Depo_ptr->pdedp_DPzmax =  0.0001;
+  if(Depo_ptr->pdedp_nbinE == 0){
+     Depo_ptr->pdedp_nbinE = 12;  /* number of bins */
+  }
+  if(Depo_ptr->pdedp_nbinPz == 0){
+     Depo_ptr->pdedp_nbinPz = 40;
+  }
+  if(Depo_ptr->pdedp_nbinmu == 0){
+     Depo_ptr->pdedp_nbinmu = 16;
+  }
+  if(Depo_ptr->pdedp_nbinDE == 0){
+     Depo_ptr->pdedp_nbinDE = 29;   /* this must be an ODD number */
+     assert(Depo_ptr->pdedp_nbinDE % 2 == 1);
+  }
+  if(Depo_ptr->pdedp_nbinDPz == 0){
+     Depo_ptr->pdedp_nbinDPz = 29;  /* this must be an ODD number; */
+     assert(Depo_ptr->pdedp_nbinDE % 2 == 1);
+  }
+  
   /* malloc */
   if(! Depo_ptr->pdedp_initialized){
     initialize_pdedp(Depo_ptr);
@@ -869,7 +914,7 @@ void pdedp_out(Deposition_t* Depo_ptr){
   const int nr = 6;     /* #of decimal places f13.6 */
   const int np = 0;     /* process code */
   const int ns = 1;    /*  # of scalars */
-  const char *dev = "D3D";
+  const char *dev = "DEV";
   const char *labelx = "DEstep"; /* *20 */
   const char *unitsx = "kev";             /* *10 */
   const char *labely = "DPsteps"; /* *20 */
@@ -1193,21 +1238,27 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* /\* cf. engn definition in initial.f *\/ */
 
   /* min/max B field */ /*checked okay*/
-  const double Bmn = bfield(eqlb_ptr, pw, 0.);
-  const double Bmx = bfield(eqlb_ptr, pw, M_PI);
-
+  /*const double Bmn = bfield(eqlb_ptr, pw, 0.);
+  const double Bmx = bfield(eqlb_ptr, pw, M_PI); */
+  /* MP: get Bmin, Bmax from equilibrium initialization */
+  const double Bmn = cfg_ptr->bmin;
+  const double Bmx = cfg_ptr->bmax; 
+  
   /* redefine range of mu
      add buffer to the actual range */
   mumax = 1./Bmn * (depo_ptr->pdedp_nbinmu + 1.) / depo_ptr->pdedp_nbinmu;
-
+  mumax = 1.05*mumax;  /* add buffer region*/
+  
   /* upper limit for Pz, add buffer */
   Pzmax = gfun(eqlb_ptr, 0)/pw*sqrt(2. * engn) *
       (depo_ptr->pdedp_nbinPz + 1.) / depo_ptr->pdedp_nbinPz;
+  Pzmax = 1.05*Pzmax;  /* add buffer region*/
 
   /* lower limit for Pz, add buffer */
   Pzmin = -1. - gfun(eqlb_ptr, pw)/pw*sqrt(2. * engn) / Bmx *
       (depo_ptr->pdedp_nbinPz + 1.) /depo_ptr->pdedp_nbinPz;
-
+  Pzmin=1.05*Pzmin; /* add buffer region*/
+  
 
   /* Check wheter the Pz,mu range needs to be adjusted. */
 
@@ -1518,10 +1569,11 @@ void check_res_ptc(Config_t* cfg_ptr, int kd){
   if(iE < 0 || iE >= depo_ptr->pdedp_nbinE ||
      iPz < 0 || iPz >= depo_ptr->pdedp_nbinPz ||
      iMu < 0 || iMu >= depo_ptr->pdedp_nbinmu){
-    printf("DBG check_res_ptc bin bounds. %g iE=%d/%d %g iPz=%d/%d %g iMu=%d/%d\n",
+     /* Out of domain, exclude from computation */
+    /* printf("DBG check_res_ptc bin bounds. %g iE=%d/%d %g iPz=%d/%d %g iMu=%d/%d\n",
            edum, iE, depo_ptr->pdedp_nbinE,
            pzdum, iPz, depo_ptr->pdedp_nbinPz,
-           mudum, iMu, depo_ptr->pdedp_nbinmu);
+           mudum, iMu, depo_ptr->pdedp_nbinmu); */
     pol[kd] = 2. * pw;
     return;
   }
