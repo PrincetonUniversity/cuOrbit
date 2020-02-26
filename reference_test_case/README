@@ -15,3 +15,27 @@ Results from my previous run: /p/kick_model/orbit/nstx/204202_jul19/displ_4_5/pD
 I'll run a test case with npert=0 as soon as portal cooperates again - I guess that'll be tomorrow morning, after maintenance.
 
 ###################################
+
+
+# Reference file
+
+To regen a reference file, assuming you have docker,
+and are in a directory with the code you care about:
+
+## get the container
+docker pull garrettwrong/cuorbit_centos-7
+### or build it
+docker build -t cuorbit_centos-7 -f ci/Dockerfile.centos7 .
+
+
+# assuming you are using the prebuild one
+## clean and regenerate code in container
+docker run -v `pwd`:`pwd` -w `pwd` garrettwrong/cuorbit_centos-7:latest make clean
+docker run -v `pwd`:`pwd` -w `pwd` garrettwrong/cuorbit_centos-7:latest make -j
+
+## run it in container
+docker run -v `pwd`:`pwd` -w `pwd` garrettwrong/cuorbit_centos-7:latest ./cuOrbit.x reference_test_case/config_short_repro.ini
+
+cp pdedp.nz reference_test_case/pdedp_short_repro.nz
+git commit -am "update reference file foo"
+git push

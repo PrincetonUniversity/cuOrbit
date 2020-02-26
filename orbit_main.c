@@ -85,8 +85,8 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
     
     printf("\n\n --- Start main run --- \n" );
     printf("\t no. of particles \t: %d\n", cfg_ptr->nprt);
-    printf("\t no. of time steps \t: %d\n", depo_ptr->nstep_all);
-    printf("\t sim. time [ms] \t:  %f\n", depo_ptr->pdedp_dtrun);
+    printf("\t no. of time steps \t: %d\n", cfg_ptr->nstep_all);
+    printf("\t sim. time [ms] \t:  %f\n", cfg_ptr->pdedp_dtrun);
     printf("\t time step [us] \t:  %f\n",
            1E6 * cfg_ptr->dt0 / get_omeg0(cfg_ptr->ptrb_ptr));
     printf("\t time steps to skip \t:  %d\n\n", get_pdedp_tskip(depo_ptr));
