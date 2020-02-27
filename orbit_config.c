@@ -71,6 +71,8 @@ static int config_handler(void* res_ptr, const char* section, const char* name,
       pconfig->alphas_file = strdup(value);
     } else if (MATCH("input", "displ_file")) {
       pconfig->displ_file = strdup(value);
+    } else if (MATCH("input", "fbmdata_file")) {
+      pconfig->fbmdata_file = strdup(value);
     }
 
     /* Output */

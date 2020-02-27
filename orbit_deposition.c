@@ -1364,7 +1364,7 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
 void deposition(Config_t* cfg_ptr, int irun_pdedp){
   if(get_do_modestep(cfg_ptr->ptrb_ptr) && irun_pdedp==0){
     printf("Reading deposition from file\n");
-    printf("WARNING NOT IMPLEMENTED YET\n");
+    sampledep(cfg_ptr);
   }
   else{  /* use Mario's deposition */
     if( irun_pdedp % 2  == 0){

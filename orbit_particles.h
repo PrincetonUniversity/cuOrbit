@@ -221,5 +221,6 @@ __host__ __device__
 #endif
 void modestep(Config_t*);
 
+void sampledep(Config_t*);
 
 #endif

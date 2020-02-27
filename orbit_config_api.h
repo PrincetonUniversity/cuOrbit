@@ -71,6 +71,7 @@ struct Config {
   char* spdata_file;
   char* alphas_file;
   char* displ_file;
+  char* fbmdata_file;
   /* outputs */
   char* pdedp_file;
   bool output_sparse;

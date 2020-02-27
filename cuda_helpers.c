@@ -40,3 +40,12 @@ void* umacalloc(size_t num, size_t size){
 #endif
   return ptr;
 }
+
+void umafree(void** ptr){
+#ifdef __NVCC__
+  cudaFree(*ptr);
+#else
+  free(*ptr);
+#endif
+  *ptr=NULL;
+}

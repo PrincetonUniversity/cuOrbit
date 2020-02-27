@@ -86,7 +86,13 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   ptrb_ptr->global_scaling_factor = config_ptr->global_scaling_factor;
   ptrb_ptr->freq_scaling_factor = config_ptr->freq_scaling_factor;
   ptrb_ptr->do_modestep = false;
-  if(config_ptr->do_modestep) ptrb_ptr->do_modestep = true;
+  if(config_ptr->do_modestep){
+    if(config_ptr->fbmdata_file == NULL){
+      fprintf(stderr, "If do_modestep, you must supply fbmdata_file in config!\n");
+      exit(1);
+    }
+    ptrb_ptr->do_modestep = true;
+  }
   //ptrb_ptr->sng = config_ptr->sng;
 
   /* in set1 */
