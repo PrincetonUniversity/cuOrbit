@@ -68,11 +68,8 @@ void orbit_main_loop(orbit_Config_t* cfg_ptr){
       }
     }
 
-    if( irun_pdedp % 2  == 0){
-      fulldepmp(cfg_ptr, depo_ptr);
-    } else {
-      fulldepmp_co(cfg_ptr, depo_ptr);
-    }
+    /* Call Mario's deposition, or Roscoe's file read..*/
+    deposition(cfg_ptr, irun_pdedp);
 
     
     /* MP: I moved the following definitions to orbit_deposition.c */

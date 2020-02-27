@@ -1361,6 +1361,21 @@ void pdedp_checkbdry(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   return;
 }
 
+void deposition(Config_t* cfg_ptr, int irun_pdedp){
+  if(get_do_modestep(cfg_ptr->ptrb_ptr) && irun_pdedp==0){
+    printf("Reading deposition from file\n");
+    printf("WARNING NOT IMPLEMENTED YET\n");
+  }
+  else{  /* use Mario's deposition */
+    if( irun_pdedp % 2  == 0){
+      fulldepmp(cfg_ptr, cfg_ptr->depo_ptr);
+    } else {
+      fulldepmp_co(cfg_ptr, cfg_ptr->depo_ptr);
+    }
+  }
+  return;
+}
+
 void fulldepmp(Config_t* cfg_ptr, Deposition_t* depo_ptr){
   /* loops over k, can live on device one day */
 
