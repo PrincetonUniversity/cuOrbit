@@ -131,6 +131,7 @@ size_t sizeof_pdedp(Deposition_t*);
 
 void pdedp_read(Deposition_t*, Config_t*);
 void pdedp_init(Deposition_t*);
+void deposition(Config_t*, int);
 void fulldepmp(Config_t*, Deposition_t*);
 void fulldepmp_co(Config_t*, Deposition_t*);
 void fullredepmp(Config_t* , Deposition_t*);

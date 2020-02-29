@@ -62,6 +62,11 @@ double* get_en(Particles_t*);
 #ifdef __NVCC__
 __host__ __device__
 #endif
+double* get_ri(Particles_t* ptcl_ptr);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_pol(Particles_t*);
 
 #ifdef __NVCC__
@@ -205,5 +210,17 @@ void konestep(Config_t*, int);
 __host__ __device__
 #endif
 void kupdate(Config_t* cfg_ptr, int k);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_idm(Particles_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void modestep(Config_t*);
+
+void sampledep(Config_t*);
 
 #endif

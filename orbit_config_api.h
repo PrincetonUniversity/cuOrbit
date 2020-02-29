@@ -71,6 +71,7 @@ struct Config {
   char* spdata_file;
   char* alphas_file;
   char* displ_file;
+  char* fbmdata_file;
   /* outputs */
   char* pdedp_file;
   bool output_sparse;
@@ -87,6 +88,7 @@ struct Config {
   double global_scaling_factor;
   double freq_scaling_factor;
   double sng;
+  bool do_modestep;
 
   /* particle */
   Particles_t* ptcl_ptr;

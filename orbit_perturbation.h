@@ -38,6 +38,12 @@ Perturb_t* Perturb_ctor();
 
 void splna(Perturb_t* , Equilib_t*, Particles_t*);
 void splnx(Perturb_t* , Equilib_t*, Particles_t*);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+bool get_do_modestep(Perturb_t* ptrb_ptr);
+
 void set_omeg0(Perturb_t*, double);
 
 #ifdef __NVCC__
@@ -121,4 +127,10 @@ __host__ __device__
 double* get_a3(Perturb_t*);
 
 double pol2pot(Config_t*, double);
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void modestep(Config_t* cfg_ptr);
+
 #endif

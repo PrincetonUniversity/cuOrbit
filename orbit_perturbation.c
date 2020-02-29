@@ -25,6 +25,7 @@
 
 #include "orbit_config_api.h"
 #include "orbit_perturbation.h"
+#include "orbit_particles.h"
 #include "orbit_util.h"
 #include "cuda_helpers.h"
 
@@ -43,6 +44,7 @@ struct Perturb {
   double global_scaling_factor;
   double alimit;
   double freq_scaling_factor;
+  bool do_modestep;
   double omeg0;
   //double sng;
 
@@ -53,17 +55,18 @@ struct Perturb {
   double *damp;
   double *harm;
   double *xx;
-  //unused? double *yy;
-  /* derivatives */
-  /// maybe these belong elsewhere, like field, which is more paticles
-  /* double *dbdt; */
-  /* double *dbdp; */
-  /* double *dbdz; */
   double *phaz;
   /* displacements xi1-xi3 */
   double *xi1, *xi2, *xi3;
   /* alphas a1-a3*/
   double *a1, *a2, *a3;
+
+  /* modestepping */
+  double *damdt;
+  double *dpzdt;
+  double *dp;
+  double *dadm;
+
 };
 
 Perturb_t* Perturb_ctor(){
@@ -82,6 +85,14 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   ptrb_ptr->alimit = config_ptr->alimit;
   ptrb_ptr->global_scaling_factor = config_ptr->global_scaling_factor;
   ptrb_ptr->freq_scaling_factor = config_ptr->freq_scaling_factor;
+  ptrb_ptr->do_modestep = false;
+  if(config_ptr->do_modestep){
+    if(config_ptr->fbmdata_file == NULL){
+      fprintf(stderr, "If do_modestep, you must supply fbmdata_file in config!\n");
+      exit(1);
+    }
+    ptrb_ptr->do_modestep = true;
+  }
   //ptrb_ptr->sng = config_ptr->sng;
 
   /* in set1 */
@@ -154,6 +165,13 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
   ptrb_ptr->mmod = (int*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(int));
   ptrb_ptr->nmod = (int*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(int));
 
+  /* modestep */
+  ptrb_ptr->damdt = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->dpzdt = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->dp = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+  ptrb_ptr->dadm = (double*)umacalloc((unsigned)ptrb_ptr->modes, sizeof(double));
+
+
   for(md=0; md < ptrb_ptr->modes; md++){
     fscanf(ifp, "** m = %d ", &(ptrb_ptr->mmod[md]));
     assert(md == ptrb_ptr->mmod[md]);
@@ -167,18 +185,11 @@ void initialize_Perturb(Perturb_t* ptrb_ptr, Config_t* config_ptr,
 
   /* now from here we initialize remaining structure */
 
-  /* who do these work for */
-  //nval = 1
-  //nval1 = 1
-
   for(md=0; md < ptrb_ptr->modes; md++){
     ptrb_ptr->harm[md] = 1;
     ptrb_ptr->omegv[md] = 2E3 * M_PI * fkhz / ptrb_ptr->omeg0;
     ptrb_ptr->nmod[md] = nmd;
   }
-
-  // who does this belong to
-  //xxxnvalx = nval;
 
   printf("Change Amplitude = %g\nChange Frequency = %g\nLimit = %g\n",
          ptrb_ptr->global_scaling_factor, ptrb_ptr->freq_scaling_factor, ptrb_ptr->alimit);
@@ -334,6 +345,13 @@ void splnx(Perturb_t* ptrb_ptr, Equilib_t* equilib_ptr, Particles_t* ptcl_ptr){
   return;
 }
 
+#ifdef __NVCC__
+__host__ __device__
+#endif
+bool get_do_modestep(Perturb_t* ptrb_ptr){
+  return ptrb_ptr->do_modestep;
+}
+
 void set_omeg0(Perturb_t* ptrb_ptr, double val){
   ptrb_ptr->omeg0 = val;
 }
@@ -459,4 +477,133 @@ __host__ __device__
 double* get_xi3(Perturb_t* ptrb_ptr){
   return ptrb_ptr->xi3;
 }
+#ifdef __NVCC__
+__host__ __device__
+#endif
+void modestep(Config_t* cfg_ptr){
+  /* interally this loops over particles already,
+   so it is the invokers responsibility to ensure it is
+  call only once. */
+  /* modestep needs the whole kitchen */
+  Equilib_t* eqlb_ptr = cfg_ptr->eqlb_ptr;
+  Perturb_t* ptrb_ptr = cfg_ptr->ptrb_ptr;
+  Particles_t* ptcl_ptr = cfg_ptr->ptcl_ptr;
+  /* from struct */
+  double *damdt = ptrb_ptr->damdt;
+  double *dpzdt = ptrb_ptr->dpzdt;
+  double *dp = ptrb_ptr->dp;
+  double *dadm = ptrb_ptr->dadm;
+  double *phaz = ptrb_ptr->phaz;
+  double *amp = ptrb_ptr->amp;
+  double *xi1 = ptrb_ptr->xi1;
+  double *xi2 = ptrb_ptr->xi2;
+  double *xi3 = ptrb_ptr->xi3;
+  double *omegv = ptrb_ptr->omegv;
+  int *nmod = ptrb_ptr->nmod;
+  int *mmod = ptrb_ptr->mmod;
+  int md1 = ptrb_ptr->md1;
+  int md2 = ptrb_ptr->md2;
+  double falf = ptrb_ptr->falf;
 
+  /* from ptcl */
+  double *zet = get_zet(ptcl_ptr);
+  double *thet = get_thet(ptcl_ptr);
+  double *g = get_g(ptcl_ptr);
+  double *ri = get_ri(ptcl_ptr);
+  double *q = get_q(ptcl_ptr);
+  double *b = get_b(ptcl_ptr);
+  double *rho = get_rho(ptcl_ptr);
+  double* pol = get_pol(ptcl_ptr);
+  double* wt = get_wt(ptcl_ptr);
+  int idm = get_idm(ptcl_ptr);
+
+  /* from eqlb */
+  double pw = get_pw(eqlb_ptr);
+
+  /* from  config */
+  const double dt0 = get_dt0(cfg_ptr);
+  int nprt = cfg_ptr->nprt;
+
+  /* locals */
+  int k;
+  int ind;
+  int md;
+  int ncon;
+  int jd;
+  double agg;
+  double ptav;
+  double rbav;
+  double pdum;
+  double dpx;
+  double dp2;
+  double xinm;
+  double alnm;
+  double ptnm;
+  double rbb;
+  double dum;
+  double dum1;
+  double omg;
+  double cnm;
+  double snm;
+
+  /* falf set from config */
+
+  /* zero arrays */
+  for(md=0; md < ptrb_ptr->modes; md++){
+    damdt[md] = 0.;
+    dpzdt[md] = 0.;
+  }
+
+  /* add stepping contributions, all particles and modes */
+  for(md=md1; md<md2; md++){
+    ncon = 0;
+    ptav = 0.;
+    rbav = 0.;
+
+    for(k=0; k<nprt; k++){
+
+      agg = nmod[md]*zet[k] - mmod[md]*thet[k];
+      cnm = cos(agg - phaz[md*idm + k]);
+      snm = sin(agg - phaz[md*idm + k]);
+      pdum = pol[k];
+      if(pdum < pw){
+        ncon += 1;
+        jd = compute_jd(eqlb_ptr, pdum);
+        dpx = pdum - ((double)jd) * pw / (get_lsp(eqlb_ptr)-1);
+        dp2 = dpx*dpx;
+        ind = ptrb_ptr->lpt * md + k;
+        xinm = amp[md]*(xi1[ind] + xi2[ind]*dpx + xi3[ind]*dp2);
+        dum = 1./(mmod[md]*g[k] + nmod[md] * ri[k]);
+        dum1 = mmod[md] - nmod[md] * q[k];
+        alnm = xinm * dum1 * dum;
+        ptnm = -(g[k]*q[k]+ri[k])*omegv[md]*xinm*dum;
+        rbb = rho[k] * b[k] * b[k] *alnm - ptnm;
+        rbav += agg;
+        ptav += phaz[md*idm +k];
+        dum = pdum / pw;
+        /* XXX ind */
+        damdt[md] += wt[ind] * rbb * cnm;  /* eq 6.80 */
+        dpzdt[md] += wt[ind] * rbb * snm;  /* eq 6.81 */
+
+        //dont think neededtd = nstep * dt0/tran;
+      } /* pdum <pw  */
+    }  /* k */
+  }  /* md */
+
+  for(md=md1; md<md2; md++){
+    omg = omegv[md];
+    dadm[md] = (falf*falf) * damdt[md] * dt0 / (
+        ncon * omg * (amp[md]*amp[md]));
+    dp[md] = -1. * (falf*falf) *dpzdt[md]*dt0/(
+        ncon * omg * (amp[md]*amp[md]));
+    amp[md] = fmax(amp[md], 1.E-9);
+  }  /* md */
+
+  for(md=md1; md<md2; md++){
+    for(k=0; k<nprt; k++){
+      phaz[md*idm + k] += dp[md];
+    }  /* k */
+  }    /* md */
+
+  /* skipped "DATA OUT..." */
+}

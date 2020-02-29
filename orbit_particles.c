@@ -195,6 +195,13 @@ double* get_en(Particles_t* ptcl_ptr){
 #ifdef __NVCC__
 __host__ __device__
 #endif
+double* get_ri(Particles_t* ptcl_ptr){
+  return ptcl_ptr->ri;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
 double* get_pol(Particles_t* ptcl_ptr){
   return ptcl_ptr->pol;
 }
@@ -488,13 +495,13 @@ void kupdate(Config_t* cfg_ptr, int k){
   const int md1 = get_md1(Ptrb);
   const int md2 = get_md2(Ptrb);
   const int idm = Ptcl->idm;
-  
+
   kfield(cfg_ptr, k);
 
   nesc = 0;
 
   nout[k] = (int)(.6 *(1.  + copysign(1. , Ptcl->pol[k] - pw)));
-  
+
   time[k] += dt[k]*(1 - nout[k]);
   tim1[k] += (1-nout[k])*dt[k];
 
@@ -713,6 +720,10 @@ void do_particle_kernel(Config_t* cfg_ptr, int particle_id){
   for(ktm=1; ktm <= get_nstep_all(cfg_ptr); ktm++){
     konestep(cfg_ptr, particle_id);
     kupdate(cfg_ptr, particle_id);
+
+    if(cfg_ptr->do_modestep && particle_id !=0){
+      modestep(cfg_ptr);
+    }
 
     if(compute_pdedp(cfg_ptr->depo_ptr) &&
        ktm >= pdedp_tskip &&
@@ -953,4 +964,128 @@ void konestep(Config_t* cfg_ptr, int k){
 
   } //j
   return;
+}
+
+#ifdef __NVCC__
+__host__ __device__
+#endif
+int get_idm(Particles_t* ptcl_ptr){
+  return ptcl_ptr->idm;
+}
+
+
+void sampledep(Config_t* cfg_ptr){
+  /* config */
+  const double engn = get_engn(cfg_ptr);
+  Particles_t* ptcl_ptr = cfg_ptr->ptcl_ptr;
+
+  /* ptcl */
+  double* b = ptcl_ptr->b;
+  double* en = ptcl_ptr->en;
+  double* rho = ptcl_ptr->rho;
+  double* pot = ptcl_ptr->pot;
+  double* pol = ptcl_ptr->pol;
+  double* ptch = ptcl_ptr->ptch;
+  double* zet = ptcl_ptr->zet;
+  double* thet = ptcl_ptr->thet;
+  double* rmu = ptcl_ptr->rmu;
+  const double ekev = get_ekev(ptcl_ptr);
+
+
+  /* eqlb */
+  const double pw = get_pw(cfg_ptr->eqlb_ptr);
+
+  /* locals */
+  const char *mode = "r";
+  FILE* ifp;
+  int nheader;
+  int nlines;
+  int lineno;
+  double rdum,zdum,ptdum,edum;
+  double thetd, pold;
+  int k;
+
+  /* we need to open a file */
+  ifp = fopen(cfg_ptr->fbmdata_file, mode);
+  if (ifp == NULL) {
+    fprintf(stderr, "Can't open input file %s!\n", cfg_ptr->fbmdata_file);
+    exit(1);
+  }
+  printf("Parsing particle deposition file %s\n",  cfg_ptr->fbmdata_file);
+
+
+  /* figure out how many lines of rz data */
+  fscanf(ifp, "%d %d", &nheader, &nlines);
+  printf("sampledep found %d header lines and %d data lines\n", nheader, nlines);
+
+  /* sanity check */
+  if(cfg_ptr->nprt > nlines){
+    fprintf(stderr,
+            "Error, you requested more particles(%d) than are in %s.\n" \
+            "Decrease nprt <= %d and retry\n",
+            cfg_ptr->nprt,
+            cfg_ptr->fbmdata_file,
+            nlines);
+    exit(1);
+  }
+
+
+  /* init counters */
+  k = 0;
+  /* read in the data */
+  /* note, already read first line */
+  for(lineno=1; lineno<nlines; lineno++){
+    /* skip the nheader additional header lines */
+    if(lineno < nheader+1) fscanf(ifp, "%*[^\n]\n");
+
+    /* stay in bounds */
+    if(k >= ptcl_ptr->nprt){
+      fprintf(stderr,
+              "We have more particle data available than nprt." \
+              "Warning, only reading first nprt (%d) particles from %s\n",
+              cfg_ptr->nprt,
+              cfg_ptr->fbmdata_file);
+      break;
+    }
+    /* read data */
+    fscanf(ifp, "%lf %lf %lf %lf ", &rdum, &zdum, &ptdum, &edum);
+
+    if(edum * 1.E-3 < cfg_ptr->pdedp_Emin ) break;  /* limit energy */
+
+    /* do some stuff, keepiong track of particles within limits */
+    // stub, need to impliment
+    //XXX gc_xz2pt(rdum, zdum, xc, rmaj, ped, pold, thetd, xhave, zhave, dist, ierr);
+    fprintf(stderr, "ERROR: gc_xz2pt or equiv is not implimented yet!\n"); exit(1);
+
+    if(thetd > M_PI) thetd -= pi2;
+
+    if(pold >= pw) break;  /* outside */
+
+    if(pold <= 1.E-6) break;  /* axis */
+
+    /* looks like we have a keeper */
+    thet[k] = thetd;
+    zet[k] = 0.;
+    pol[k] = pold;
+    ptch[k] = ptdum;
+    en[k] = edum * engn * 1.E-3 / ekev ;  /* kinetic */
+    k += 1;
+
+  }  /* line */
+
+  /* presumably we then change nprt... */
+  cfg_ptr->nprt = k;
+  ptcl_ptr->nprt = k;
+
+  /* step */
+  field(cfg_ptr, ptcl_ptr->nprt);
+  for(k=0; k<ptcl_ptr->nprt; k++){
+    rho[k] = ptch[k] * sqrt(2. * en[k]) / b[k];
+    rmu[k] = en[k] / b[k] - .5 * rho[k] * rho[k] * b[k];
+    en[k] = en[k] + pot[k];
+  }  /* k */
+
+  fclose(ifp);
+  printf("sampledep completed read of %d particles\n",  ptcl_ptr->nprt);
+
 }
