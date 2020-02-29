@@ -721,7 +721,6 @@ void do_particle_kernel(Config_t* cfg_ptr, int particle_id){
     konestep(cfg_ptr, particle_id);
     kupdate(cfg_ptr, particle_id);
 
-    /* XXX should this go before onestep and update?... */
     if(cfg_ptr->do_modestep && particle_id !=0){
       modestep(cfg_ptr);
     }
@@ -1019,29 +1018,44 @@ void sampledep(Config_t* cfg_ptr){
   fscanf(ifp, "%d %d", &nheader, &nlines);
   printf("sampledep found %d header lines and %d data lines\n", nheader, nlines);
 
+  /* sanity check */
+  if(cfg_ptr->nprt > nlines){
+    fprintf(stderr,
+            "Error, you requested more particles(%d) than are in %s.\n" \
+            "Decrease nprt <= %d and retry\n",
+            cfg_ptr->nprt,
+            cfg_ptr->fbmdata_file,
+            nlines);
+    exit(1);
+  }
+
+
   /* init counters */
   k = 0;
   /* read in the data */
   /* note, already read first line */
-  for(lineno=0; lineno<nlines-1; lineno++){
+  for(lineno=1; lineno<nlines; lineno++){
     /* skip the nheader additional header lines */
     if(lineno < nheader) fscanf(ifp, "%*[^\n]\n");
 
     /* stay in bounds */
     if(k >= ptcl_ptr->nprt){
       fprintf(stderr,
-              "Error, we have more particles than nprt.  Increase nprt towards %d\n" \
-              " or, alter the code to admit min(nprt,k)...\n", nlines);
-      exit(1);
+              "We have more particle data available than nprt." \
+              "Warning, only reading first nprt (%d) particles from %s\n",
+              cfg_ptr->nprt,
+              cfg_ptr->fbmdata_file);
+      break;
     }
     /* read data */
     fscanf(ifp, "%lf %lf %lf %lf ", &rdum, &zdum, &ptdum, &edum);
 
-    if(edum * 1.E-3 < 10.) break;  /* limit energy */
+    if(edum * 1.E-3 < cfg_ptr->pdedp_Emin ) break;  /* limit energy */
 
     /* do some stuff, keepiong track of particles within limits */
     // stub, need to impliment
     //XXX gc_xz2pt(rdum, zdum, xc, rmaj, ped, pold, thetd, xhave, zhave, dist, ierr);
+    fprintf(stderr, "ERROR: gc_xz2pt or equiv is not implimented yet!\n"); exit(1);
 
     if(thetd > M_PI) thetd -= pi2;
 
