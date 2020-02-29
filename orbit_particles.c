@@ -1036,7 +1036,7 @@ void sampledep(Config_t* cfg_ptr){
   /* note, already read first line */
   for(lineno=1; lineno<nlines; lineno++){
     /* skip the nheader additional header lines */
-    if(lineno < nheader-1) fscanf(ifp, "%*[^\n]\n");
+    if(lineno < nheader+1) fscanf(ifp, "%*[^\n]\n");
 
     /* stay in bounds */
     if(k >= ptcl_ptr->nprt){
